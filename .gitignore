@@ -1,0 +1,24 @@
+# Xcode
+## User settings
+*.xcuserstate
+project.xcworkspace/xcuserdata/
+*.xcuserdatad
+xcuserdata/
+
+## Build generated
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+
+# Python & Temporary
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+*.db
+scratch/

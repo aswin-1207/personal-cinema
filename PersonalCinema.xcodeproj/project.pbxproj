@@ -1,0 +1,560 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B001 /* PersonalCinemaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A001 /* PersonalCinemaApp.swift */; };
+		B002 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A002 /* MainTabView.swift */; };
+		B003 /* CinemaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A003 /* CinemaTheme.swift */; };
+		B004 /* MovieCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A004 /* MovieCard.swift */; };
+		B005 /* HeroMovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A005 /* HeroMovieView.swift */; };
+		B006 /* RatingControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A006 /* RatingControl.swift */; };
+		B007 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007 /* EmptyStateView.swift */; };
+		B008 /* LoadingShimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A008 /* LoadingShimmer.swift */; };
+		B009 /* CinemaTicket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A009 /* CinemaTicket.swift */; };
+		B010 /* TMDBService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A010 /* TMDBService.swift */; };
+		B011 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A011 /* Models.swift */; };
+		B014 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A014 /* HapticManager.swift */; };
+		B015 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A015 /* SoundManager.swift */; };
+		B016 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A016 /* NotificationManager.swift */; };
+		B017 /* SwiftDataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A017 /* SwiftDataModels.swift */; };
+		B018 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A018 /* DataManager.swift */; };
+		B020 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A020 /* HomeViewModel.swift */; };
+		B021 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A021 /* HomeView.swift */; };
+		B022 /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A022 /* DiscoverViewModel.swift */; };
+		B023 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A023 /* DiscoverView.swift */; };
+		B024 /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A024 /* LibraryViewModel.swift */; };
+		B025 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A025 /* LibraryView.swift */; };
+		B026 /* MovieDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A026 /* MovieDetailViewModel.swift */; };
+		B027 /* MovieDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A027 /* MovieDetailView.swift */; };
+		B028 /* CinemaModeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A028 /* CinemaModeViewModel.swift */; };
+		B029 /* CinemaModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029 /* CinemaModeView.swift */; };
+		B030 /* WatchCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A030 /* WatchCompletionView.swift */; };
+		B031 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A031 /* CalendarViewModel.swift */; };
+		B032 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A032 /* CalendarView.swift */; };
+		B033 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A033 /* ProfileViewModel.swift */; };
+		B034 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A034 /* ProfileView.swift */; };
+		B035 /* ImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A035 /* ImportViewModel.swift */; };
+		B036 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A036 /* ImportView.swift */; };
+		B037 /* RandomMovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A037 /* RandomMovieView.swift */; };
+		B038 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A038 /* CollectionDetailView.swift */; };
+		B039 /* WatchedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039 /* WatchedControl.swift */; };
+		B040 /* StatisticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A040 /* StatisticsService.swift */; };
+		B101 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A101 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A001 /* PersonalCinemaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalCinemaApp.swift; sourceTree = "<group>"; };
+		A002 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A003 /* CinemaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaTheme.swift; sourceTree = "<group>"; };
+		A004 /* MovieCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCard.swift; sourceTree = "<group>"; };
+		A005 /* HeroMovieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroMovieView.swift; sourceTree = "<group>"; };
+		A006 /* RatingControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingControl.swift; sourceTree = "<group>"; };
+		A007 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		A008 /* LoadingShimmer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingShimmer.swift; sourceTree = "<group>"; };
+		A009 /* CinemaTicket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaTicket.swift; sourceTree = "<group>"; };
+		A010 /* TMDBService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TMDBService.swift; sourceTree = "<group>"; };
+		A011 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A014 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		A015 /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
+		A016 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		A017 /* SwiftDataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataModels.swift; sourceTree = "<group>"; };
+		A018 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		A020 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		A021 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A022 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
+		A023 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		A024 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		A025 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		A026 /* MovieDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailViewModel.swift; sourceTree = "<group>"; };
+		A027 /* MovieDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailView.swift; sourceTree = "<group>"; };
+		A028 /* CinemaModeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaModeViewModel.swift; sourceTree = "<group>"; };
+		A029 /* CinemaModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinemaModeView.swift; sourceTree = "<group>"; };
+		A030 /* WatchCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompletionView.swift; sourceTree = "<group>"; };
+		A031 /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
+		A032 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		A033 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		A034 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A035 /* ImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportViewModel.swift; sourceTree = "<group>"; };
+		A036 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		A037 /* RandomMovieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RandomMovieView.swift; sourceTree = "<group>"; };
+		A038 /* CollectionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailView.swift; sourceTree = "<group>"; };
+		A039 /* WatchedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchedControl.swift; sourceTree = "<group>"; };
+		A040 /* StatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsService.swift; sourceTree = "<group>"; };
+		A100 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A101 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A102 /* PersonalCinema.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PersonalCinema.entitlements; sourceTree = "<group>"; };
+		PRODUCTREF /* PersonalCinema.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalCinema.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		MAINGROUP = {
+			isa = PBXGroup;
+			children = (
+				APPGROUP /* App */,
+				DESIGNGROUP /* DesignSystem */,
+				COREGROUP /* Core */,
+				FEATURESGROUP /* Features */,
+				PRODUCTSGROUP /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		APPGROUP = {
+			isa = PBXGroup;
+			children = (
+				A001 /* PersonalCinemaApp.swift */,
+				A002 /* MainTabView.swift */,
+				A100 /* Info.plist */,
+				A101 /* Assets.xcassets */,
+				A102 /* PersonalCinema.entitlements */,
+			);
+			name = "App";
+			path = "ios/PersonalCinema/App";
+			sourceTree = "<group>";
+		};
+		DESIGNGROUP = {
+			isa = PBXGroup;
+			children = (
+				A003 /* CinemaTheme.swift */,
+				DESIGNCOMPONENTS /* Components */,
+			);
+			name = "DesignSystem";
+			path = "ios/PersonalCinema/DesignSystem";
+			sourceTree = "<group>";
+		};
+		DESIGNCOMPONENTS = {
+			isa = PBXGroup;
+			children = (
+				A004 /* MovieCard.swift */,
+				A005 /* HeroMovieView.swift */,
+				A006 /* RatingControl.swift */,
+				A007 /* EmptyStateView.swift */,
+				A008 /* LoadingShimmer.swift */,
+				A009 /* CinemaTicket.swift */,
+				A039 /* WatchedControl.swift */,
+			);
+			name = "Components";
+			path = "Components";
+			sourceTree = "<group>";
+		};
+		COREGROUP = {
+			isa = PBXGroup;
+			children = (
+				CORESUB_NETWORK,
+				CORESUB_HAPTICS,
+				CORESUB_SOUND,
+				CORESUB_NOTIF,
+				CORESUB_STORAGE,
+				CORESUB_SERVICES,
+			);
+			name = "Core";
+			path = "ios/PersonalCinema/Core";
+			sourceTree = "<group>";
+		};
+		CORESUB_NETWORK = {
+			isa = PBXGroup;
+			children = (
+				A010 /* TMDBService.swift */,
+				A011 /* Models.swift */,
+			);
+			name = "Network";
+			path = "Network";
+			sourceTree = "<group>";
+		};
+		CORESUB_HAPTICS = {
+			isa = PBXGroup;
+			children = (
+				A014 /* HapticManager.swift */,
+			);
+			name = "Haptics";
+			path = "Haptics";
+			sourceTree = "<group>";
+		};
+		CORESUB_SOUND = {
+			isa = PBXGroup;
+			children = (
+				A015 /* SoundManager.swift */,
+			);
+			name = "Sound";
+			path = "Sound";
+			sourceTree = "<group>";
+		};
+		CORESUB_NOTIF = {
+			isa = PBXGroup;
+			children = (
+				A016 /* NotificationManager.swift */,
+			);
+			name = "Notifications";
+			path = "Notifications";
+			sourceTree = "<group>";
+		};
+		CORESUB_STORAGE = {
+			isa = PBXGroup;
+			children = (
+				A017 /* SwiftDataModels.swift */,
+				A018 /* DataManager.swift */,
+			);
+			name = "Storage";
+			path = "Storage";
+			sourceTree = "<group>";
+		};
+		CORESUB_SERVICES = {
+			isa = PBXGroup;
+			children = (
+				A040 /* StatisticsService.swift */,
+			);
+			name = "Services";
+			path = "Services";
+			sourceTree = "<group>";
+		};
+		FEATURESGROUP = {
+			isa = PBXGroup;
+			children = (
+				FEAT_HOME,
+				FEAT_DISCOVER,
+				FEAT_LIBRARY,
+				FEAT_DETAIL,
+				FEAT_CINEMA,
+				FEAT_TIMER,
+				FEAT_CALENDAR,
+				FEAT_PROFILE,
+				FEAT_IMPORT,
+			);
+			name = "Features";
+			path = "ios/PersonalCinema/Features";
+			sourceTree = "<group>";
+		};
+		FEAT_HOME = {
+			isa = PBXGroup;
+			children = (
+				A020 /* HomeViewModel.swift */,
+				A021 /* HomeView.swift */,
+			);
+			name = "Home";
+			path = "Home";
+			sourceTree = "<group>";
+		};
+		FEAT_DISCOVER = {
+			isa = PBXGroup;
+			children = (
+				A022 /* DiscoverViewModel.swift */,
+				A023 /* DiscoverView.swift */,
+				A037 /* RandomMovieView.swift */,
+			);
+			name = "Discover";
+			path = "Discover";
+			sourceTree = "<group>";
+		};
+		FEAT_LIBRARY = {
+			isa = PBXGroup;
+			children = (
+				A024 /* LibraryViewModel.swift */,
+				A025 /* LibraryView.swift */,
+				A038 /* CollectionDetailView.swift */,
+			);
+			name = "Library";
+			path = "Library";
+			sourceTree = "<group>";
+		};
+		FEAT_DETAIL = {
+			isa = PBXGroup;
+			children = (
+				A026 /* MovieDetailViewModel.swift */,
+				A027 /* MovieDetailView.swift */,
+			);
+			name = "MovieDetail";
+			path = "MovieDetail";
+			sourceTree = "<group>";
+		};
+		FEAT_CINEMA = {
+			isa = PBXGroup;
+			children = (
+				A028 /* CinemaModeViewModel.swift */,
+				A029 /* CinemaModeView.swift */,
+			);
+			name = "CinemaMode";
+			path = "CinemaMode";
+			sourceTree = "<group>";
+		};
+		FEAT_TIMER = {
+			isa = PBXGroup;
+			children = (
+				A030 /* WatchCompletionView.swift */,
+			);
+			name = "WatchTimer";
+			path = "WatchTimer";
+			sourceTree = "<group>";
+		};
+		FEAT_CALENDAR = {
+			isa = PBXGroup;
+			children = (
+				A031 /* CalendarViewModel.swift */,
+				A032 /* CalendarView.swift */,
+			);
+			name = "Calendar";
+			path = "Calendar";
+			sourceTree = "<group>";
+		};
+		FEAT_PROFILE = {
+			isa = PBXGroup;
+			children = (
+				A033 /* ProfileViewModel.swift */,
+				A034 /* ProfileView.swift */,
+			);
+			name = "Profile";
+			path = "Profile";
+			sourceTree = "<group>";
+		};
+		FEAT_IMPORT = {
+			isa = PBXGroup;
+			children = (
+				A035 /* ImportViewModel.swift */,
+				A036 /* ImportView.swift */,
+			);
+			name = "Import";
+			path = "Import";
+			sourceTree = "<group>";
+		};
+		PRODUCTSGROUP = {
+			isa = PBXGroup;
+			children = (
+				PRODUCTREF /* PersonalCinema.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		TARGET1 /* PersonalCinema */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BUILDCONFIGS;
+			buildPhases = (
+				SOURCEBUILDPHASE /* Sources */,
+				FRAMEWORKBUILDPHASE /* Frameworks */,
+				RESOURCEBUILDPHASE /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = PersonalCinema;
+			productName = PersonalCinema;
+			productReference = PRODUCTREF /* PersonalCinema.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		PROJECTOBJ /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					TARGET1 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = PROJBUILDCONFIGS;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = MAINGROUP;
+			productRefGroup = PRODUCTSGROUP;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				TARGET1 /* PersonalCinema */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		RESOURCEBUILDPHASE = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B101 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		SOURCEBUILDPHASE = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B001 /* PersonalCinemaApp.swift in Sources */,
+				B002 /* MainTabView.swift in Sources */,
+				B003 /* CinemaTheme.swift in Sources */,
+				B004 /* MovieCard.swift in Sources */,
+				B005 /* HeroMovieView.swift in Sources */,
+				B006 /* RatingControl.swift in Sources */,
+				B007 /* EmptyStateView.swift in Sources */,
+				B008 /* LoadingShimmer.swift in Sources */,
+				B009 /* CinemaTicket.swift in Sources */,
+				B010 /* TMDBService.swift in Sources */,
+				B011 /* Models.swift in Sources */,
+				B014 /* HapticManager.swift in Sources */,
+				B015 /* SoundManager.swift in Sources */,
+				B016 /* NotificationManager.swift in Sources */,
+				B017 /* SwiftDataModels.swift in Sources */,
+				B018 /* DataManager.swift in Sources */,
+				B020 /* HomeViewModel.swift in Sources */,
+				B021 /* HomeView.swift in Sources */,
+				B022 /* DiscoverViewModel.swift in Sources */,
+				B023 /* DiscoverView.swift in Sources */,
+				B024 /* LibraryViewModel.swift in Sources */,
+				B025 /* LibraryView.swift in Sources */,
+				B026 /* MovieDetailViewModel.swift in Sources */,
+				B027 /* MovieDetailView.swift in Sources */,
+				B028 /* CinemaModeViewModel.swift in Sources */,
+				B029 /* CinemaModeView.swift in Sources */,
+				B030 /* WatchCompletionView.swift in Sources */,
+				B031 /* CalendarViewModel.swift in Sources */,
+				B032 /* CalendarView.swift in Sources */,
+				B033 /* ProfileViewModel.swift in Sources */,
+				B034 /* ProfileView.swift in Sources */,
+				B035 /* ImportViewModel.swift in Sources */,
+				B036 /* ImportView.swift in Sources */,
+				B037 /* RandomMovieView.swift in Sources */,
+				B038 /* CollectionDetailView.swift in Sources */,
+				B039 /* WatchedControl.swift in Sources */,
+				B040 /* StatisticsService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FRAMEWORKBUILDPHASE = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DEBUGCONFIG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		RELEASECONFIG /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		TARGETDEBUGCONFIG /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ios/PersonalCinema/App/PersonalCinema.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ios/PersonalCinema/App/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.personalcinema.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		TARGETRELEASECONFIG /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ios/PersonalCinema/App/PersonalCinema.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ios/PersonalCinema/App/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.personalcinema.app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		PROJBUILDCONFIGS /* Build configuration list for PBXProject "PersonalCinema" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DEBUGCONFIG /* Debug */,
+				RELEASECONFIG /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BUILDCONFIGS /* Build configuration list for PBXNativeTarget "PersonalCinema" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				TARGETDEBUGCONFIG /* Debug */,
+				TARGETRELEASECONFIG /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = PROJECTOBJ /* Project object */;
+}
