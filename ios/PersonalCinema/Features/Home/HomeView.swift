@@ -204,7 +204,7 @@ struct HomeView: View {
                 isWatched: .constant(false),
                 style: .pill,
                 onWatched: {
-                    Task {
+                    Task { @MainActor in
                         _ = DataManager.shared.markWatched(movieId: movie.id)
                         await viewModel.load()
                     }

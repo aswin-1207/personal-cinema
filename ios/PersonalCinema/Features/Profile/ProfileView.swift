@@ -61,7 +61,9 @@ struct ProfileView: View {
             titleVisibility: .visible
         ) {
             Button("Erase All Movies & History", role: .destructive) {
-                viewModel.clearAllData()
+                Task { @MainActor in
+                    viewModel.clearAllData()
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -279,8 +281,10 @@ struct ProfileView: View {
 
             // Export CSV
             Button {
-                exportedData = viewModel.exportFullBackupJSON()
-                showingExportSheet = true
+                Task { @MainActor in
+                    exportedData = viewModel.exportFullBackupJSON()
+                    showingExportSheet = true
+                }
             } label: {
                 HStack {
                     Image(systemName: "arrow.down.doc.fill")

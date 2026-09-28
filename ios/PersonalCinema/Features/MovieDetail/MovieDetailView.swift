@@ -203,6 +203,8 @@ struct MovieDetailView: View {
             .padding(.top, CinemaSpacing.xs)
             .padding(.trailing, CinemaSpacing.md)
         }
+    }
+
     @ViewBuilder
     private func actionButtons(movie: MovieDetail) -> some View {
         VStack(spacing: CinemaSpacing.sm) {
