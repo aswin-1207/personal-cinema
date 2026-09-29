@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
 import { StatsService, CinemaOverviewStats } from '../services/statsService';
+import { ExportService } from '../services/exportService';
 import { BackupCenterModal } from '../components/backup/BackupCenterModal';
 import { ImportWizard } from '../components/import/ImportWizard';
+import { Modal } from '../components/common/Modal';
+import { CinemaButton } from '../components/common/CinemaButton';
+import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
 import { Achievement } from '../types/backup';
 import {
@@ -12,12 +16,22 @@ import {
   Trophy,
   Database,
   Upload,
+  Download,
   Settings,
   Volume2,
   Vibrate,
   Sliders,
   Trash2,
   Lock,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  KeyRound,
+  AlertTriangle,
+  Heart,
+  Layers,
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
@@ -27,10 +41,16 @@ export const Profile: React.FC = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
   // Settings form states
   const [displayName, setDisplayName] = useState(preferences.displayName || '');
+  const [isSavingName, setIsSavingName] = useState(false);
+
+  // TMDB advanced states
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [tmdbApiKey, setTmdbApiKey] = useState(preferences.tmdbApiKey || '');
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
     StatsService.getOverview().then(setStats);
@@ -42,154 +62,226 @@ export const Profile: React.FC = () => {
     setTmdbApiKey(preferences.tmdbApiKey || '');
   }, [preferences]);
 
-  const handleSaveDisplayName = async () => {
+  const handleSaveDisplayName = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (displayName.trim()) {
+      setIsSavingName(true);
       await updatePreference('displayName', displayName.trim());
+      setIsSavingName(false);
       showToast('Display name updated.');
     }
   };
 
   const handleSaveTmdbKey = async () => {
     await updatePreference('tmdbApiKey', tmdbApiKey.trim());
-    showToast('TMDB API Key updated.');
+    showToast(tmdbApiKey.trim() ? 'Personal TMDB key updated.' : 'Using default built-in TMDB key.');
   };
 
-  const handleResetData = async () => {
-    if (
-      confirm(
-        'WARNING: This will permanently delete all your local movies, watch history, and custom collections. Proceed?'
-      )
-    ) {
-      await clearAllLocalData();
-      notifyDataChanged();
-      showToast('Cinema database wiped.');
+  const handleResetTmdbKey = async () => {
+    setTmdbApiKey('');
+    await updatePreference('tmdbApiKey', '');
+    showToast('Reset to default TMDB configuration.');
+  };
+
+  const handleExportData = async (format: 'json' | 'csv') => {
+    try {
+      await ExportService.exportLibrary(format);
+      showToast(`Exported cinema archive as ${format.toUpperCase()}`);
+    } catch (err) {
+      showToast('Export failed. Please check permissions.');
     }
   };
 
+  const handleConfirmClear = async () => {
+    setIsConfirmClearOpen(false);
+    await clearAllLocalData();
+    notifyDataChanged();
+    showToast('All local cinema data wiped.');
+  };
+
+  const totalMovies = stats ? stats.totalWatched + stats.totalWatchlist + stats.totalWatching : 0;
+  const unlockedCount = achievements.filter((a) => a.unlockedAt).length;
+
   return (
-    <div className="space-y-8 pb-20">
-      {/* Profile Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-cinema-gold font-semibold mb-1">
-            Personal Cinema Vault
-          </div>
-          <h1 className="font-serif font-bold text-3xl sm:text-4xl text-cinema-white">
-            {preferences.displayName || 'Aswin'}'s Cinema
-          </h1>
-          <p className="text-xs text-cinema-subtle mt-1">
-            Private, local-first catalog. Powered by IndexedDB & TMDB.
-          </p>
-        </div>
-
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsImportOpen(true)}
-            className="cinema-button-secondary px-4 py-2.5 text-xs flex items-center gap-1.5"
-          >
-            <Upload size={14} />
-            <span>Import Vault</span>
-          </button>
-
-          <button
-            onClick={() => setIsBackupOpen(true)}
-            className="cinema-button-primary px-4 py-2.5 text-xs flex items-center gap-1.5 shadow-gold"
-          >
-            <Database size={14} />
-            <span>Backup Center</span>
-          </button>
-        </div>
+    <div className="space-y-8 pb-28 select-none animate-cinema-fade max-w-4xl mx-auto">
+      {/* Profile Header (Section 18) */}
+      <div className="border-b border-white/[0.08] pb-5">
+        <span className="font-caps-label text-[#EDC257] tracking-widest text-[11px] block">
+          MY CINEMA
+        </span>
+        <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F2F0] tracking-tight mt-0.5">
+          {preferences.displayName || 'Aswin'}'s Cinema
+        </h1>
+        <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
+          Your personal movie archive and private screening vault.
+        </p>
       </div>
 
-      {/* Stats Overview Grid */}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-cinema-surface/60 border border-white/5 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-cinema-gold/15 text-cinema-gold flex items-center justify-center">
-              <Film size={24} />
+      {/* Cinema Snapshot (Section 19) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
+            Cinema Snapshot
+          </h2>
+          {totalMovies === 0 && (
+            <span className="text-[11px] text-[#EDC257] font-serif italic">
+              Your cinema is waiting
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
+              <Film size={20} />
             </div>
             <div>
-              <span className="text-xs text-cinema-subtle block">Watched Films</span>
-              <span className="font-bold text-cinema-white text-xl">{stats.totalWatched}</span>
+              <span className="text-[11px] text-[#9E9DA5] font-medium block">Total Films</span>
+              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">{totalMovies}</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-cinema-surface/60 border border-white/5 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-cinema-gold/15 text-cinema-gold flex items-center justify-center">
-              <Clock size={24} />
+          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 size={20} />
             </div>
             <div>
-              <span className="text-xs text-cinema-subtle block">Screen Time</span>
-              <span className="font-bold text-cinema-white text-xl">{stats.totalRuntimeHours} hrs</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-cinema-surface/60 border border-white/5 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-cinema-gold/15 text-cinema-gold flex items-center justify-center">
-              <Star size={24} />
-            </div>
-            <div>
-              <span className="text-xs text-cinema-subtle block">Average Rating</span>
-              <span className="font-bold text-cinema-white text-xl">
-                {stats.averageRating ? `${stats.averageRating} ★` : '—'}
+              <span className="text-[11px] text-[#9E9DA5] font-medium block">Watched</span>
+              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
+                {stats?.totalWatched ?? 0}
               </span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-cinema-surface/60 border border-white/5 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-cinema-gold/15 text-cinema-gold flex items-center justify-center">
-              <Trophy size={24} />
+          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
+              <Layers size={20} />
             </div>
             <div>
-              <span className="text-xs text-cinema-subtle block">Mastered Sets</span>
-              <span className="font-bold text-cinema-white text-xl">
-                {stats.completedCollections} / {stats.totalCollections}
+              <span className="text-[11px] text-[#9E9DA5] font-medium block">Collections</span>
+              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
+                {stats?.totalCollections ?? 0}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
+              <Heart size={20} />
+            </div>
+            <div>
+              <span className="text-[11px] text-[#9E9DA5] font-medium block">Favorites</span>
+              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
+                {stats?.totalFavorites ?? 0}
               </span>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Top Genres Breakdown */}
-      {stats && stats.topGenres.length > 0 && (
-        <div className="p-6 rounded-2xl bg-cinema-surface/40 border border-white/5 space-y-4">
-          <h3 className="font-serif font-bold text-lg text-cinema-white">Top Screening Genres</h3>
-          <div className="space-y-2.5">
-            {stats.topGenres.map((g) => {
-              const maxCount = stats.topGenres[0].count;
-              const percent = Math.round((g.count / maxCount) * 100);
-              return (
-                <div key={g.name} className="space-y-1">
-                  <div className="flex justify-between text-xs text-cinema-silver">
-                    <span>{g.name}</span>
-                    <span className="text-cinema-subtle">
-                      {g.count} {g.count === 1 ? 'film' : 'films'}
-                    </span>
-                  </div>
-                  <div className="w-full h-1.5 bg-cinema-charcoal rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-cinema-gold rounded-full transition-all duration-500"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+        {/* Runtime & Rating metrics if watched > 0 */}
+        {stats && stats.totalWatched > 0 && (
+          <div className="p-3.5 rounded-xl bg-[#171924]/50 border border-white/5 flex flex-wrap items-center justify-between text-xs text-[#9E9DA5] gap-4">
+            <div className="flex items-center gap-2">
+              <Clock size={15} className="text-[#EDC257]" />
+              <span>
+                Screen Time: <strong className="text-[#F5F2F0]">{stats.totalRuntimeHours} hrs</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star size={15} className="text-[#EDC257]" />
+              <span>
+                Average Rating:{' '}
+                <strong className="text-[#F5F2F0]">
+                  {stats.averageRating ? `${stats.averageRating} ★` : '—'}
+                </strong>
+              </span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Quick Actions (Section 20) */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
+          Quick Actions
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            onClick={() => setIsImportOpen(true)}
+            role="button"
+            tabIndex={0}
+            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <Upload size={18} />
+            </div>
+            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
+              Import Movies
+            </div>
+            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
+              Bring your movie lists, spreadsheets, or text files into Personal Cinema.
+            </p>
+          </div>
+
+          <div
+            onClick={() => setIsBackupOpen(true)}
+            role="button"
+            tabIndex={0}
+            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <Database size={18} />
+            </div>
+            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
+              Backup Center
+            </div>
+            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
+              Protect your catalog with encrypted snapshots and instant restore.
+            </p>
+          </div>
+
+          <div
+            onClick={() => handleExportData('json')}
+            role="button"
+            tabIndex={0}
+            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <Download size={18} />
+            </div>
+            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
+              Export Archive
+            </div>
+            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
+              Download your entire library and watch records as structured JSON or CSV.
+            </p>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Achievements / Milestones Shelf */}
-      <div className="p-6 rounded-2xl bg-cinema-surface/40 border border-white/5 space-y-4">
+      {/* Milestones & Accolades (Section 21) */}
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-serif font-bold text-lg text-cinema-white">Milestones & Accolades</h3>
-            <p className="text-xs text-cinema-subtle">Earned by screening and archiving films.</p>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
+              Milestones & Accolades
+            </h2>
+            <p className="text-xs text-[#5C5B64] mt-0.5">
+              {unlockedCount === 0
+                ? 'Your first screening starts everything.'
+                : `${unlockedCount} of ${achievements.length} achievements unlocked.`}
+            </p>
           </div>
-          <div className="text-xs text-cinema-gold font-semibold">
-            {achievements.filter((a) => a.unlockedAt).length} of {achievements.length} Unlocked
-          </div>
+          <span
+            className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+              unlockedCount > 0
+                ? 'bg-[#EDC257]/20 text-[#EDC257] border border-[#EDC257]/40'
+                : 'bg-white/5 text-[#9E9DA5] border border-white/5'
+            }`}
+          >
+            {unlockedCount > 0 ? `${unlockedCount} Unlocked` : 'Waiting for 1st Film'}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -198,29 +290,41 @@ export const Profile: React.FC = () => {
             return (
               <div
                 key={ach.id}
-                className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
+                className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-start gap-3 ${
                   isUnlocked
-                    ? 'border-cinema-gold/30 bg-cinema-surface/70'
-                    : 'border-white/5 bg-cinema-charcoal/30 opacity-60'
+                    ? 'border-[#EDC257]/30 bg-[#171924] shadow-[0_4px_16px_rgba(237,194,87,0.12)]'
+                    : 'border-white/[0.06] bg-[#12141F]/60 opacity-60'
                 }`}
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     isUnlocked
-                      ? 'bg-cinema-gold/20 text-cinema-gold shadow-gold'
-                      : 'bg-cinema-charcoal text-cinema-subtle'
+                      ? 'bg-[#EDC257] text-[#09090D] shadow-sm'
+                      : 'bg-white/5 text-[#5C5B64]'
                   }`}
                 >
                   {isUnlocked ? <Trophy size={18} /> : <Lock size={16} />}
                 </div>
-                <div>
-                  <h4 className="font-semibold text-xs text-cinema-white">{ach.title}</h4>
-                  <p className="text-[11px] text-cinema-subtle leading-tight mt-0.5">
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="font-bold text-xs text-[#F5F2F0] truncate">{ach.title}</h4>
+                    <span
+                      className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
+                        isUnlocked
+                          ? 'bg-[#EDC257]/20 text-[#EDC257]'
+                          : 'bg-white/5 text-[#5C5B64]'
+                      }`}
+                    >
+                      {isUnlocked ? 'Unlocked' : 'Locked'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#9E9DA5] leading-snug mt-0.5">
                     {ach.description}
                   </p>
                   {isUnlocked && ach.unlockedAt && (
-                    <span className="text-[9px] text-cinema-gold mt-1 block font-mono">
-                      Unlocked {new Date(ach.unlockedAt).toLocaleDateString()}
+                    <span className="text-[10px] text-[#EDC257] mt-1 block font-mono">
+                      ✓ Earned {new Date(ach.unlockedAt).toLocaleDateString()}
                     </span>
                   )}
                 </div>
@@ -228,128 +332,180 @@ export const Profile: React.FC = () => {
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* Preferences & Settings */}
-      <div className="p-6 rounded-2xl bg-cinema-surface/40 border border-white/5 space-y-6">
-        <h3 className="font-serif font-bold text-lg text-cinema-white flex items-center gap-2">
-          <Settings size={18} className="text-cinema-gold" />
-          <span>Cinema Preferences</span>
-        </h3>
+      {/* Cinema Preferences (Section 22, 23, 24, 25, 26) */}
+      <section className="p-5 sm:p-6 rounded-2xl bg-[#171924]/80 border border-white/[0.08] space-y-6">
+        <div className="flex items-center gap-2.5 pb-2 border-b border-white/[0.06]">
+          <Settings size={18} className="text-[#EDC257]" />
+          <h2 className="font-serif font-bold text-base text-[#F5F2F0]">Cinema Preferences</h2>
+        </div>
 
-        <div className="space-y-4 max-w-xl">
-          {/* Display Name */}
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
-              Display Name
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Aswin"
-                className="cinema-input flex-grow text-xs"
-              />
-              <button
-                type="button"
-                onClick={handleSaveDisplayName}
-                className="cinema-button-secondary px-4 py-2 text-xs"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-
-          {/* Sound & Haptics & Reduced Motion */}
-          <div className="space-y-3 pt-2 border-t border-white/5">
-            <label className="flex items-center justify-between text-xs text-cinema-silver cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Volume2 size={16} className="text-cinema-gold" />
-                <span>Cinematic Audio Effects (Web Audio Synthesized Chimes)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={preferences.soundEnabled}
-                onChange={(e) => updatePreference('soundEnabled', e.target.checked)}
-                className="cinema-checkbox"
-              />
-            </label>
-
-            <label className="flex items-center justify-between text-xs text-cinema-silver cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Vibrate size={16} className="text-cinema-gold" />
-                <span>Haptic Feedback (Mobile Vibrate API)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={preferences.hapticsEnabled}
-                onChange={(e) => updatePreference('hapticsEnabled', e.target.checked)}
-                className="cinema-checkbox"
-              />
-            </label>
-
-            <label className="flex items-center justify-between text-xs text-cinema-silver cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Sliders size={16} className="text-cinema-gold" />
-                <span>Reduced Motion Celebrations</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={preferences.motionReduced}
-                onChange={(e) => updatePreference('motionReduced', e.target.checked)}
-                className="cinema-checkbox"
-              />
-            </label>
-          </div>
-
-          {/* TMDB API Key config */}
-          <div className="pt-2 border-t border-white/5">
-            <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
-              TMDB API Key (Optional Override)
-            </label>
-            <p className="text-[11px] text-cinema-subtle mb-2">
-              Personal Cinema includes a built-in TMDB key. You can provide your own personal TMDB v3
-              key if desired.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={tmdbApiKey}
-                onChange={(e) => setTmdbApiKey(e.target.value)}
-                placeholder="Leave blank to use default key"
-                className="cinema-input flex-grow text-xs font-mono"
-              />
-              <button
-                type="button"
-                onClick={handleSaveTmdbKey}
-                className="cinema-button-secondary px-4 py-2 text-xs"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="pt-4 border-t border-cinema-crimson/20">
-            <h4 className="text-xs uppercase tracking-wider text-cinema-crimson font-bold mb-1">
-              Danger Zone
-            </h4>
-            <p className="text-xs text-cinema-subtle mb-3">
-              Clear all local database records including movies, watched dates, and collections.
-            </p>
-            <button
-              onClick={handleResetData}
-              className="px-4 py-2 rounded-lg bg-cinema-crimson/15 hover:bg-cinema-crimson/30 border border-cinema-crimson/40 text-cinema-crimson text-xs font-semibold flex items-center gap-1.5"
+        {/* Display Name Row (Section 23) */}
+        <form onSubmit={handleSaveDisplayName} className="space-y-2">
+          <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
+            Display Name
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg">
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g. Aswin"
+              className="cinema-input flex-1 text-sm"
+            />
+            <CinemaButton
+              type="submit"
+              variant="secondary"
+              size="md"
+              isLoading={isSavingName}
+              className="sm:w-auto w-full"
             >
-              <Trash2 size={14} />
-              <span>Wipe Local Database</span>
-            </button>
+              Save Changes
+            </CinemaButton>
+          </div>
+        </form>
+
+        {/* Custom Switches (Section 22, 24, 25, 26) */}
+        <div className="space-y-1 divide-y divide-white/[0.04]">
+          <CinemaToggle
+            icon={<Volume2 size={18} />}
+            label="Cinematic Audio"
+            description="Synthesized harmonic chimes and audio interactions via Web Audio API."
+            checked={preferences.soundEnabled}
+            onChange={(checked) => updatePreference('soundEnabled', checked)}
+          />
+
+          <CinemaToggle
+            icon={<Vibrate size={18} />}
+            label="Haptic Feedback"
+            description="Tactile vibration pulses on supported mobile devices."
+            checked={preferences.hapticsEnabled}
+            onChange={(checked) => updatePreference('hapticsEnabled', checked)}
+          />
+
+          <CinemaToggle
+            icon={<Sliders size={18} />}
+            label="Reduce Motion"
+            description="Minimize complex cinematic zoom and background transitions."
+            checked={preferences.motionReduced}
+            onChange={(checked) => updatePreference('motionReduced', checked)}
+          />
+        </div>
+      </section>
+
+      {/* Advanced TMDB Configuration (Section 27) */}
+      <section className="rounded-2xl bg-[#171924]/40 border border-white/[0.06] overflow-hidden">
+        <button
+          onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+          className="w-full p-4 flex items-center justify-between text-left text-xs text-[#9E9DA5] hover:text-[#F5F2F0] hover:bg-white/[0.02] cursor-pointer transition-colors border-none bg-transparent"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <KeyRound size={15} className="text-[#EDC257]" />
+            <span>Advanced Configuration (TMDB Key Override)</span>
+          </div>
+          {isAdvancedOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {isAdvancedOpen && (
+          <div className="p-5 pt-0 border-t border-white/[0.04] space-y-3 mt-3 animate-cinema-fade">
+            <p className="text-xs text-[#9E9DA5] leading-relaxed">
+              Personal Cinema includes a built-in TMDB key. You only need to enter your personal v3 key
+              if you exceed rate limits or prefer custom proxy routing.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg">
+              <div className="relative flex-1">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  value={tmdbApiKey}
+                  onChange={(e) => setTmdbApiKey(e.target.value)}
+                  placeholder="Leave empty for default key"
+                  className="cinema-input text-xs font-mono pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] hover:text-[#F5F2F0] border-none bg-transparent cursor-pointer"
+                >
+                  {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <CinemaButton variant="secondary" size="sm" onClick={handleSaveTmdbKey}>
+                  Update
+                </CinemaButton>
+                {tmdbApiKey && (
+                  <CinemaButton variant="ghost" size="sm" onClick={handleResetTmdbKey}>
+                    Reset
+                  </CinemaButton>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Danger Zone (Section 28 & 29) */}
+      <section className="p-5 rounded-2xl bg-[#B81C28]/10 border border-[#B81C28]/25 space-y-3">
+        <div className="flex items-center gap-2 text-[#D94048]">
+          <AlertTriangle size={18} />
+          <h3 className="text-xs uppercase tracking-wider font-extrabold">Danger Zone</h3>
+        </div>
+        <p className="text-xs text-[#9E9DA5] leading-relaxed">
+          These actions can permanently remove local cinema records, ratings, collections, and screening history from this device.
+        </p>
+
+        <CinemaButton
+          variant="danger"
+          size="md"
+          icon={<Trash2 size={15} />}
+          onClick={() => setIsConfirmClearOpen(true)}
+        >
+          Clear Local Cinema
+        </CinemaButton>
+      </section>
+
+      {/* Clear Database Confirmation Modal (Section 29) */}
+      <Modal
+        isOpen={isConfirmClearOpen}
+        onClose={() => setIsConfirmClearOpen(false)}
+        title="Clear Local Cinema"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-left">
+          <div className="p-3.5 rounded-xl bg-[#B81C28]/15 border border-[#B81C28]/30 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-[#D94048] flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-[#F5F2F0] leading-relaxed">
+              This will permanently delete your movies, watched history, custom collections, personal ratings, and notes from IndexedDB.
+            </p>
+          </div>
+
+          <p className="text-xs text-[#9E9DA5]">
+            Consider creating a backup first via <strong>Backup Center</strong> before proceeding.
+          </p>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.08]">
+            <CinemaButton
+              variant="ghost"
+              size="md"
+              onClick={() => setIsConfirmClearOpen(false)}
+            >
+              Cancel
+            </CinemaButton>
+            <CinemaButton
+              variant="danger"
+              size="md"
+              onClick={handleConfirmClear}
+            >
+              Clear Everything
+            </CinemaButton>
           </div>
         </div>
-      </div>
+      </Modal>
 
-      {/* Modals */}
+      {/* Backup and Import Modals */}
       <BackupCenterModal isOpen={isBackupOpen} onClose={() => setIsBackupOpen(false)} />
       <ImportWizard
         isOpen={isImportOpen}

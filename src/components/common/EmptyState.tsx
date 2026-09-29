@@ -1,4 +1,6 @@
+import React from 'react';
 import { Film, LucideIcon } from 'lucide-react';
+import { CinemaButton } from './CinemaButton';
 
 interface EmptyStateProps {
   icon?: LucideIcon;
@@ -76,16 +78,16 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {description}
       </p>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="flex gap-3 flex-wrap justify-center">
         {primaryText && onAction && (
-          <button className="btn-primary" onClick={onAction}>
+          <CinemaButton variant="primary" size="md" onClick={onAction}>
             {primaryText}
-          </button>
+          </CinemaButton>
         )}
         {secondaryActionText && onSecondaryAction && (
-          <button className="btn-secondary" onClick={onSecondaryAction}>
+          <CinemaButton variant="secondary" size="md" onClick={onSecondaryAction}>
             {secondaryActionText}
-          </button>
+          </CinemaButton>
         )}
       </div>
     </div>

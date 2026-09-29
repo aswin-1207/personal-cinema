@@ -176,7 +176,7 @@ export const Library: React.FC = () => {
       {/* Tabs & Display Mode Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
         {/* Segmented Tab Controls */}
-        <div className="flex bg-cinema-surface rounded-xl p-1 border border-white/5">
+        <div className="flex bg-cinema-surface rounded-xl p-1 border border-white/5 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => setActiveTabFilter('watchlist')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${

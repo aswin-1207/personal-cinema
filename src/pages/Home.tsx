@@ -11,6 +11,7 @@ import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CollectionCard } from '../components/collection/CollectionCard';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
+import { CinemaButton } from '../components/common/CinemaButton';
 import {
   Sparkles,
   Film,
@@ -322,6 +323,31 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Intentional Cinema Onboarding Card (Section 16) */}
+      {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#171924]/80 border border-white/[0.08] text-center space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#EDC257]/15 text-[#EDC257] mx-auto flex items-center justify-center">
+            <Film size={24} />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h3 className="font-serif font-bold text-lg sm:text-xl text-[#F5F2F0]">
+              Your Cinema Is Waiting
+            </h3>
+            <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1.5 leading-relaxed">
+              Start building your personal movie catalog. Discover landmark world cinema or import your existing movie lists.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-center flex-wrap pt-2">
+            <CinemaButton variant="primary" size="md" onClick={() => setActiveTab('discover')}>
+              Discover Movies
+            </CinemaButton>
+            <CinemaButton variant="secondary" size="md" onClick={() => setActiveTab('profile')}>
+              Import Movie List
+            </CinemaButton>
+          </div>
+        </div>
+      )}
 
       {/* Rail: Currently Watching (Status = watching) */}
       <MoviePosterRail

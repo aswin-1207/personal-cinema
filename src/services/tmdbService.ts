@@ -1,6 +1,7 @@
 import { Movie, Genre } from '../types/movie';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { PreferencesRepository } from '../db/repositories/preferencesRepository';
+import { CURATED_LANDMARKS } from './curatedLandmarks';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const MEMORY_CACHE = new Map<string, { data: any; timestamp: number }>();
@@ -24,7 +25,12 @@ export class TMDBService {
     }
 
     try {
-      const res = await fetch(url);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
         throw new Error(`TMDB error (${res.status}): ${res.statusText}`);
       }
@@ -32,7 +38,7 @@ export class TMDBService {
       MEMORY_CACHE.set(url, { data, timestamp: Date.now() });
       return data as T;
     } catch (err) {
-      // If offline or network error, check if we have older cached data
+      // If offline, DNS blocked, or network error, check if we have older cached data
       if (cached) {
         return cached.data as T;
       }
@@ -57,12 +63,20 @@ export class TMDBService {
       const results = (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
       return { results, totalPages: data.total_pages || 1 };
     } catch (err) {
-      console.warn('Search failed or offline:', err);
-      // Fallback: search local IndexedDB movies
+      console.warn('Search failed or offline, checking local archive & landmarks:', err);
+      // Fallback: search local IndexedDB movies + curated landmarks
       const allLocal = await MovieRepository.getAll();
       const lower = query.toLowerCase();
-      const filtered = allLocal.filter((m) => m.title.toLowerCase().includes(lower));
-      return { results: filtered, totalPages: 1 };
+      const localMatches = allLocal.filter((m) => m.title.toLowerCase().includes(lower));
+      const landmarkMatches = CURATED_LANDMARKS.filter((m) => m.title.toLowerCase().includes(lower));
+      
+      const mergedMap = new Map<number, Movie>();
+      localMatches.forEach((m) => mergedMap.set(m.id, m));
+      landmarkMatches.forEach((m) => {
+        if (!mergedMap.has(m.id)) mergedMap.set(m.id, m);
+      });
+
+      return { results: Array.from(mergedMap.values()), totalPages: 1 };
     }
   }
 
@@ -86,6 +100,8 @@ export class TMDBService {
       return movie;
     } catch (err) {
       if (local) return local;
+      const landmark = CURATED_LANDMARKS.find((m) => m.id === tmdbId);
+      if (landmark) return landmark;
       throw err;
     }
   }
@@ -99,7 +115,7 @@ export class TMDBService {
       const data = await this.fetchWithCache<any>(`/movie/${tmdbId}/similar`);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch {
-      return [];
+      return CURATED_LANDMARKS.filter((m) => m.id !== tmdbId).slice(0, 8);
     }
   }
 
@@ -127,8 +143,10 @@ export class TMDBService {
       const data = await this.fetchWithCache<any>(`/trending/movie/${timeWindow}`);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch (err) {
-      console.warn('Trending fetch failed or offline:', err);
-      return (await MovieRepository.getAll()).slice(0, 20);
+      console.warn('Trending fetch failed or offline, using curated vault:', err);
+      const local = await MovieRepository.getAll();
+      if (local.length > 5) return local.slice(0, 20);
+      return CURATED_LANDMARKS.slice(0, 16);
     }
   }
 
@@ -140,8 +158,10 @@ export class TMDBService {
       const data = await this.fetchWithCache<any>('/movie/popular', { page: page.toString() });
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch (err) {
-      console.warn('Popular fetch failed or offline:', err);
-      return (await MovieRepository.getAll()).slice(0, 20);
+      console.warn('Popular fetch failed or offline, using curated vault:', err);
+      const local = await MovieRepository.getAll();
+      if (local.length > 5) return local.slice(0, 20);
+      return CURATED_LANDMARKS.slice(8, 24);
     }
   }
 
@@ -188,7 +208,14 @@ export class TMDBService {
       const data = await this.fetchWithCache<any>('/discover/movie', queryParams);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch {
-      return [];
+      if (params.genreIds && params.genreIds.length > 0) {
+        const targetIds = new Set(params.genreIds);
+        const matches = CURATED_LANDMARKS.filter((m) =>
+          m.genres.some((g) => targetIds.has(g.id))
+        );
+        return matches.length > 0 ? matches : CURATED_LANDMARKS.slice(0, 8);
+      }
+      return CURATED_LANDMARKS.slice(0, 10);
     }
   }
 
