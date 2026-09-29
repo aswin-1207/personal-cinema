@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Movie, UserMovie } from '../../types/movie';
 import { tmdbService } from '../../services/tmdbService';
 import { useCinema } from '../../context/CinemaContext';
 import { WatchedButton } from './WatchedButton';
-import { Star, Heart, CheckCircle2, Eye, Bookmark } from 'lucide-react';
+import { Star, Heart, CheckCircle2, Eye, Bookmark, Film } from 'lucide-react';
 
 interface MoviePosterProps {
   movie: Movie;
@@ -24,15 +24,22 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
 }) => {
   const { openMovieDetail, toggleFavorite } = useCinema();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const handleClick = () => {
     if (onClick) onClick();
     else openMovieDetail(movie.id);
   };
 
-  const posterUrl = movie.posterPath
-    ? tmdbService.getImageUrl(movie.posterPath, 'w342')
-    : null;
+  const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w342');
+
+  // Verify cached image status on mount for Safari / PWA
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, [posterUrl]);
 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
   const isWatched = userData?.status === 'watched';
@@ -53,34 +60,40 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           handleClick();
         }
       }}
-      className={`group relative flex-shrink-0 cursor-pointer select-none rounded-[14px] overflow-hidden bg-[#171924] border border-white/[0.07] hover:border-[#EDC257]/40 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:scale-[1.04] active:scale-[0.97] transition-all duration-300 ease-out ${widthClass} ${className}`}
+      className={`group relative flex-shrink-0 cursor-pointer select-none rounded-[14px] overflow-hidden bg-[#171924] border border-white/[0.08] hover:border-[#EDC257]/50 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:scale-[1.04] active:scale-[0.97] transition-all duration-300 ease-out ${widthClass} ${className}`}
     >
       {/* 2:3 Aspect Ratio Container */}
       <div className="relative aspect-[2/3] w-full bg-[#12141D] overflow-hidden">
-        
         {/* Shimmer Skeleton Placeholder while loading */}
-        {!imageLoaded && posterUrl && (
+        {!imageLoaded && !imageError && posterUrl && (
           <div className="absolute inset-0 cinema-skeleton z-0" />
         )}
 
-        {posterUrl ? (
+        {posterUrl && !imageError ? (
           <img
+            ref={imgRef}
             src={posterUrl}
             alt={movie.title}
             loading={priority ? 'eager' : 'lazy'}
             onLoad={() => setImageLoaded(true)}
-            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-105 ${
+            onError={() => setImageError(true)}
+            className={`w-full h-full object-cover transition-all duration-400 group-hover:scale-105 group-hover:brightness-105 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center p-3 text-center text-xs text-[#5C5B64] font-serif">
-            {movie.title}
+          /* Intentional Cinematic Fallback when poster is missing or blocked */
+          <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-[#1A1D2C] to-[#0F111A]">
+            <Film size={26} className="text-[#EDC257]/60 mb-2" />
+            <span className="text-xs text-[#F5F2F0] font-serif font-bold line-clamp-2 px-1">
+              {movie.title}
+            </span>
+            {year && <span className="text-[10px] text-[#9E9DA5] mt-1">{year}</span>}
           </div>
         )}
 
         {/* Ambient Dark Bottom Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
 
         {/* Non-intrusive Status Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
@@ -110,7 +123,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
             e.stopPropagation();
             await toggleFavorite(movie);
           }}
-          className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all z-10 ${
+          className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all z-10 border-none cursor-pointer ${
             isFavorite
               ? 'bg-[#B81C28]/90 text-white shadow-md opacity-100'
               : 'bg-[#09090D]/60 text-[#9E9DA5] opacity-0 group-hover:opacity-100 hover:text-[#B81C28] hover:scale-110'

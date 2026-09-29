@@ -6,7 +6,8 @@ import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CinemaSegmentedControl } from '../components/common/CinemaSegmentedControl';
-import { Search, X, Film, RefreshCw } from 'lucide-react';
+import { CinemaButton } from '../components/common/CinemaButton';
+import { Search, X, Film, RefreshCw, KeyRound } from 'lucide-react';
 
 const SCREENING_MOODS = [
   { label: 'Mind-Bending', genreId: 878 },
@@ -20,7 +21,7 @@ const SCREENING_MOODS = [
 ];
 
 export const Discover: React.FC = () => {
-  const { openMovieDetail, isOnline, dataVersion } = useCinema();
+  const { openMovieDetail, isOnline, dataVersion, setActiveTab } = useCinema();
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -235,15 +236,29 @@ export const Discover: React.FC = () => {
 
       {/* Network Alert (if sync error occurs) */}
       {fetchError && !isFiltering && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-center justify-between gap-3">
-          <span>{fetchError}</span>
-          <button
-            onClick={loadDiscoveryData}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-none cursor-pointer font-medium"
-          >
-            <RefreshCw size={12} />
-            <span>Retry</span>
-          </button>
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
+          <div>
+            <div className="font-bold text-amber-300">TMDB Connection Notice</div>
+            <p className="text-[11px] text-amber-200/80 mt-0.5">{fetchError}</p>
+          </div>
+          <div className="flex gap-2">
+            <CinemaButton
+              variant="secondary"
+              size="sm"
+              icon={<RefreshCw size={12} />}
+              onClick={loadDiscoveryData}
+            >
+              Retry
+            </CinemaButton>
+            <CinemaButton
+              variant="ghost"
+              size="sm"
+              icon={<KeyRound size={12} />}
+              onClick={() => setActiveTab('profile')}
+            >
+              Settings
+            </CinemaButton>
+          </div>
         </div>
       )}
 

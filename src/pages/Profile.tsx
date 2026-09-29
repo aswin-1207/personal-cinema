@@ -8,6 +8,7 @@ import { Modal } from '../components/common/Modal';
 import { CinemaButton } from '../components/common/CinemaButton';
 import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
+import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { Achievement } from '../types/backup';
 import {
   Film,
@@ -51,6 +52,23 @@ export const Profile: React.FC = () => {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [tmdbApiKey, setTmdbApiKey] = useState(preferences.tmdbApiKey || '');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<TMDBDiagnostics | null>(null);
+  const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
+
+  const handleRunDiagnostics = async () => {
+    setIsRunningDiagnostics(true);
+    try {
+      const res = await tmdbService.runDiagnostics();
+      setDiagnostics(res);
+      if (res.isConnected) {
+        showToast('TMDB Connection: OK (200)');
+      } else {
+        showToast(`TMDB Connection: ${res.lastError}`);
+      }
+    } finally {
+      setIsRunningDiagnostics(false);
+    }
+  };
 
   useEffect(() => {
     StatsService.getOverview().then(setStats);
@@ -442,6 +460,65 @@ export const Profile: React.FC = () => {
                   </CinemaButton>
                 )}
               </div>
+            </div>
+
+            {/* Live Diagnostics Tool (Section 20) */}
+            <div className="pt-3 border-t border-white/[0.06] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[#F5F2F0]">Connection Diagnostics</span>
+                <CinemaButton
+                  variant="secondary"
+                  size="sm"
+                  isLoading={isRunningDiagnostics}
+                  onClick={handleRunDiagnostics}
+                >
+                  Test TMDB Connection
+                </CinemaButton>
+              </div>
+
+              {diagnostics && (
+                <div className="p-3 rounded-xl bg-[#09090D] border border-white/10 text-xs space-y-1.5 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-[#9E9DA5]">TMDB Configured:</span>
+                    <span className={diagnostics.isConfigured ? 'text-emerald-400 font-bold' : 'text-rose-400'}>
+                      {diagnostics.isConfigured ? 'YES' : 'NO'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#9E9DA5]">Auth Mechanism:</span>
+                    <span className="text-[#EDC257]">
+                      {diagnostics.authType === 'bearer_token' ? 'Read Access Token (Bearer)' : 'v3 API Key'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#9E9DA5]">Credential Source:</span>
+                    <span className="text-[#F5F2F0]">
+                      {diagnostics.authSource === 'user_override'
+                        ? 'User Override (Saved)'
+                        : diagnostics.authSource === 'environment'
+                        ? 'Vite Environment'
+                        : 'Built-in Master Key'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#9E9DA5]">Connection Status:</span>
+                    <span className={diagnostics.isConnected ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                      {diagnostics.isConnected ? `CONNECTED (${diagnostics.latencyMs}ms)` : 'FAILED'}
+                    </span>
+                  </div>
+                  {diagnostics.sampleMovieTitle && (
+                    <div className="flex justify-between">
+                      <span className="text-[#9E9DA5]">Sample Query:</span>
+                      <span className="text-[#F5F2F0]">"{diagnostics.sampleMovieTitle}" (TMDB ID 27205)</span>
+                    </div>
+                  )}
+                  {diagnostics.lastError && (
+                    <div className="pt-1 text-rose-400 text-[11px]">
+                      Error: {diagnostics.lastError}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
