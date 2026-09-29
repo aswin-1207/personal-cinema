@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Collection, CollectionProgress } from '../../types/collection';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { MovieRepository } from '../../db/repositories/movieRepository';
-import { CheckCircle2, Film } from 'lucide-react';
+import { Trophy, Layers } from 'lucide-react';
 import { tmdbService } from '../../services/tmdbService';
 
 interface CollectionCardProps {
@@ -50,7 +50,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
         }
       }
 
-      // Top 4 movies for collage
+      // Top 4 movies for universe collage
       const topMovieIds = colMovies.slice(0, 4).map((cm) => cm.movieId);
       const movies = await MovieRepository.getByIds(topMovieIds);
       const posters = movies
@@ -68,10 +68,12 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
     };
   }, [collection.id, collection.coverType, collection.customCoverMovieId, collection.updatedAt]);
 
+  const isComplete = progress.total > 0 && progress.watched === progress.total;
+
   return (
     <div
       onClick={onClick}
-      className={`cinema-card group cursor-pointer flex flex-col overflow-hidden transition-all duration-300 hover:border-gold-500/40 hover:-translate-y-1 ${className}`}
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#171924] border border-white/[0.08] hover:border-[#EDC257]/45 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col ${className}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -81,92 +83,92 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
         }
       }}
     >
-      {/* Cover / Collage Container */}
-      <div className="relative aspect-[16/10] bg-cinema-surface overflow-hidden">
+      {/* Visual Collage representing a Movie Universe (2x2 with depth shifts) */}
+      <div className="relative aspect-[16/10] bg-[#10121A] overflow-hidden">
         {collection.coverType === 'hero' && heroPosterUrl ? (
           <img
             src={heroPosterUrl}
             alt={collection.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
           />
         ) : posterUrls.length >= 4 ? (
-          <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0.5 bg-cinema-charcoal">
-            {posterUrls.slice(0, 4).map((url, i) => (
+          <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-0.5 bg-[#09090D] p-0.5">
+            {/* Poster 0: Top Left */}
+            <div className="overflow-hidden relative shadow-md transition-transform duration-500 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1">
+              <img src={posterUrls[0]} alt="" className="w-full h-full object-cover" />
+            </div>
+            {/* Poster 1: Top Right */}
+            <div className="overflow-hidden relative shadow-md transition-transform duration-500 ease-out group-hover:translate-x-1 group-hover:-translate-y-1">
+              <img src={posterUrls[1]} alt="" className="w-full h-full object-cover" />
+            </div>
+            {/* Poster 2: Bottom Left */}
+            <div className="overflow-hidden relative shadow-md transition-transform duration-500 ease-out group-hover:-translate-x-1 group-hover:translate-y-1">
+              <img src={posterUrls[2]} alt="" className="w-full h-full object-cover" />
+            </div>
+            {/* Poster 3: Bottom Right */}
+            <div className="overflow-hidden relative shadow-md transition-transform duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1">
+              <img src={posterUrls[3]} alt="" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        ) : posterUrls.length > 0 ? (
+          <div className="flex w-full h-full bg-[#09090D]">
+            {posterUrls.map((url, i) => (
               <img
                 key={i}
                 src={url}
                 alt=""
-                className="w-full h-full object-cover group-hover:opacity-95 transition-opacity"
-                loading="lazy"
+                className="flex-1 h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ))}
           </div>
-        ) : posterUrls.length > 0 ? (
-          <div className="w-full h-full relative">
-            <img
-              src={posterUrls[0]}
-              alt={collection.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-            {posterUrls.length > 1 && (
-              <div className="absolute inset-0 bg-gradient-to-t from-cinema-black via-cinema-black/40 to-transparent flex items-end p-2">
-                <span className="text-xs text-cinema-silver font-medium">+{progress.total - 1} movies</span>
-              </div>
-            )}
-          </div>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-cinema-subtle p-4">
-            <Film size={36} className="mb-2 opacity-40 text-cinema-gold" />
-            <span className="text-xs">Empty Collection</span>
+          <div className="w-full h-full flex flex-col items-center justify-center text-[#5C5B64] gap-2">
+            <Layers size={32} />
+            <span className="text-xs font-serif">Curated Saga</span>
           </div>
         )}
 
-        {/* Completion Gold Badge */}
-        {progress.isComplete && progress.total > 0 && (
-          <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cinema-gold/90 text-cinema-black text-xs font-semibold shadow-gold backdrop-blur-sm animate-pulse-glow">
-            <CheckCircle2 size={13} className="text-cinema-black" />
-            <span>Complete</span>
+        {/* Ambient Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-[#09090D]/40 to-transparent group-hover:opacity-85 transition-opacity" />
+
+        {/* Completion Badge */}
+        {isComplete && (
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EDC257] text-[#09090D] text-[10px] font-black shadow-[0_2px_12px_rgba(237,194,87,0.4)] backdrop-blur-md">
+            <Trophy size={12} strokeWidth={2.5} />
+            <span>COMPLETE</span>
           </div>
         )}
-
-        {/* Movie Count Pill */}
-        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-cinema-black/80 backdrop-blur-sm text-[11px] font-medium text-cinema-silver border border-white/5">
-          {progress.total} {progress.total === 1 ? 'movie' : 'movies'}
-        </div>
       </div>
 
-      {/* Card Info & Progress */}
-      <div className="p-4 flex flex-col flex-grow justify-between bg-cinema-surface/60">
+      {/* Collection Metadata & Integrated Thin Progress Bar */}
+      <div className="p-4 bg-[#171924] flex-grow flex flex-col justify-between space-y-3">
         <div>
-          <h3 className="font-semibold text-cinema-white text-base line-clamp-1 group-hover:text-cinema-gold transition-colors">
+          <h4 className="font-serif font-bold text-sm sm:text-base text-[#F5F2F0] line-clamp-1 group-hover:text-[#EDC257] group-hover:-translate-y-0.5 transition-all duration-200">
             {collection.name}
-          </h3>
+          </h4>
           {collection.description && (
-            <p className="text-xs text-cinema-subtle line-clamp-2 mt-1 leading-relaxed">
+            <p className="text-xs text-[#9E9DA5] line-clamp-1 mt-0.5">
               {collection.description}
             </p>
           )}
         </div>
 
-        {/* Progress Bar */}
-        <div className="mt-3 pt-3 border-t border-white/5">
-          <div className="flex justify-between items-center text-xs mb-1.5 text-cinema-silver">
+        {/* Cinematic Universe Progress */}
+        <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between text-[11px] text-[#9E9DA5]">
             <span>
-              {progress.watched} of {progress.total} watched
+              {progress.total} {progress.total === 1 ? 'Movie' : 'Movies'} · {progress.watched} Watched
             </span>
-            <span className={`font-medium ${progress.isComplete ? 'text-cinema-gold' : 'text-cinema-silver'}`}>
+            <span className={`font-bold ${isComplete ? 'text-[#EDC257]' : 'text-[#F5F2F0]'}`}>
               {progress.percent}%
             </span>
           </div>
-          <div className="w-full h-1.5 bg-cinema-charcoal rounded-full overflow-hidden">
+
+          {/* Thin Cinematic Progress Bar */}
+          <div className="w-full h-1.5 bg-[#09090D] rounded-full overflow-hidden border border-white/5">
             <div
-              className={`h-full transition-all duration-500 rounded-full ${
-                progress.isComplete
-                  ? 'bg-gradient-to-r from-cinema-amber to-cinema-gold shadow-gold'
-                  : 'bg-cinema-gold/80'
-              }`}
+              className="h-full rounded-full bg-gradient-to-r from-[#EDC257] to-[#D99C33] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(237,194,87,0.3)]"
               style={{ width: `${progress.percent}%` }}
             />
           </div>

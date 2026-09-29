@@ -3,17 +3,17 @@ import { useCinema } from '../context/CinemaContext';
 import { tmdbService } from '../services/tmdbService';
 import { Movie, Genre } from '../types/movie';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
-import { MovieCard } from '../components/movie/MovieCard';
-import { SectionHeader } from '../components/common/SectionHeader';
-import { Search, Sparkles, X } from 'lucide-react';
+import { MoviePoster } from '../components/movie/MoviePoster';
+import { MoviePosterRail } from '../components/movie/MoviePosterRail';
+import { Search, X, Compass, Film } from 'lucide-react';
 
 const MOODS = [
-  { label: 'Mind-Bending', genreId: 878, desc: 'Sci-Fi & Reality Shifters' }, // Sci-Fi
-  { label: 'Adrenaline Rush', genreId: 28, desc: 'Explosive Action' }, // Action
-  { label: 'Cozy & Heartwarming', genreId: 35, desc: 'Comedy & Comfort' }, // Comedy
-  { label: 'Chilling Suspense', genreId: 53, desc: 'Nail-biting Thrillers' }, // Thriller
-  { label: 'Deeply Moving', genreId: 18, desc: 'Cinematic Drama' }, // Drama
-  { label: 'Eerie & Haunting', genreId: 27, desc: 'Atmospheric Horror' }, // Horror
+  { label: 'Mind-Bending', genreId: 878, desc: 'Sci-Fi & Reality Shifters' },
+  { label: 'Adrenaline Rush', genreId: 28, desc: 'Explosive Action' },
+  { label: 'Cozy & Heartwarming', genreId: 35, desc: 'Comforting Cinema' },
+  { label: 'Chilling Suspense', genreId: 53, desc: 'Nail-Biting Thrillers' },
+  { label: 'Deeply Moving', genreId: 18, desc: 'Emotional Dramas' },
+  { label: 'Eerie & Haunting', genreId: 27, desc: 'Atmospheric Horror' },
 ];
 
 export const Discover: React.FC = () => {
@@ -37,7 +37,7 @@ export const Discover: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 400);
+    }, 350);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -54,9 +54,7 @@ export const Discover: React.FC = () => {
     if (!isOnline) return;
 
     tmdbService.getGenres().then(setGenres).catch(console.error);
-
     tmdbService.getTrending(trendingTime).then(setTrendingMovies).catch(console.error);
-
     tmdbService.getPopular(1).then((res: any) => setPopularMovies(res.results)).catch(console.error);
   }, [isOnline, trendingTime]);
 
@@ -69,7 +67,7 @@ export const Discover: React.FC = () => {
       tmdbService
         .searchMovies(debouncedQuery)
         .then((res: any) => {
-          setSearchResults(res.results);
+          setSearchResults(res.results || []);
         })
         .finally(() => setIsSearching(false));
     } else if (selectedGenreId) {
@@ -77,7 +75,7 @@ export const Discover: React.FC = () => {
       tmdbService
         .discoverMovies({ with_genres: String(selectedGenreId), sort_by: 'popularity.desc' })
         .then((res: any) => {
-          setSearchResults(res.results);
+          setSearchResults(res.results || []);
         })
         .finally(() => setIsSearching(false));
     } else {
@@ -99,210 +97,211 @@ export const Discover: React.FC = () => {
     setSelectedGenreId(null);
   };
 
-  const isShowingFiltered = Boolean(debouncedQuery || selectedGenreId);
+  const isFiltering = Boolean(query.trim() || selectedGenreId !== null);
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header & Search */}
-      <div className="space-y-4">
+    <div className="pb-24 space-y-10 select-none animate-cinema-fade">
+      {/* Exploration Header & Expanding Search Bar (Section 42 & 43) */}
+      <div className="space-y-5">
         <div>
-          <h1 className="font-serif font-bold text-3xl text-cinema-white">Discover Vault</h1>
-          <p className="text-xs text-cinema-subtle mt-1">
-            Search millions of films across global cinema archives via TMDB.
+          <div className="flex items-center gap-2 text-[#EDC257] text-[11px] font-bold tracking-[0.16em] uppercase">
+            <Compass size={14} />
+            <span>DISCOVER & EXPLORE</span>
+          </div>
+          <h1 className="font-hero-title mt-1">
+            Global Movie Vault
+          </h1>
+          <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
+            Explore world cinema, curate by mood, or search the complete TMDB film database.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-cinema-gold" />
+        {/* Expanding Search Bar */}
+        <div className="relative max-w-2xl">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#EDC257]" />
           <input
             type="text"
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              if (selectedGenreId) setSelectedGenreId(null);
-            }}
-            placeholder="Search by title, director, keyword..."
-            className="cinema-input w-full pl-11 pr-10 py-3.5 text-sm bg-cinema-surface/80 border-white/10 focus:border-cinema-gold"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by title, director, saga, or keywords..."
+            className="w-full bg-[#171924]/90 border border-white/10 focus:border-[#EDC257] rounded-2xl pl-12 pr-10 py-3.5 text-sm text-[#F5F2F0] placeholder-[#5C5B64] shadow-[0_4px_20px_rgba(0,0,0,0.5)] focus:shadow-[0_0_24px_rgba(237,194,87,0.25)] outline-none transition-all duration-300"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-cinema-subtle hover:text-cinema-white p-1"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-[#9E9DA5] hover:text-white"
             >
               <X size={16} />
             </button>
           )}
         </div>
+      </div>
 
-        {/* Mood Filter Cards (When not searching by text) */}
-        {!query && (
-          <div>
-            <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-cinema-subtle mb-2 font-medium">
-              <Sparkles size={13} className="text-cinema-gold" />
-              <span>Screening Moods</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-              {MOODS.map((m) => {
-                const isSelected = selectedGenreId === m.genreId;
-                return (
-                  <button
-                    key={m.label}
-                    onClick={() => handleSelectMood(m.genreId)}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-cinema-gold bg-cinema-gold/15 text-cinema-gold shadow-gold'
-                        : 'border-white/5 bg-cinema-surface/40 hover:bg-cinema-surface hover:border-white/15 text-cinema-silver'
-                    }`}
-                  >
-                    <div className="font-semibold text-xs text-cinema-white line-clamp-1">{m.label}</div>
-                    <div className="text-[10px] text-cinema-subtle mt-0.5 line-clamp-1">{m.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
+      {/* Mood Exploration Chips (Section 42) */}
+      {!query && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-section-title text-sm sm:text-base text-[#F5F2F0]">
+              Curate By Cinematic Mood
+            </h3>
+            {selectedGenreId && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-[#EDC257] hover:underline"
+              >
+                Reset Mood
+              </button>
+            )}
           </div>
-        )}
 
-        {/* Genre Pill Carousel */}
-        {genres.length > 0 && !query && (
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-            <button
-              onClick={() => setSelectedGenreId(null)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
-                selectedGenreId === null
-                  ? 'border-cinema-gold bg-cinema-gold/20 text-cinema-gold'
-                  : 'border-white/5 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
-              }`}
-            >
-              All Genres
-            </button>
-            {genres.map((g) => {
-              const isSelected = selectedGenreId === g.id;
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {MOODS.map((mood) => {
+              const isSelected = selectedGenreId === mood.genreId;
               return (
                 <button
-                  key={g.id}
-                  onClick={() => setSelectedGenreId(isSelected ? null : g.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+                  key={mood.genreId}
+                  onClick={() => handleSelectMood(mood.genreId)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer ${
                     isSelected
-                      ? 'border-cinema-gold bg-cinema-gold/20 text-cinema-gold'
-                      : 'border-white/5 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
+                      ? 'bg-[#EDC257]/15 border-[#EDC257] text-[#EDC257] shadow-[0_4px_20px_rgba(237,194,87,0.25)] scale-[1.02]'
+                      : 'bg-[#171924]/60 border-white/[0.06] text-[#F5F2F0] hover:bg-[#171924] hover:border-white/20'
                   }`}
                 >
-                  {g.name}
+                  <div className="text-xs font-bold font-serif line-clamp-1">{mood.label}</div>
+                  <div className="text-[10px] text-[#9E9DA5] line-clamp-1 mt-0.5">{mood.desc}</div>
                 </button>
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Main Content Area */}
-      {isShowingFiltered ? (
-        /* Search / Filter Results Grid */
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-serif font-bold text-xl text-cinema-white">
-              {debouncedQuery
-                ? `Results for "${debouncedQuery}"`
-                : genres.find((g) => g.id === selectedGenreId)?.name || 'Filtered Films'}
-            </h3>
+      {/* Genre Filter Scroll Strip */}
+      {!query && genres.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
+          <button
+            onClick={() => setSelectedGenreId(null)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+              selectedGenreId === null
+                ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] shadow-gold'
+                : 'bg-white/[0.05] text-[#9E9DA5] border-white/5 hover:text-white'
+            }`}
+          >
+            All Genres
+          </button>
+          {genres.map((g) => {
+            const isSelected = selectedGenreId === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => setSelectedGenreId(isSelected ? null : g.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                  isSelected
+                    ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] shadow-gold'
+                    : 'bg-white/[0.05] text-[#9E9DA5] border-white/5 hover:text-white hover:bg-white/[0.08]'
+                }`}
+              >
+                {g.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Active Search or Mood Filter Results Grid */}
+      {isFiltering ? (
+        <section className="space-y-4 pt-2">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+            <h2 className="font-section-title text-[#F5F2F0]">
+              {query ? `Search Results for "${query}"` : 'Curated Mood Selection'}
+            </h2>
             <button
               onClick={clearFilters}
-              className="text-xs text-cinema-gold hover:underline flex items-center gap-1"
+              className="text-xs text-[#EDC257] hover:underline"
             >
-              <X size={12} />
-              <span>Clear Filter</span>
+              Clear
             </button>
           </div>
 
           {isSearching ? (
             <div className="py-20 flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mb-3" />
-              <span className="text-xs text-cinema-subtle">Searching TMDB Vault...</span>
+              <div className="w-10 h-10 rounded-full border-2 border-[#171924] border-t-[#EDC257] animate-spin mb-3" />
+              <span className="text-xs text-[#9E9DA5] font-serif">Scanning Vault...</span>
             </div>
-          ) : searchResults.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          ) : searchResults.length === 0 ? (
+            <div className="py-16 text-center text-[#5C5B64] space-y-2">
+              <Film size={36} className="mx-auto text-[#5C5B64]" />
+              <h3 className="font-serif font-bold text-base text-[#F5F2F0]">No Films Found</h3>
+              <p className="text-xs text-[#9E9DA5]">Try adjusting your title query or mood selection.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {searchResults.map((movie) => (
-                <MovieCard
+                <MoviePoster
                   key={movie.id}
                   movie={movie}
                   userData={userMovieMap.get(movie.id)}
                   onClick={() => openMovieDetail(movie.id)}
                 />
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 text-cinema-subtle">
-              <p className="text-sm font-medium text-cinema-silver">No movies matched your search.</p>
-              <p className="text-xs mt-1">Try another title, director name, or clear active filters.</p>
             </div>
           )}
         </section>
       ) : (
-        /* Default Discover Rows: Trending & Popular */
+        /* Discovery Rails: Trending & Popular */
         <div className="space-y-10">
-          {/* Trending Section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <SectionHeader
-                title="Trending Movies"
-                subtitle="Most discussed and tracked this week"
-                className="mb-0"
-              />
-              <div className="flex bg-cinema-surface rounded-lg p-1 border border-white/5 text-xs">
-                <button
-                  onClick={() => setTrendingTime('day')}
-                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                    trendingTime === 'day'
-                      ? 'bg-cinema-gold text-cinema-black font-semibold'
-                      : 'text-cinema-silver hover:text-cinema-white'
-                  }`}
-                >
-                  Today
-                </button>
-                <button
-                  onClick={() => setTrendingTime('week')}
-                  className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                    trendingTime === 'week'
-                      ? 'bg-cinema-gold text-cinema-black font-semibold'
-                      : 'text-cinema-silver hover:text-cinema-white'
-                  }`}
-                >
-                  This Week
-                </button>
+          {/* Trending Rail with Day/Week Toggle */}
+          <section className="space-y-3.5">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-section-title text-[#F5F2F0]">Trending Cinema</h3>
+                  <div className="flex items-center bg-[#171924] border border-white/5 rounded-lg p-0.5 text-[10px] font-bold">
+                    <button
+                      onClick={() => setTrendingTime('day')}
+                      className={`px-2 py-0.5 rounded ${
+                        trendingTime === 'day' ? 'bg-[#EDC257] text-[#09090D]' : 'text-[#9E9DA5]'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => setTrendingTime('week')}
+                      className={`px-2 py-0.5 rounded ${
+                        trendingTime === 'week' ? 'bg-[#EDC257] text-[#09090D]' : 'text-[#9E9DA5]'
+                      }`}
+                    >
+                      This Week
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-[#9E9DA5] mt-0.5">
+                  Most viewed cinematic releases right now
+                </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {trendingMovies.slice(0, 10).map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  movie={movie}
-                  userData={userMovieMap.get(movie.id)}
-                  onClick={() => openMovieDetail(movie.id)}
-                />
-              ))}
+            <div className="relative rail-edge-fade">
+              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8 scroll-smooth">
+                {trendingMovies.map((movie) => (
+                  <MoviePoster
+                    key={movie.id}
+                    movie={movie}
+                    userData={userMovieMap.get(movie.id)}
+                    onClick={() => openMovieDetail(movie.id)}
+                  />
+                ))}
+              </div>
             </div>
           </section>
 
-          {/* Popular Films */}
-          <section>
-            <SectionHeader
-              title="All-Time Popular"
-              subtitle="Enduring cinematic favorites worldwide"
-            />
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {popularMovies.slice(0, 10).map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  movie={movie}
-                  userData={userMovieMap.get(movie.id)}
-                  onClick={() => openMovieDetail(movie.id)}
-                />
-              ))}
-            </div>
-          </section>
+          {/* Popular Films Rail */}
+          <MoviePosterRail
+            title="World Popularity"
+            subtitle="Films capturing audiences across the globe"
+            items={popularMovies.map((m) => ({ movie: m, userData: userMovieMap.get(m.id) }))}
+            onMovieClick={(m) => openMovieDetail(m.id)}
+          />
         </div>
       )}
     </div>

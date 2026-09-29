@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { CollectionWithMovies } from '../../src/types/collection';
-import { MovieCard } from '../components/movie/MovieCard';
+import { MoviePoster } from '../components/movie/MoviePoster';
 import { AddMoviesToCollectionModal } from '../components/collection/AddMoviesToCollectionModal';
 import { CollectionShareModal } from '../components/share/CollectionShareModal';
-import { CollectionCompletionModal } from '../components/collection/CollectionCompletionModal';
 import { EmptyState } from '../components/common/EmptyState';
 import {
   ArrowLeft,
@@ -17,6 +16,7 @@ import {
   MoveUp,
   MoveDown,
   X,
+  Layers,
 } from 'lucide-react';
 
 interface CollectionDetailProps {
@@ -31,7 +31,6 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
   const [filter, setFilter] = useState<'all' | 'watched' | 'watching' | 'unwatched'>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
 
   const loadData = async () => {
@@ -45,9 +44,9 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
 
   if (!collectionData) {
     return (
-      <div className="py-20 text-center text-cinema-subtle">
-        <div className="w-10 h-10 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mx-auto mb-3" />
-        <p className="text-xs">Loading collection...</p>
+      <div className="py-20 text-center text-[#5C5B64]">
+        <div className="w-10 h-10 rounded-full border-2 border-[#1E2029] border-t-[#EDC257] animate-spin mx-auto mb-3" />
+        <p className="text-xs font-serif">Entering Universe...</p>
       </div>
     );
   }
@@ -88,12 +87,12 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
   });
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Top Navigation */}
+    <div className="space-y-8 pb-24 select-none animate-cinema-fade">
+      {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-xs text-cinema-subtle hover:text-cinema-white transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F2F0] transition-colors"
         >
           <ArrowLeft size={16} />
           <span>Back to Collections</span>
@@ -102,15 +101,15 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsShareOpen(true)}
-            className="cinema-button-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
+            className="cinema-button-secondary px-3.5 py-1.5 text-xs flex items-center gap-1.5"
           >
             <Share2 size={14} />
-            <span>Share</span>
+            <span>Share Saga</span>
           </button>
 
           <button
             onClick={handleDeleteCollection}
-            className="p-1.5 rounded-lg text-cinema-subtle hover:text-cinema-crimson transition-colors"
+            className="p-2 rounded-xl text-[#9E9DA5] hover:text-[#B81C28] hover:bg-red-950/30 transition-colors"
             title="Delete Collection"
           >
             <Trash2 size={16} />
@@ -118,48 +117,53 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         </div>
       </div>
 
-      {/* Hero Header Card */}
-      <div className="p-6 rounded-2xl bg-cinema-surface/70 border border-white/5 relative overflow-hidden">
-        {/* Glow if complete */}
+      {/* Universe Establishing Hero Stage (Section 33) */}
+      <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-[#171924] to-[#10121A] border border-[#EDC257]/30 relative overflow-hidden shadow-2xl">
+        {/* Subtle Ambient Glow if 100% complete */}
         {progress.isComplete && (
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-cinema-gold/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#EDC257]/20 rounded-full blur-3xl pointer-events-none" />
         )}
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="max-w-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+          <div className="max-w-2xl space-y-3">
+            <div className="flex items-center gap-2 text-[#EDC257] text-[11px] font-bold tracking-[0.18em] uppercase">
+              <Layers size={14} />
+              <span>CURATED MOVIE UNIVERSE</span>
+            </div>
+
             {progress.isComplete && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cinema-gold/20 border border-cinema-gold/40 text-cinema-gold text-xs font-semibold mb-3 shadow-gold">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EDC257]/15 border border-[#EDC257]/40 text-[#EDC257] text-xs font-black shadow-[0_2px_12px_rgba(237,194,87,0.3)]">
                 <Trophy size={14} />
-                <span>Collection Mastered (100% Watched)</span>
+                <span>COLLECTION MASTERED ✓</span>
               </div>
             )}
 
-            <h1 className="font-serif font-extrabold text-3xl sm:text-4xl text-cinema-white mb-2">
+            <h1 className="font-hero-title">
               {collection.name}
             </h1>
 
             {collection.description && (
-              <p className="text-sm text-cinema-silver leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm text-[#F5F2F0]/80 leading-relaxed max-w-xl">
                 {collection.description}
               </p>
             )}
 
-            {/* Derived Progress Bar */}
-            <div className="space-y-1.5 max-w-md">
-              <div className="flex justify-between text-xs text-cinema-silver">
+            {/* Derived Thin Progress Bar (Section 34) */}
+            <div className="space-y-1.5 max-w-md pt-2">
+              <div className="flex justify-between text-xs text-[#9E9DA5]">
                 <span>
                   {progress.watched} of {progress.total} movies completed
                 </span>
-                <span className={`font-semibold ${progress.isComplete ? 'text-cinema-gold' : ''}`}>
+                <span className={`font-bold ${progress.isComplete ? 'text-[#EDC257]' : 'text-[#F5F2F0]'}`}>
                   {progress.percent}%
                 </span>
               </div>
-              <div className="w-full h-2 bg-cinema-charcoal rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-[#09090D] rounded-full overflow-hidden border border-white/5">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
                     progress.isComplete
-                      ? 'bg-gradient-to-r from-cinema-amber to-cinema-gold shadow-gold'
-                      : 'bg-cinema-gold'
+                      ? 'bg-gradient-to-r from-[#D99C33] to-[#EDC257] shadow-[0_0_12px_rgba(237,194,87,0.4)]'
+                      : 'bg-[#EDC257]'
                   }`}
                   style={{ width: `${progress.percent}%` }}
                 />
@@ -168,10 +172,10 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           </div>
 
           {/* Action CTAs */}
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setIsAddOpen(true)}
-              className="cinema-button-primary px-5 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-gold"
+              className="cinema-button-primary px-6 py-3 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(237,194,87,0.35)]"
             >
               <Plus size={15} />
               <span>Add Movies</span>
@@ -180,12 +184,12 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             {movies.length > 1 && (
               <button
                 onClick={() => setReorderMode(!reorderMode)}
-                className={`cinema-button-secondary px-4 py-2.5 text-xs flex items-center justify-center gap-1.5 ${
-                  reorderMode ? 'border-cinema-gold text-cinema-gold' : ''
+                className={`cinema-button-secondary px-4 py-3 text-xs font-semibold flex items-center justify-center gap-1.5 ${
+                  reorderMode ? 'border-[#EDC257] text-[#EDC257]' : ''
                 }`}
               >
                 <ArrowUpDown size={15} />
-                <span>{reorderMode ? 'Done Reordering' : 'Reorder List'}</span>
+                <span>{reorderMode ? 'Done Reordering' : 'Reorder Sequence'}</span>
               </button>
             )}
           </div>
@@ -193,105 +197,88 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex border-b border-white/10 pb-3 gap-3">
+      <div className="flex border-b border-white/[0.08] pb-3 gap-2">
         {(['all', 'unwatched', 'watching', 'watched'] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setFilter(mode)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer border-none ${
               filter === mode
-                ? 'bg-cinema-gold text-cinema-black'
-                : 'text-cinema-silver hover:text-cinema-white bg-cinema-surface/50'
+                ? 'bg-[#EDC257] text-[#09090D] shadow-md'
+                : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F2F0]'
             }`}
           >
             {mode === 'all'
               ? `All (${movies.length})`
-              : mode === 'watched'
-              ? `Watched (${progress.watched})`
+              : mode === 'unwatched'
+              ? `Unwatched (${progress.unwatched})`
               : mode === 'watching'
               ? `Watching (${progress.watching})`
-              : `Unwatched (${progress.unwatched})`}
+              : `Watched (${progress.watched})`}
           </button>
         ))}
       </div>
 
-      {/* Movie Grid or Reorder List */}
+      {/* Transition into Poster Wall (Section 33) */}
       {filteredMovies.length === 0 ? (
         <EmptyState
-          title={`No ${filter} movies in this collection`}
+          title={`No ${filter} movies in this saga`}
           description={
-            movies.length === 0
-              ? 'This collection is empty. Click below to add movies from your library.'
-              : 'Switch filters or add more films to this collection.'
+            filter === 'all'
+              ? 'Add movies to this collection to start curating your journey.'
+              : 'Switch filters or add more films.'
           }
-          actionLabel={movies.length === 0 ? 'Add Movies' : undefined}
-          onAction={movies.length === 0 ? () => setIsAddOpen(true) : undefined}
+          actionText="Add Movies"
+          onAction={() => setIsAddOpen(true)}
         />
       ) : reorderMode ? (
-        /* Reorder List View */
+        /* Reorder Sequence Mode */
         <div className="space-y-2">
-          {movies.map((item, idx) => (
+          {movies.map((item, index) => (
             <div
               key={item.movie.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-cinema-surface border border-white/10"
+              className="flex items-center justify-between p-3 rounded-xl bg-[#171924] border border-white/5"
             >
               <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-cinema-gold w-6">#{idx + 1}</span>
-                <span className="font-medium text-cinema-white text-sm">{item.movie.title}</span>
-                <span className="text-xs text-cinema-subtle">
-                  ({item.movie.releaseDate?.substring(0, 4) || 'N/A'})
-                </span>
+                <span className="text-xs font-mono text-[#EDC257] w-6">{index + 1}.</span>
+                <span className="text-sm font-semibold text-[#F5F2F0]">{item.movie.title}</span>
               </div>
-
               <div className="flex items-center gap-1">
                 <button
-                  disabled={idx === 0}
-                  onClick={() => handleMoveMovie(idx, idx - 1)}
-                  className="p-1.5 rounded bg-cinema-charcoal hover:bg-cinema-surfaceElevated disabled:opacity-30 text-cinema-silver"
-                  title="Move Up"
+                  onClick={() => handleMoveMovie(index, index - 1)}
+                  disabled={index === 0}
+                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F2F0]"
                 >
-                  <MoveUp size={15} />
+                  <MoveUp size={14} />
                 </button>
                 <button
-                  disabled={idx === movies.length - 1}
-                  onClick={() => handleMoveMovie(idx, idx + 1)}
-                  className="p-1.5 rounded bg-cinema-charcoal hover:bg-cinema-surfaceElevated disabled:opacity-30 text-cinema-silver"
-                  title="Move Down"
+                  onClick={() => handleMoveMovie(index, index + 1)}
+                  disabled={index === movies.length - 1}
+                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F2F0]"
                 >
-                  <MoveDown size={15} />
+                  <MoveDown size={14} />
                 </button>
                 <button
                   onClick={() => handleRemoveMovie(item.movie.id)}
-                  className="p-1.5 rounded text-cinema-crimson hover:bg-cinema-crimson/10 ml-2"
+                  className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 ml-2"
                   title="Remove from Collection"
                 >
-                  <X size={15} />
+                  <X size={14} />
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* Standard Movie Cards Grid */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        /* Visual Poster Wall with 2:3 Aspect Ratio */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filteredMovies.map((item) => (
-            <div key={item.movie.id} className="relative group">
-              <MovieCard
-                movie={item.movie}
-                userData={item.userData}
-                onClick={() => openMovieDetail(item.movie.id)}
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveMovie(item.movie.id);
-                }}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-cinema-black/80 text-cinema-subtle hover:text-cinema-crimson opacity-0 group-hover:opacity-100 transition-opacity border border-white/10"
-                title="Remove from collection"
-              >
-                <X size={13} />
-              </button>
-            </div>
+            <MoviePoster
+              key={item.movie.id}
+              movie={item.movie}
+              userData={item.userData}
+              onClick={() => openMovieDetail(item.movie.id)}
+            />
           ))}
         </div>
       )}
@@ -308,23 +295,12 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         }}
       />
 
-      {/* Share Collection Modal */}
-      {collectionData && (
-        <CollectionShareModal
-          isOpen={isShareOpen}
-          onClose={() => setIsShareOpen(false)}
-          collectionData={collectionData}
-        />
-      )}
-
-      {/* 100% Completion Celebration Modal */}
-      {showCompletionModal && (
-        <CollectionCompletionModal
-          collection={collection}
-          onClose={() => setShowCompletionModal(false)}
-          onShare={() => setIsShareOpen(true)}
-        />
-      )}
+      {/* Collection Share Modal */}
+      <CollectionShareModal
+        isOpen={isShareOpen}
+        collectionData={collectionData}
+        onClose={() => setIsShareOpen(false)}
+      />
     </div>
   );
 };

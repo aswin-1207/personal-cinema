@@ -1,27 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
+import { useCinemaShell } from '../components/cinema/CinemaShell';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { tmdbService } from '../services/tmdbService';
 import { MovieWithUserData, Movie } from '../types/movie';
 import { Collection, CollectionProgress } from '../types/collection';
-import { PosterCard } from '../components/movie/PosterCard';
+import { CinemaHero } from '../components/cinema/CinemaHero';
+import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CollectionCard } from '../components/collection/CollectionCard';
-import { SectionHeader } from '../components/common/SectionHeader';
-import { EmptyState } from '../components/common/EmptyState';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import {
-  Play,
   Sparkles,
   Film,
   Clock,
   Flame,
-  Star,
-  Search,
-  User as UserIcon,
   ChevronRight,
   TrendingUp,
+  Play,
 } from 'lucide-react';
 
 export const Home: React.FC = () => {
@@ -29,9 +26,10 @@ export const Home: React.FC = () => {
     openMovieDetail,
     openCollectionDetail,
     setActiveTab,
-    preferences,
     dataVersion,
   } = useCinema();
+
+  const { setAmbientColor } = useCinemaShell();
 
   const [heroMovie, setHeroMovie] = useState<MovieWithUserData | null>(null);
   const [continueWatching, setContinueWatching] = useState<MovieWithUserData[]>([]);
@@ -151,6 +149,11 @@ export const Home: React.FC = () => {
             totalHours: hours,
             streak: watchedListItems.length > 0 ? 1 : 0,
           });
+
+          // Dynamic Ambient Atmosphere (Layer 1)
+          if (chosenHero?.movie.backdropPath) {
+            setAmbientColor('rgba(237, 194, 87, 0.12)');
+          }
         }
       } catch (err) {
         console.error('Failed to load home data:', err);
@@ -161,12 +164,7 @@ export const Home: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [dataVersion]);
-
-  // Greeting
-  const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? 'MORNING' : hour < 18 ? 'AFTERNOON' : 'EVENING';
-  const userName = preferences.displayName || 'ASWIN';
+  }, [dataVersion, setAmbientColor]);
 
   const handleSurpriseMe = async () => {
     setIsSurpriseOpen(true);
@@ -178,206 +176,70 @@ export const Home: React.FC = () => {
       setTimeout(() => {
         setSurpriseMovie(candidates[randomIdx].movie);
         setIsRolling(false);
-      }, 700);
+      }, 650);
     } else {
       const trending = await tmdbService.getTrending('week');
       const randomIdx = Math.floor(Math.random() * trending.length);
       setTimeout(() => {
         setSurpriseMovie(trending[randomIdx]);
         setIsRolling(false);
-      }, 700);
+      }, 650);
     }
   };
 
-  const heroBackdrop = heroMovie?.movie.backdropPath
-    ? tmdbService.getImageUrl(heroMovie.movie.backdropPath, 'original')
-    : heroMovie?.movie.posterPath
-    ? tmdbService.getImageUrl(heroMovie.movie.posterPath, 'w780')
-    : null;
-
   return (
-    <div className="pb-24 space-y-10">
-      {/* Top Header Bar */}
-      <header className="flex items-center justify-between pt-2 pb-1">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cinema-gold to-cinema-amber flex items-center justify-center text-cinema-black font-extrabold text-sm shadow-gold">
-            ▶
-          </div>
-          <div>
-            <div className="font-serif font-extrabold text-base tracking-widest text-cinema-white leading-tight">
-              PERSONAL CINEMA
-            </div>
-            <div className="text-[10px] tracking-widest text-cinema-gold font-bold">
-              YOUR PRIVATE THEATER
-            </div>
-          </div>
-        </div>
+    <div className="pb-24 space-y-12 select-none">
+      
+      {/* LAYER 2 & 3 & 4: Cinematic Hero Stage */}
+      <CinemaHero
+        movieWithData={heroMovie}
+        onWatchNow={() => setIsCinemaModeOpen(true)}
+        onOpenDetails={(id) => openMovieDetail(id)}
+        onSurpriseMe={handleSurpriseMe}
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('discover')}
-            className="p-2.5 rounded-full bg-cinema-surface/70 hover:bg-cinema-surface border border-white/5 text-cinema-silver hover:text-cinema-white transition-colors"
-            title="Search Movies"
-          >
-            <Search size={16} />
-          </button>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="p-2.5 rounded-full bg-cinema-surface/70 hover:bg-cinema-surface border border-white/5 text-cinema-silver hover:text-cinema-white transition-colors"
-            title="Profile & Vault"
-          >
-            <UserIcon size={16} />
-          </button>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <div className="relative -mx-4 -mt-2 sm:-mx-8 h-[65vh] min-h-[440px] max-h-[620px] bg-cinema-black rounded-3xl overflow-hidden flex items-end shadow-2xl border border-white/5">
-        {/* Backdrop Image */}
-        {heroBackdrop && (
-          <img
-            src={heroBackdrop}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.72] contrast-[1.08] transform scale-105 transition-transform duration-1000"
-          />
-        )}
-
-        {/* Ambient Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-cinema-black via-cinema-black/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-cinema-black/90 via-cinema-black/20 to-transparent" />
-
-        {/* Hero Content */}
-        <div className="relative z-10 w-full px-6 sm:px-10 pb-8 sm:pb-10 max-w-4xl">
-          {/* Greeting Tag */}
-          <div className="flex items-center gap-2 text-cinema-gold text-xs font-semibold tracking-widest uppercase mb-2 animate-fade-in">
-            <Sparkles size={14} className="text-cinema-gold" />
-            <span>
-              GOOD {timeOfDay}, {userName}. WHAT ARE WE WATCHING?
-            </span>
-          </div>
-
-          {heroMovie ? (
-            <div>
-              <h1 className="font-serif font-extrabold text-3xl sm:text-5xl md:text-6xl text-cinema-white tracking-tight drop-shadow-2xl mb-2 sm:mb-3">
-                {heroMovie.movie.title}
-              </h1>
-
-              {/* Metadata strip */}
-              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-cinema-silver mb-3 drop-shadow">
-                {heroMovie.movie.releaseDate && (
-                  <span>{heroMovie.movie.releaseDate.substring(0, 4)}</span>
-                )}
-                {heroMovie.movie.runtime && <span>• {heroMovie.movie.runtime} min</span>}
-                {heroMovie.movie.genres && heroMovie.movie.genres.length > 0 && (
-                  <span>• {heroMovie.movie.genres.slice(0, 2).map((g) => g.name).join(', ')}</span>
-                )}
-                {heroMovie.movie.voteAverage > 0 && (
-                  <span className="flex items-center gap-1 text-cinema-gold font-semibold">
-                    <Star size={13} className="fill-cinema-gold text-cinema-gold" />
-                    <span>{heroMovie.movie.voteAverage.toFixed(1)}</span>
-                  </span>
-                )}
-              </div>
-
-              {heroMovie.movie.overview && (
-                <p className="text-xs sm:text-sm text-cinema-silver/90 max-w-2xl line-clamp-2 sm:line-clamp-3 mb-6 leading-relaxed drop-shadow">
-                  {heroMovie.movie.overview}
-                </p>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => setIsCinemaModeOpen(true)}
-                  className="cinema-button-primary px-5 sm:px-6 py-2.5 sm:py-3 flex items-center gap-2 text-xs sm:text-sm font-semibold shadow-gold"
-                >
-                  <Play size={16} className="fill-cinema-black" />
-                  <span>Watch Now</span>
-                </button>
-
-                <WatchedButton
-                  movie={heroMovie.movie}
-                  userData={heroMovie.userData}
-                  style="pill"
-                />
-
-                <button
-                  onClick={() => openMovieDetail(heroMovie.movie.id)}
-                  className="cinema-button-secondary px-4 py-2.5 sm:py-3 flex items-center gap-2 text-xs sm:text-sm backdrop-blur-md"
-                >
-                  <span>Details</span>
-                </button>
-
-                <button
-                  onClick={handleSurpriseMe}
-                  className="p-2.5 sm:p-3 rounded-xl bg-cinema-surface/70 hover:bg-cinema-surface border border-white/5 text-cinema-silver hover:text-cinema-white transition-colors"
-                  title="Surprise Me"
-                >
-                  <Sparkles size={16} className="text-cinema-gold" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-cinema-silver">
-              <h2 className="font-serif text-3xl font-bold text-cinema-white mb-2">
-                Welcome to Personal Cinema
-              </h2>
-              <p className="text-sm max-w-lg mb-4">
-                Your private cinematic haven for tracking and exploring movies.
-              </p>
-              <button
-                onClick={() => setActiveTab('discover')}
-                className="cinema-button-primary px-6 py-2.5 text-sm"
-              >
-                Discover Movies
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Continue Your Journey: Active Collection Feature */}
+      {/* Continue Your Journey: Active Collection Feature (Section 86 & 87) */}
       {activeJourney && (
-        <section className="bg-gradient-to-r from-cinema-surface to-cinema-deep-navy border border-cinema-gold/30 rounded-3xl p-5 sm:p-7 shadow-xl">
+        <section className="bg-gradient-to-r from-[#171924] to-[#10121A] border border-[#EDC257]/30 rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
-              <div className="flex items-center gap-2 text-cinema-gold text-xs font-semibold tracking-widest uppercase">
+              <div className="flex items-center gap-2 text-[#EDC257] text-[11px] font-bold tracking-[0.16em] uppercase">
                 <TrendingUp size={14} />
                 <span>CONTINUE YOUR JOURNEY</span>
               </div>
-              <h2 className="font-serif font-bold text-xl sm:text-2xl text-cinema-white mt-1">
+              <h2 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F2F0] mt-1">
                 {activeJourney.collection.name}
               </h2>
             </div>
 
             <button
               onClick={() => openCollectionDetail(activeJourney.collection.id)}
-              className="text-xs text-cinema-gold hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#EDC257] hover:underline flex items-center gap-1 font-bold tracking-wide"
             >
-              <span>View Full Journey</span>
+              <span>View Full Saga</span>
               <ChevronRight size={14} />
             </button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-1.5 mb-5">
-            <div className="flex justify-between text-xs text-cinema-subtle">
+          {/* Thin Cinematic Progress Bar */}
+          <div className="space-y-1.5 mb-6">
+            <div className="flex justify-between text-xs text-[#9E9DA5]">
               <span>
                 {activeJourney.progress.watched} of {activeJourney.progress.total} watched
               </span>
-              <span className="font-bold text-cinema-gold">{activeJourney.progress.percent}%</span>
+              <span className="font-bold text-[#EDC257]">{activeJourney.progress.percent}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-cinema-charcoal overflow-hidden border border-white/5">
+            <div className="w-full h-1.5 rounded-full bg-[#09090D] overflow-hidden border border-white/5">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-cinema-gold to-cinema-amber transition-all duration-500 shadow-gold"
+                className="h-full rounded-full bg-gradient-to-r from-[#EDC257] to-[#D99C33] transition-all duration-700 ease-out shadow-[0_0_10px_rgba(237,194,87,0.3)]"
                 style={{ width: `${activeJourney.progress.percent}%` }}
               />
             </div>
           </div>
 
-          {/* Next Up Movie Card */}
-          <div className="flex items-center gap-4 bg-cinema-black/50 border border-white/5 rounded-2xl p-3 sm:p-4">
-            <div className="w-16 sm:w-20 aspect-[2/3] rounded-xl overflow-hidden bg-cinema-charcoal flex-shrink-0 shadow-lg border border-cinema-gold/20">
+          {/* Next Up in Saga Movie Card */}
+          <div className="flex items-center gap-4 bg-[#09090D]/60 border border-white/[0.08] rounded-2xl p-3.5 sm:p-5">
+            <div className="w-16 sm:w-20 aspect-[2/3] rounded-xl overflow-hidden bg-[#171924] flex-shrink-0 shadow-lg border border-[#EDC257]/20">
               {activeJourney.nextMovie.movie.posterPath ? (
                 <img
                   src={tmdbService.getImageUrl(activeJourney.nextMovie.movie.posterPath, 'w185')}
@@ -385,31 +247,31 @@ export const Home: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[10px] text-cinema-subtle">
+                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#5C5B64]">
                   No Poster
                 </div>
               )}
             </div>
 
             <div className="flex-grow min-w-0">
-              <div className="text-[11px] text-cinema-gold font-bold uppercase tracking-wider">
+              <div className="text-[10px] text-[#EDC257] font-black uppercase tracking-widest">
                 NEXT UP IN SAGA
               </div>
-              <h3 className="font-serif font-bold text-base sm:text-lg text-cinema-white truncate mt-0.5">
+              <h3 className="font-serif font-bold text-base sm:text-lg text-[#F5F2F0] truncate mt-0.5">
                 {activeJourney.nextMovie.movie.title}
               </h3>
-              <p className="text-xs text-cinema-subtle mt-0.5">
+              <p className="text-xs text-[#9E9DA5] mt-0.5">
                 {activeJourney.nextMovie.movie.releaseDate?.substring(0, 4)}{' '}
                 {activeJourney.nextMovie.movie.runtime ? `· ${activeJourney.nextMovie.movie.runtime}m` : ''}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2.5 flex-shrink-0">
               <button
                 onClick={() => openMovieDetail(activeJourney.nextMovie.movie.id)}
-                className="cinema-button-primary px-4 py-2 text-xs font-semibold shadow-gold hidden sm:flex items-center gap-1.5"
+                className="cinema-button-primary px-4 py-2.5 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(237,194,87,0.3)]"
               >
-                <Play size={13} className="fill-cinema-black" />
+                <Play size={13} className="fill-[#09090D]" />
                 <span>Screen Now</span>
               </button>
               <WatchedButton
@@ -423,38 +285,38 @@ export const Home: React.FC = () => {
       )}
 
       {/* Stats Quick Strip */}
-      <div className="grid grid-cols-3 gap-3 bg-cinema-surface/50 border border-white/5 rounded-2xl p-4">
+      <div className="grid grid-cols-3 gap-3 bg-[#171924]/60 border border-white/[0.06] rounded-2xl p-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-cinema-gold/10 border border-cinema-gold/20 flex items-center justify-center text-cinema-gold">
-            <Film size={20} />
+          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
+            <Film size={18} />
           </div>
           <div>
-            <div className="text-xs text-cinema-subtle">Watched</div>
-            <div className="font-bold text-cinema-white text-base sm:text-lg">
+            <div className="text-[11px] text-[#9E9DA5]">Watched</div>
+            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
               {stats.totalWatched} {stats.totalWatched === 1 ? 'Film' : 'Films'}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-2 border-x border-white/5">
-          <div className="w-10 h-10 rounded-xl bg-cinema-gold/10 border border-cinema-gold/20 flex items-center justify-center text-cinema-gold">
-            <Clock size={20} />
+        <div className="flex items-center gap-3 px-2 border-x border-white/[0.06]">
+          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
+            <Clock size={18} />
           </div>
           <div>
-            <div className="text-xs text-cinema-subtle">Screen Time</div>
-            <div className="font-bold text-cinema-white text-base sm:text-lg">
+            <div className="text-[11px] text-[#9E9DA5]">Screen Time</div>
+            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
               {stats.totalHours} hrs
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-cinema-gold/10 border border-cinema-gold/20 flex items-center justify-center text-cinema-gold">
-            <Flame size={20} />
+          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
+            <Flame size={18} />
           </div>
           <div>
-            <div className="text-xs text-cinema-subtle">Curated Cols</div>
-            <div className="font-bold text-cinema-white text-base sm:text-lg">
+            <div className="text-[11px] text-[#9E9DA5]">Curated Sagas</div>
+            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
               {collections.length}
             </div>
           </div>
@@ -462,91 +324,45 @@ export const Home: React.FC = () => {
       </div>
 
       {/* Rail: Currently Watching (Status = watching) */}
-      {continueWatching.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Currently Watching"
-            subtitle="Films in active screening"
-            actionLabel="View All"
-            onAction={() => setActiveTab('library')}
-          />
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 sm:-mx-8 sm:px-8">
-            {continueWatching.map((item) => (
-              <div key={item.movie.id} className="w-36 sm:w-44 flex-shrink-0">
-                <PosterCard
-                  movie={item.movie}
-                  userData={item.userData}
-                  onClick={() => openMovieDetail(item.movie.id)}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <MoviePosterRail
+        title="Currently Watching"
+        subtitle="Active screenings in your cinema"
+        actionLabel="View All"
+        onAction={() => setActiveTab('library')}
+        items={continueWatching}
+        onMovieClick={(m) => openMovieDetail(m.id)}
+      />
 
       {/* Rail: On Your Watchlist */}
-      <section>
-        <SectionHeader
-          title="On Your Watchlist"
-          subtitle="Films queued up for your next screening"
-          actionLabel="View Library"
-          onAction={() => setActiveTab('library')}
-        />
-        {watchlist.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 sm:-mx-8 sm:px-8">
-            {watchlist.map((item) => (
-              <div key={item.movie.id} className="w-36 sm:w-44 flex-shrink-0">
-                <PosterCard
-                  movie={item.movie}
-                  userData={item.userData}
-                  onClick={() => openMovieDetail(item.movie.id)}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title="Your Watchlist is Empty"
-            description="Explore trending films and add what catches your eye."
-            actionText="Discover Movies"
-            onAction={() => setActiveTab('discover')}
-          />
-        )}
-      </section>
+      <MoviePosterRail
+        title="On Your Watchlist"
+        subtitle="Films queued up for your next screening"
+        actionLabel="View Library"
+        onAction={() => setActiveTab('library')}
+        items={watchlist}
+        onMovieClick={(m) => openMovieDetail(m.id)}
+      />
 
-      {/* Rail: Recently Watched */}
-      {recentlyWatched.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Recently Watched"
-            subtitle="Your logged screening history"
-            actionLabel="View Vault"
-            onAction={() => setActiveTab('library')}
-          />
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 sm:-mx-8 sm:px-8">
-            {recentlyWatched.map((item) => (
-              <div key={item.movie.id} className="w-36 sm:w-44 flex-shrink-0">
-                <PosterCard
-                  movie={item.movie}
-                  userData={item.userData}
-                  onClick={() => openMovieDetail(item.movie.id)}
-                />
-              </div>
-            ))}
+      {/* Curated Sagas / Collections Rail */}
+      {collections.length > 0 && (
+        <section className="space-y-3.5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h3 className="font-section-title text-[#F5F2F0]">Curated Collections</h3>
+              <p className="text-xs text-[#9E9DA5] mt-0.5">
+                Thematic universes and cinematic marathons
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('collections')}
+              className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#EDC257] hover:text-[#EDC257] p-0"
+            >
+              <span>All Collections</span>
+              <ChevronRight size={14} />
+            </button>
           </div>
-        </section>
-      )}
 
-      {/* Rail: Curated Collections */}
-      <section>
-        <SectionHeader
-          title="Curated Collections"
-          subtitle="Sagas, directors, and cinematic universes"
-          actionLabel="All Collections"
-          onAction={() => setActiveTab('collections')}
-        />
-        {collections.length > 0 ? (
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 sm:-mx-8 sm:px-8">
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
             {collections.map((col) => (
               <div key={col.id} className="w-64 sm:w-72 flex-shrink-0">
                 <CollectionCard
@@ -556,39 +372,30 @@ export const Home: React.FC = () => {
               </div>
             ))}
           </div>
-        ) : (
-          <EmptyState
-            title="Create Custom Collections"
-            description="Organize your films by director, franchise, or mood."
-            actionText="Explore Collections"
-            onAction={() => setActiveTab('collections')}
-          />
-        )}
-      </section>
-
-      {/* Rail: Recommended For You */}
-      {recommendations.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Recommended For You"
-            subtitle="Films trending worldwide to expand your vault"
-            actionLabel="Discover More"
-            onAction={() => setActiveTab('discover')}
-          />
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4 sm:-mx-8 sm:px-8">
-            {recommendations.map((rec) => (
-              <div key={rec.id} className="w-36 sm:w-44 flex-shrink-0">
-                <PosterCard
-                  movie={rec}
-                  onClick={() => openMovieDetail(rec.id)}
-                />
-              </div>
-            ))}
-          </div>
         </section>
       )}
 
-      {/* Hero Cinema Mode Modal */}
+      {/* Rail: Recently Watched */}
+      <MoviePosterRail
+        title="Recently Watched"
+        subtitle="Your logged screening history"
+        actionLabel="View Vault"
+        onAction={() => setActiveTab('library')}
+        items={recentlyWatched}
+        onMovieClick={(m) => openMovieDetail(m.id)}
+      />
+
+      {/* Rail: Recommended For You */}
+      <MoviePosterRail
+        title="Recommended For You"
+        subtitle="Trending films worldwide to expand your vault"
+        actionLabel="Discover More"
+        onAction={() => setActiveTab('discover')}
+        items={recommendations.map((m) => ({ movie: m }))}
+        onMovieClick={(m) => openMovieDetail(m.id)}
+      />
+
+      {/* Hero Cinema Mode Atmospheric Screening Modal */}
       {isCinemaModeOpen && heroMovie && (
         <CinemaModeModal
           movie={heroMovie.movie}
@@ -599,29 +406,29 @@ export const Home: React.FC = () => {
 
       {/* Surprise Me Modal */}
       {isSurpriseOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cinema-black/85 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-sm bg-cinema-surface border border-cinema-gold/40 rounded-2xl shadow-2xl p-6 text-center animate-scale-in">
-            <div className="inline-flex p-3 rounded-2xl bg-cinema-gold/15 text-cinema-gold mb-3 shadow-gold">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050508]/85 backdrop-blur-md animate-cinema-fade">
+          <div className="relative w-full max-w-sm bg-[#171924] border border-[#EDC257]/40 rounded-2xl shadow-2xl p-6 text-center animate-cinema-scale">
+            <div className="inline-flex p-3 rounded-2xl bg-[#EDC257]/15 text-[#EDC257] mb-3 shadow-[0_2px_12px_rgba(237,194,87,0.3)]">
               <Sparkles size={28} className={isRolling ? 'animate-spin' : ''} />
             </div>
 
-            <h3 className="font-serif font-bold text-xl text-cinema-white mb-1">
+            <h3 className="font-serif font-bold text-xl text-[#F5F2F0] mb-1">
               Tonight's Mystery Selection
             </h3>
-            <p className="text-xs text-cinema-subtle mb-4">
+            <p className="text-xs text-[#9E9DA5] mb-4">
               Hand-picked by Personal Cinema from your library queue.
             </p>
 
             {isRolling || !surpriseMovie ? (
               <div className="py-12 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mb-3" />
-                <span className="text-xs text-cinema-gold font-mono uppercase tracking-wider">
+                <div className="w-12 h-12 rounded-full border-2 border-[#222534] border-t-[#EDC257] animate-spin mb-3" />
+                <span className="text-xs text-[#EDC257] font-mono uppercase tracking-wider">
                   Scanning Vault...
                 </span>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="aspect-[2/3] w-36 mx-auto rounded-xl overflow-hidden shadow-2xl border border-cinema-gold/30">
+                <div className="aspect-[2/3] w-36 mx-auto rounded-xl overflow-hidden shadow-2xl border border-[#EDC257]/30">
                   {surpriseMovie.posterPath ? (
                     <img
                       src={tmdbService.getImageUrl(surpriseMovie.posterPath, 'w342')}
@@ -632,8 +439,8 @@ export const Home: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-cinema-white text-base">{surpriseMovie.title}</h4>
-                  <p className="text-xs text-cinema-subtle">
+                  <h4 className="font-bold text-[#F5F2F0] text-base">{surpriseMovie.title}</h4>
+                  <p className="text-xs text-[#9E9DA5]">
                     {surpriseMovie.releaseDate?.substring(0, 4)} {surpriseMovie.runtime ? `· ${surpriseMovie.runtime}m` : ''}
                   </p>
                 </div>
@@ -660,7 +467,7 @@ export const Home: React.FC = () => {
 
             <button
               onClick={() => setIsSurpriseOpen(false)}
-              className="mt-4 text-xs text-cinema-subtle hover:text-cinema-white underline block mx-auto"
+              className="mt-4 text-xs text-[#9E9DA5] hover:text-[#F5F2F0] underline block mx-auto cursor-pointer bg-transparent border-none"
             >
               Close
             </button>

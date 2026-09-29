@@ -1,39 +1,86 @@
-/* Personal Cinema Design System - Cinematic Dark Theme */
+/* Personal Cinema Design System - Master Cinematic Theme & Tokens */
 
 :root {
-  --cinema-black: #0D0D12;
-  --cinema-deep-navy: #0F1220;
-  --cinema-charcoal: #1E2029;
-  --cinema-surface: #262833;
-  --cinema-surface-elevated: #333542;
-  
-  --cinema-gold: #EDC257;
-  --cinema-gold-glow: rgba(237, 194, 87, 0.35);
+  /* Layer 0 & 1: Base Backgrounds & Surfaces (Luxury Cinema Room) */
+  --cinema-bg: #09090D;
+  --cinema-bg-elevated: #10121A;
+  --cinema-surface: #171924;
+  --cinema-surface-elevated: #222534;
+  --cinema-surface-glass: rgba(18, 20, 30, 0.72);
+  --cinema-surface-glass-heavy: rgba(13, 14, 22, 0.88);
+
+  /* Cinema Accents */
+  --cinema-accent: #EDC257;
+  --cinema-accent-glow: rgba(237, 194, 87, 0.32);
   --cinema-amber: #D99C33;
   --cinema-crimson: #B81C28;
   --cinema-crimson-soft: #D94048;
-  
-  --cinema-white: #F5F2F0;
-  --cinema-silver: #B7B5B3;
-  --cinema-subtle: #737177;
-  --cinema-border: rgba(255, 255, 255, 0.08);
 
+  /* Cinema Typography */
+  --cinema-text: #F5F2F0;
+  --cinema-text-muted: #9E9DA5;
+  --cinema-subtle: #5C5B64;
+  --cinema-white: #FFFFFF;
+  --cinema-black: #050508;
+
+  /* Borders & Highlights */
+  --cinema-border: rgba(255, 255, 255, 0.08);
+  --cinema-border-bright: rgba(255, 255, 255, 0.16);
+  --cinema-border-accent: rgba(237, 194, 87, 0.4);
+
+  /* Fonts */
   --font-display: 'Cinzel', Georgia, serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-pill: 9999px;
-  
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
-  --shadow-gold: 0 4px 20px rgba(237, 194, 87, 0.25);
-  
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
-  --transition-cinematic: 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Radii */
+  --cinema-radius-xs: 4px;
+  --cinema-radius-sm: 8px;
+  --cinema-radius-md: 14px;
+  --cinema-radius-lg: 20px;
+  --cinema-radius-xl: 28px;
+  --cinema-radius-pill: 9999px;
+
+  /* Shadows */
+  --cinema-shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --cinema-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --cinema-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.7);
+  --cinema-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
+  --cinema-shadow-gold: 0 4px 24px rgba(237, 194, 87, 0.28);
+  --cinema-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* Spacing */
+  --cinema-spacing-xs: 4px;
+  --cinema-spacing-sm: 8px;
+  --cinema-spacing-md: 16px;
+  --cinema-spacing-lg: 24px;
+  --cinema-spacing-xl: 36px;
+  --cinema-spacing-2xl: 48px;
+
+  /* Motion Timing & Easing */
+  --cinema-duration-fast: 0.18s;
+  --cinema-duration-normal: 0.32s;
+  --cinema-duration-slow: 0.55s;
+  --cinema-duration-cinematic: 0.75s;
+  --cinema-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --cinema-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Backward Compatibility Aliases */
+  --cinema-deep-navy: var(--cinema-bg-elevated);
+  --cinema-charcoal: var(--cinema-surface);
+  --cinema-gold: var(--cinema-accent);
+  --cinema-gold-glow: var(--cinema-accent-glow);
+  --cinema-silver: var(--cinema-text-muted);
+  --radius-sm: var(--cinema-radius-sm);
+  --radius-md: var(--cinema-radius-md);
+  --radius-lg: var(--cinema-radius-lg);
+  --radius-pill: var(--cinema-radius-pill);
+  --shadow-sm: var(--cinema-shadow-sm);
+  --shadow-md: var(--cinema-shadow-md);
+  --shadow-lg: var(--cinema-shadow-lg);
+  --shadow-gold: var(--cinema-shadow-gold);
+  --transition-fast: var(--cinema-duration-fast) ease;
+  --transition-normal: var(--cinema-duration-normal) ease;
+  --transition-cinematic: var(--cinema-duration-cinematic) var(--cinema-ease);
 }
 
 * {
@@ -43,9 +90,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
-  background-color: var(--cinema-black);
-  color: var(--cinema-white);
+html, body {
+  background-color: var(--cinema-bg);
+  color: var(--cinema-text);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.5;
@@ -61,190 +108,273 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--cinema-black);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--cinema-surface-elevated);
-  border-radius: var(--radius-pill);
+  border-radius: var(--cinema-radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--cinema-subtle);
 }
 
-/* Glass & Card Utilities */
-.cinema-card {
-  background: var(--cinema-surface);
-  border: 1px solid var(--cinema-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast), border-color var(--transition-fast);
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.cinema-glass {
-  background: rgba(26, 28, 36, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--cinema-border);
-}
-
-/* Typography Helpers */
-.title-display {
+/* Typography Responsive Clamps */
+.font-hero-title {
   font-family: var(--font-display);
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: var(--cinema-white);
+  font-size: clamp(2rem, 4.5vw, 4.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--cinema-text);
 }
 
-.label-caps {
+.font-section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cinema-text);
+}
+
+.font-caps-label {
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--cinema-accent);
+}
+
+/* Ambient Glass Surfaces */
+.cinema-glass {
+  background: var(--cinema-surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--cinema-border);
+  box-shadow: var(--cinema-shadow-glass);
+}
+
+.cinema-glass-heavy {
+  background: var(--cinema-surface-glass-heavy);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--cinema-border-bright);
+  box-shadow: var(--cinema-shadow-lg);
+}
+
+/* Cinema Buttons Hierarchy */
+.cinema-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--cinema-accent), var(--cinema-amber));
+  color: var(--cinema-black);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  padding: 12px 22px;
+  border-radius: var(--cinema-radius-md);
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--cinema-shadow-gold);
+  transition: transform var(--cinema-duration-fast) var(--cinema-ease), box-shadow var(--cinema-duration-fast) var(--cinema-ease);
+}
+.cinema-button-primary:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 28px rgba(237, 194, 87, 0.45);
+}
+.cinema-button-primary:active {
+  transform: scale(0.97);
+}
+
+.cinema-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--cinema-text);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 20px;
+  border-radius: var(--cinema-radius-md);
+  border: 1px solid var(--cinema-border-bright);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background var(--cinema-duration-fast), transform var(--cinema-duration-fast), border-color var(--cinema-duration-fast);
+}
+.cinema-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--cinema-border-accent);
+  transform: translateY(-1px);
+}
+.cinema-button-secondary:active {
+  transform: scale(0.97);
+}
+
+.cinema-button-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--cinema-text-muted);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: var(--cinema-radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: color var(--cinema-duration-fast), background var(--cinema-duration-fast);
+}
+.cinema-button-ghost:hover {
+  color: var(--cinema-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Custom Form Controls */
+.cinema-input {
+  background: rgba(18, 20, 28, 0.7);
+  border: 1px solid var(--cinema-border);
+  color: var(--cinema-text);
+  border-radius: var(--cinema-radius-md);
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--cinema-duration-fast), box-shadow var(--cinema-duration-fast);
+}
+.cinema-input:focus {
+  border-color: var(--cinema-accent);
+  box-shadow: 0 0 0 3px var(--cinema-accent-glow);
+}
+.cinema-input::placeholder {
   color: var(--cinema-subtle);
 }
 
-/* Buttons */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--cinema-gold);
-  color: var(--cinema-black);
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  padding: 12px 20px;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  box-shadow: var(--shadow-gold);
-  transition: transform var(--transition-fast), opacity var(--transition-fast), box-shadow var(--transition-fast);
-}
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px var(--cinema-gold-glow);
-}
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgba(237, 194, 87, 0.08);
-  color: var(--cinema-gold);
-  font-weight: 600;
-  font-size: 14px;
-  padding: 12px 20px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--cinema-gold);
-  cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
-}
-.btn-secondary:hover {
-  background: rgba(237, 194, 87, 0.16);
-}
-.btn-secondary:active {
-  transform: scale(0.98);
-}
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--cinema-white);
-  font-weight: 500;
-  font-size: 14px;
-  padding: 10px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--cinema-border);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-.btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Poster Card Ratios */
-.poster-container {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--cinema-charcoal);
-  box-shadow: var(--shadow-sm);
-}
-
-.poster-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--transition-cinematic);
-}
-
-.poster-container:hover .poster-img {
-  transform: scale(1.04);
-}
-
-/* Animations */
-@keyframes goldPulse {
-  0% { box-shadow: 0 0 0 0 rgba(237, 194, 87, 0.5); }
-  70% { box-shadow: 0 0 0 16px rgba(237, 194, 87, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(237, 194, 87, 0); }
-}
-
-@keyframes lightSweep {
-  0% { transform: translateX(-100%) rotate(25deg); }
-  100% { transform: translateX(200%) rotate(25deg); }
-}
-
-.light-sweep-container {
-  position: relative;
-  overflow: hidden;
-}
-.light-sweep-container::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+/* Poster Skeleton Shimmer */
+.cinema-skeleton {
   background: linear-gradient(
     90deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.18) 50%,
-    transparent 80%
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
   );
-  animation: lightSweep 1.6s ease-in-out infinite;
+  background-size: 200% 100%;
+  animation: cinemaShimmer 1.8s infinite ease-in-out;
+}
+
+/* Section Edge Fades for Rails */
+.rail-edge-fade {
+  position: relative;
+}
+.rail-edge-fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--cinema-bg));
   pointer-events: none;
+  z-index: 5;
 }
 
-/* Responsive Layout */
-.app-container {
-  display: flex;
-  min-height: 100vh;
+/* ============================================================
+   ANIMATIONS (Section 102)
+   ============================================================ */
+@keyframes cinemaFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.main-content {
-  flex: 1;
-  min-width: 0;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px));
-}
-
-@media (min-width: 768px) {
-  .main-content {
-    padding-bottom: 32px;
-    margin-left: 240px;
+@keyframes cinemaRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Reduce Motion */
+@keyframes cinemaScale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cinemaCrossfade {
+  0% { opacity: 0; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cinemaSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes cinemaIslandExpand {
+  0% {
+    width: 200px;
+    height: 42px;
+    border-radius: 9999px;
+  }
+  100% {
+    width: min(92vw, 440px);
+    height: auto;
+    border-radius: var(--cinema-radius-xl);
+  }
+}
+
+@keyframes cinemaWatchedCheck {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cinemaShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes cinemaPulseGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.animate-cinema-fade {
+  animation: cinemaFade var(--cinema-duration-normal) var(--cinema-ease) forwards;
+}
+
+.animate-cinema-rise {
+  animation: cinemaRise var(--cinema-duration-slow) var(--cinema-ease) forwards;
+}
+
+.animate-cinema-scale {
+  animation: cinemaScale var(--cinema-duration-normal) var(--cinema-ease) forwards;
+}
+
+.animate-cinema-sheet {
+  animation: cinemaSheet var(--cinema-duration-normal) var(--cinema-ease) forwards;
+}
+
+/* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;

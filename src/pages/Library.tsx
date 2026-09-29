@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useCinema } from '../context/CinemaContext';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { MovieWithUserData } from '../types/movie';
-import { MovieCard } from '../components/movie/MovieCard';
+import { MoviePoster } from '../components/movie/MoviePoster';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { RatingControl } from '../components/movie/RatingControl';
 import { EmptyState } from '../components/common/EmptyState';
@@ -146,9 +146,9 @@ export const Library: React.FC = () => {
       {/* Title & Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif font-bold text-3xl text-cinema-white">My Cinema Vault</h1>
-          <p className="text-xs text-cinema-subtle mt-0.5">
-            Your personal, canonical film catalog and screening records.
+          <h1 className="font-hero-title">My Cinema Library</h1>
+          <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
+            Your personal, canonical film catalog, watchlist, and screening history.
           </p>
         </div>
 
@@ -339,10 +339,10 @@ export const Library: React.FC = () => {
           onAction={() => setActiveTab('discover')}
         />
       ) : displayMode === 'grid' ? (
-        /* Grid Mode */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        /* Visual Poster Grid with 2:3 Aspect Ratio */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filteredItems.map((item) => (
-            <MovieCard
+            <MoviePoster
               key={item.movie.id}
               movie={item.movie}
               userData={item.userData}
