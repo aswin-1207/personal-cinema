@@ -57,6 +57,10 @@ final class LibraryViewModel {
         isLoading = false
     }
 
+    func loadMore() async {
+        // SwiftData local library is loaded into memory; pagination is not required
+    }
+
     private var sortKey: String {
         switch sortBy {
         case .addedAt: return "added_at"

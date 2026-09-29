@@ -138,7 +138,7 @@ struct LibraryView: View {
     private var gridView: some View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: CinemaSpacing.md) {
-                ForEach(viewModel.filteredMovies, id: \.id) { item in
+                ForEach(viewModel.filteredMovies) { item in
                     if let movie = item.movie {
                         NavigationLink(destination: MovieDetailView(tmdbId: movie.id)) {
                             libraryGridItem(item: item, movie: movie)
@@ -146,11 +146,6 @@ struct LibraryView: View {
                         .buttonStyle(.plain)
                         .contextMenu {
                             movieContextMenu(item: item)
-                        }
-                        .onAppear {
-                            if item.id == viewModel.filteredMovies.last?.id {
-                                Task { await viewModel.loadMore() }
-                            }
                         }
                     }
                 }
@@ -166,7 +161,7 @@ struct LibraryView: View {
 
     private var listView: some View {
         List {
-            ForEach(viewModel.filteredMovies, id: \.id) { item in
+            ForEach(viewModel.filteredMovies) { item in
                 if let movie = item.movie {
                     NavigationLink(destination: MovieDetailView(tmdbId: movie.id)) {
                         libraryListItem(item: item, movie: movie)
