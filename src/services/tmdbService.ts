@@ -1,11 +1,42 @@
 import { Movie, Genre } from '../types/movie';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { PreferencesRepository } from '../db/repositories/preferencesRepository';
+import { getDB, TMDBCacheEntry } from '../db/database';
 import { CURATED_LANDMARKS } from './curatedLandmarks';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const MEMORY_CACHE = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+
+// Specific TTLs by data category (Section 9)
+const TTL_MAP: Record<string, number> = {
+  trending: 15 * 60 * 1000, // 15 minutes
+  popular: 60 * 60 * 1000, // 1 hour
+  search: 5 * 60 * 1000, // 5 minutes
+  details: 24 * 60 * 60 * 1000, // 24 hours
+  genres: 7 * 24 * 60 * 60 * 1000, // 7 days
+  discover: 30 * 60 * 1000, // 30 minutes
+  similar: 60 * 60 * 1000, // 1 hour
+  credits: 24 * 60 * 60 * 1000, // 24 hours
+};
+
+export type TMDBErrorCode =
+  | 'AUTHENTICATION_FAILED'
+  | 'RATE_LIMITED'
+  | 'NETWORK_ERROR'
+  | 'INVALID_RESPONSE'
+  | 'TMDB_REQUEST_FAILED'
+  | 'NO_RESULTS';
+
+export class TMDBError extends Error {
+  code: TMDBErrorCode;
+  status?: number;
+
+  constructor(message: string, code: TMDBErrorCode, status?: number) {
+    super(message);
+    this.name = 'TMDBError';
+    this.code = code;
+    this.status = status;
+  }
+}
 
 export interface TMDBAuthConfig {
   type: 'v3_key' | 'bearer_token';
@@ -23,6 +54,43 @@ export interface TMDBDiagnostics {
   lastError: string | null;
   sampleMovieTitle: string | null;
 }
+
+export interface SWRResult<T> {
+  data: T;
+  isStale: boolean;
+  fromCache: boolean;
+}
+
+// In-memory cache for active session
+const MEMORY_CACHE = new Map<string, { data: any; timestamp: number; ttlMs: number }>();
+
+// In-flight request deduplication map (Section 8)
+const IN_FLIGHT_REQUESTS = new Map<string, Promise<any>>();
+
+// Concurrency queue controller (Section 14)
+class RequestQueue {
+  private activeCount = 0;
+  private maxConcurrent = 4;
+  private queue: Array<() => void> = [];
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.activeCount >= this.maxConcurrent) {
+      await new Promise<void>((resolve) => this.queue.push(resolve));
+    }
+    this.activeCount++;
+    try {
+      return await fn();
+    } finally {
+      this.activeCount--;
+      if (this.queue.length > 0) {
+        const next = this.queue.shift();
+        if (next) next();
+      }
+    }
+  }
+}
+
+const REQUEST_QUEUE = new RequestQueue();
 
 export class TMDBService {
   /**
@@ -52,7 +120,7 @@ export class TMDBService {
       return { type, value: envKey, source: 'environment' };
     }
 
-    // Verified active public TMDB v3 key (tested 200 OK)
+    // Verified active public TMDB key
     return {
       type: 'v3_key',
       value: '15d2ea6d0dc1d476efbca3eba2b9bbfb',
@@ -60,23 +128,56 @@ export class TMDBService {
     };
   }
 
+  private static getTTLForEndpoint(endpoint: string): number {
+    if (endpoint.includes('/trending')) return TTL_MAP.trending;
+    if (endpoint.includes('/popular')) return TTL_MAP.popular;
+    if (endpoint.includes('/search')) return TTL_MAP.search;
+    if (endpoint.includes('/discover')) return TTL_MAP.discover;
+    if (endpoint.includes('/genre')) return TTL_MAP.genres;
+    if (endpoint.includes('/credits')) return TTL_MAP.credits;
+    if (endpoint.includes('/similar')) return TTL_MAP.similar;
+    if (endpoint.startsWith('/movie/')) return TTL_MAP.details;
+    return 10 * 60 * 1000;
+  }
+
   /**
-   * Central Request Wrapper:
-   * Stage 1: Direct TMDB request with 4.5s timeout.
-   * Stage 2: Automatic fallback to `/api/tmdb` serverless proxy (bypasses regional ISP DNS blocks).
-   * Stage 3: In-memory cache fallback.
+   * IndexedDB Cache Layer (Section 10)
    */
-  private static async fetchWithCache<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-    const auth = await this.getAuthConfig();
-    const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`;
-
-    // Check memory cache
-    const cached = MEMORY_CACHE.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.data as T;
+  private static async getFromIDBCache(key: string): Promise<TMDBCacheEntry | null> {
+    try {
+      const db = await getDB();
+      const entry = await db.get('tmdbCache', key);
+      return entry || null;
+    } catch {
+      return null;
     }
+  }
 
-    // Build direct TMDB request
+  private static async saveToIDBCache(key: string, data: any, ttlMs: number): Promise<void> {
+    try {
+      const db = await getDB();
+      await db.put('tmdbCache', {
+        key,
+        data,
+        timestamp: Date.now(),
+        ttlMs,
+      });
+    } catch {
+      // Ignore cache write errors
+    }
+  }
+
+  private static directTMDBFailed = false;
+
+  /**
+   * Core network fetch with retry, backoff, and deduplication
+   */
+  private static async executeNetworkFetch<T>(
+    endpoint: string,
+    params: Record<string, string>,
+    signal?: AbortSignal
+  ): Promise<T> {
+    const auth = await this.getAuthConfig();
     const headers: Record<string, string> = {
       Accept: 'application/json',
     };
@@ -93,38 +194,103 @@ export class TMDBService {
       directUrl = `${TMDB_BASE_URL}${endpoint}?${directParams.toString()}`;
     }
 
-    let lastError: Error | null = null;
+    // Fast-path: If direct TMDB has previously encountered an ISP block/DNS hang in this session,
+    // hit the /api/tmdb proxy immediately without wasting seconds on a dead DNS connection.
+    if (this.directTMDBFailed && typeof window !== 'undefined') {
+      try {
+        const proxyParams = new URLSearchParams(params);
+        proxyParams.set('endpoint', endpoint);
+        const proxyUrl = `/api/tmdb?${proxyParams.toString()}`;
 
-    // Stage 1: Try Direct TMDB
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const proxyHeaders: Record<string, string> = { Accept: 'application/json' };
+        if (auth.value) proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
 
-      const res = await fetch(directUrl, { headers, signal: controller.signal });
-      clearTimeout(timeoutId);
+        const proxyRes = await fetch(proxyUrl, { headers: proxyHeaders, signal: controller.signal });
+        clearTimeout(timeoutId);
 
-      if (res.ok) {
-        const data = await res.json();
-        MEMORY_CACHE.set(cacheKey, { data, timestamp: Date.now() });
-        return data as T;
-      }
-
-      if (res.status === 401) {
-        throw new Error('TMDB_UNAUTHORIZED: The provided TMDB API key or access token is invalid.');
-      }
-      if (res.status === 429) {
-        throw new Error('TMDB_RATE_LIMIT: TMDB API rate limit exceeded.');
-      }
-      throw new Error(`TMDB_ERROR: HTTP ${res.status} ${res.statusText}`);
-    } catch (err: any) {
-      lastError = err;
-      // If unauthorized, do not retry proxy with invalid credentials
-      if (err.message?.includes('TMDB_UNAUTHORIZED')) {
-        throw err;
+        if (proxyRes.ok) {
+          const data = await proxyRes.json();
+          return data as T;
+        }
+      } catch {
+        // Fall back to attempting direct fetch below
       }
     }
 
-    // Stage 2: Try /api/tmdb serverless proxy (if on web and not localhost)
+    // Attempt direct TMDB with controlled retries (Section 15)
+    let maxAttempts = this.directTMDBFailed ? 1 : 2;
+    let attempt = 0;
+    let lastError: TMDBError | null = null;
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      if (signal?.aborted) {
+        throw new TMDBError('Request aborted', 'NETWORK_ERROR');
+      }
+
+      try {
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => timeoutController.abort(), 2500);
+
+        // Combine caller signal and timeout signal
+        const onAbort = () => timeoutController.abort();
+        if (signal) signal.addEventListener('abort', onAbort);
+
+        const res = await fetch(directUrl, { headers, signal: timeoutController.signal });
+        clearTimeout(timeoutId);
+        if (signal) signal.removeEventListener('abort', onAbort);
+
+        if (res.ok) {
+          this.directTMDBFailed = false; // Direct connection verified working
+          const data = await res.json();
+          return data as T;
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          throw new TMDBError(
+            'TMDB authentication failed. Check credentials.',
+            'AUTHENTICATION_FAILED',
+            res.status
+          );
+        }
+
+        if (res.status === 429) {
+          const retryAfter = parseInt(res.headers.get('Retry-After') || '1', 10);
+          if (attempt < maxAttempts) {
+            await new Promise((r) => setTimeout(r, Math.max(retryAfter * 1000, 1000)));
+            continue;
+          }
+          throw new TMDBError('TMDB rate limit reached.', 'RATE_LIMITED', 429);
+        }
+
+        if (res.status >= 500 && attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, attempt * 500));
+          continue;
+        }
+
+        throw new TMDBError(`HTTP ${res.status}: ${res.statusText}`, 'TMDB_REQUEST_FAILED', res.status);
+      } catch (err: any) {
+        if (err instanceof TMDBError && err.code === 'AUTHENTICATION_FAILED') {
+          throw err;
+        }
+        if (signal?.aborted) {
+          throw new TMDBError('Request aborted by caller', 'NETWORK_ERROR');
+        }
+        this.directTMDBFailed = true; // Mark direct route failed to activate proxy
+        lastError =
+          err instanceof TMDBError
+            ? err
+            : new TMDBError(err?.message || 'Network request failed', 'NETWORK_ERROR');
+
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, attempt * 400));
+        }
+      }
+    }
+
+    // Stage 2: Fallback to /api/tmdb serverless proxy (bypasses regional ISP blocks)
     if (typeof window !== 'undefined') {
       try {
         const proxyParams = new URLSearchParams(params);
@@ -132,33 +298,134 @@ export class TMDBService {
         const proxyUrl = `/api/tmdb?${proxyParams.toString()}`;
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const proxyHeaders: Record<string, string> = { Accept: 'application/json' };
+        if (auth.value) proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
 
-        const proxyRes = await fetch(proxyUrl, { signal: controller.signal });
+        const proxyRes = await fetch(proxyUrl, { headers: proxyHeaders, signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (proxyRes.ok) {
           const data = await proxyRes.json();
-          MEMORY_CACHE.set(cacheKey, { data, timestamp: Date.now() });
           return data as T;
         }
-      } catch (proxyErr: any) {
-        // Proxy failed or not on Vercel deployment
+      } catch {
+        // Fallback failed
       }
     }
 
-    // Stage 3: Return memory cache if available
-    if (cached) {
-      return cached.data as T;
-    }
-
-    throw lastError || new Error('TMDB_UNREACHABLE: Unable to reach movie archive.');
+    throw lastError || new TMDBError('TMDB service unreachable', 'NETWORK_ERROR');
   }
 
   /**
-   * Search movies by title and optional year
+   * Request with memory cache + IndexedDB cache + request deduplication (Sections 8, 9, 10)
    */
-  static async search(query: string, year?: number, page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+  static async fetchWithCache<T>(
+    endpoint: string,
+    params: Record<string, string> = {},
+    options?: { signal?: AbortSignal; ttl?: number }
+  ): Promise<T> {
+    const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`;
+    const ttlMs = options?.ttl || this.getTTLForEndpoint(endpoint);
+
+    // 1. Check in-memory cache
+    const memCached = MEMORY_CACHE.get(cacheKey);
+    if (memCached && Date.now() - memCached.timestamp < memCached.ttlMs) {
+      return memCached.data as T;
+    }
+
+    // 2. Check in-flight request deduplication (Section 8)
+    if (IN_FLIGHT_REQUESTS.has(cacheKey)) {
+      return IN_FLIGHT_REQUESTS.get(cacheKey)! as Promise<T>;
+    }
+
+    // 3. Check persistent IndexedDB cache (Section 10)
+    const idbCached = await this.getFromIDBCache(cacheKey);
+    if (idbCached && Date.now() - idbCached.timestamp < idbCached.ttlMs) {
+      // Re-populate memory cache
+      MEMORY_CACHE.set(cacheKey, {
+        data: idbCached.data,
+        timestamp: idbCached.timestamp,
+        ttlMs: idbCached.ttlMs,
+      });
+      return idbCached.data as T;
+    }
+
+    // 4. Dispatch through concurrency queue and deduplicate
+    const fetchPromise = REQUEST_QUEUE.run(async () => {
+      try {
+        const freshData = await this.executeNetworkFetch<T>(endpoint, params, options?.signal);
+        // Save to memory cache
+        MEMORY_CACHE.set(cacheKey, { data: freshData, timestamp: Date.now(), ttlMs });
+        // Save to IndexedDB cache
+        this.saveToIDBCache(cacheKey, freshData, ttlMs);
+        return freshData;
+      } finally {
+        IN_FLIGHT_REQUESTS.delete(cacheKey);
+      }
+    });
+
+    IN_FLIGHT_REQUESTS.set(cacheKey, fetchPromise);
+    return fetchPromise;
+  }
+
+  /**
+   * Stale-While-Revalidate pattern (Section 7 & 11)
+   * Returns cached data immediately if available, then triggers background refresh.
+   */
+  static async fetchWithSWR<T>(
+    endpoint: string,
+    params: Record<string, string> = {},
+    onRevalidate?: (fresh: T) => void,
+    options?: { signal?: AbortSignal; ttl?: number }
+  ): Promise<SWRResult<T>> {
+    const cacheKey = `${endpoint}?${new URLSearchParams(params).toString()}`;
+    const ttlMs = options?.ttl || this.getTTLForEndpoint(endpoint);
+
+    // Check memory first
+    const memCached = MEMORY_CACHE.get(cacheKey);
+    if (memCached) {
+      const isStale = Date.now() - memCached.timestamp >= memCached.ttlMs;
+      if (isStale && onRevalidate) {
+        // Trigger background revalidation without blocking caller
+        this.fetchWithCache<T>(endpoint, params, { signal: options?.signal, ttl: ttlMs })
+          .then((fresh) => onRevalidate(fresh))
+          .catch(() => {});
+      }
+      return { data: memCached.data as T, isStale, fromCache: true };
+    }
+
+    // Check IndexedDB
+    const idbCached = await this.getFromIDBCache(cacheKey);
+    if (idbCached) {
+      const isStale = Date.now() - idbCached.timestamp >= idbCached.ttlMs;
+      MEMORY_CACHE.set(cacheKey, {
+        data: idbCached.data,
+        timestamp: idbCached.timestamp,
+        ttlMs: idbCached.ttlMs,
+      });
+      if (isStale && onRevalidate) {
+        this.fetchWithCache<T>(endpoint, params, { signal: options?.signal, ttl: ttlMs })
+          .then((fresh) => onRevalidate(fresh))
+          .catch(() => {});
+      }
+      return { data: idbCached.data as T, isStale, fromCache: true };
+    }
+
+    // No cache: await fresh network fetch
+    const freshData = await this.fetchWithCache<T>(endpoint, params, options);
+    return { data: freshData, isStale: false, fromCache: false };
+  }
+
+  /**
+   * Search movies by title and optional year with AbortSignal support (Section 12 & 13)
+   */
+  static async search(
+    query: string,
+    year?: number,
+    page: number = 1,
+    signal?: AbortSignal
+  ): Promise<{ results: Movie[]; totalPages: number }> {
     if (!query.trim()) return { results: [], totalPages: 0 };
     const params: Record<string, string> = {
       query: query.trim(),
@@ -168,11 +435,15 @@ export class TMDBService {
     if (year) params.year = year.toString();
 
     try {
-      const data = await this.fetchWithCache<any>('/search/movie', params);
-      const results = (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+      const data = await this.fetchWithCache<any>('/search/movie', params, { signal });
+      const rawResults = data.results || [];
+      const results = rawResults.map((raw: any) => this.mapRawToMovie(raw));
       return { results, totalPages: data.total_pages || 1 };
-    } catch (err) {
-      console.warn('Search falling back to local vault:', err);
+    } catch (err: any) {
+      if (err instanceof TMDBError && err.code === 'NETWORK_ERROR' && err.message.includes('aborted')) {
+        throw err;
+      }
+      // Check local vault if offline
       const allLocal = await MovieRepository.getAll();
       const lower = query.toLowerCase();
       const localMatches = allLocal.filter((m) => m.title.toLowerCase().includes(lower));
@@ -242,14 +513,20 @@ export class TMDBService {
   }
 
   /**
-   * Get trending movies
+   * Get trending movies with SWR support
    */
-  static async getTrending(timeWindow: 'day' | 'week' = 'week'): Promise<Movie[]> {
+  static async getTrending(
+    timeWindow: 'day' | 'week' = 'week',
+    onRevalidate?: (movies: Movie[]) => void
+  ): Promise<Movie[]> {
     try {
-      const data = await this.fetchWithCache<any>(`/trending/movie/${timeWindow}`);
-      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
-    } catch (err) {
-      console.warn('Trending fetch failed, using fallback vault:', err);
+      const res = await this.fetchWithSWR<any>(
+        `/trending/movie/${timeWindow}`,
+        {},
+        onRevalidate ? (fresh) => onRevalidate((fresh.results || []).map((r: any) => this.mapRawToMovie(r))) : undefined
+      );
+      return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+    } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
       return CURATED_LANDMARKS.slice(0, 16);
@@ -257,14 +534,17 @@ export class TMDBService {
   }
 
   /**
-   * Get popular movies
+   * Get popular movies with SWR support
    */
-  static async getPopular(page: number = 1): Promise<Movie[]> {
+  static async getPopular(page: number = 1, onRevalidate?: (movies: Movie[]) => void): Promise<Movie[]> {
     try {
-      const data = await this.fetchWithCache<any>('/movie/popular', { page: page.toString() });
-      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
-    } catch (err) {
-      console.warn('Popular fetch failed, using fallback vault:', err);
+      const res = await this.fetchWithSWR<any>(
+        '/movie/popular',
+        { page: page.toString() },
+        onRevalidate ? (fresh) => onRevalidate((fresh.results || []).map((r: any) => this.mapRawToMovie(r))) : undefined
+      );
+      return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+    } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
       return CURATED_LANDMARKS.slice(8, 24);
@@ -360,7 +640,7 @@ export class TMDBService {
   }
 
   /**
-   * Helper to map TMDB JSON to canonical Movie entity
+   * Canonical Movie Model Mapper (Section 5)
    */
   private static mapRawToMovie(raw: any): Movie {
     const credits = raw.credits
@@ -369,14 +649,14 @@ export class TMDBService {
             id: c.id,
             name: c.name,
             character: c.character,
-            profilePath: c.profile_path,
+            profilePath: c.profile_path || null,
           })),
           crew: (raw.credits.crew || []).slice(0, 15).map((c: any) => ({
             id: c.id,
             name: c.name,
             job: c.job,
             department: c.department,
-            profilePath: c.profile_path,
+            profilePath: c.profile_path || null,
           })),
         }
       : undefined;
@@ -384,31 +664,30 @@ export class TMDBService {
     return {
       id: raw.id,
       title: raw.title || raw.name || 'Untitled',
-      originalTitle: raw.original_title,
+      originalTitle: raw.original_title || undefined,
       overview: raw.overview || '',
-      releaseDate: raw.release_date,
-      runtime: raw.runtime ?? null,
-      posterPath: raw.poster_path,
-      backdropPath: raw.backdrop_path,
+      releaseDate: raw.release_date || undefined,
+      runtime: typeof raw.runtime === 'number' ? raw.runtime : null,
+      posterPath: raw.poster_path || null,
+      backdropPath: raw.backdrop_path || null,
       voteAverage: typeof raw.vote_average === 'number' ? Math.round(raw.vote_average * 10) / 10 : 0,
-      voteCount: raw.vote_count,
+      voteCount: typeof raw.vote_count === 'number' ? raw.vote_count : 0,
       genres: raw.genres || (raw.genre_ids ? raw.genre_ids.map((id: number) => ({ id, name: '' })) : []),
       credits,
-      status: raw.status,
-      tagline: raw.tagline,
-      budget: raw.budget,
-      revenue: raw.revenue,
+      status: raw.status || undefined,
+      tagline: raw.tagline || undefined,
+      budget: raw.budget || undefined,
+      revenue: raw.revenue || undefined,
       lastFetched: new Date().toISOString(),
     };
   }
 
   /**
-   * Construct absolute, clean, and normalized TMDB Poster URL.
-   * Returns null if path is invalid or missing.
+   * Centralized Poster Image URL utility (Section 6 & 18)
    */
   static getPosterUrl(
     path?: string | null,
-    size: 'w92' | 'w185' | 'w342' | 'w500' | 'original' = 'w500'
+    size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780' | 'original' = 'w342'
   ): string | null {
     if (!path || typeof path !== 'string') return null;
     const trimmed = path.trim();
@@ -420,12 +699,11 @@ export class TMDBService {
   }
 
   /**
-   * Construct absolute, clean, and normalized TMDB Backdrop URL.
-   * Returns null if path is invalid or missing.
+   * Centralized Backdrop Image URL utility (Section 6 & 18)
    */
   static getBackdropUrl(
     path?: string | null,
-    size: 'w780' | 'w1280' | 'original' = 'w1280'
+    size: 'w300' | 'w780' | 'w1280' | 'original' = 'w1280'
   ): string | null {
     if (!path || typeof path !== 'string') return null;
     const trimmed = path.trim();
@@ -434,21 +712,38 @@ export class TMDBService {
 
     const clean = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return `https://image.tmdb.org/t/p/${size}${clean}`;
+  }
+
+  /**
+   * Centralized General Image URL helper (Section 6)
+   */
+  static getTMDBImageUrl(
+    path?: string | null,
+    size: 'w92' | 'w154' | 'w185' | 'w300' | 'w342' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'
+  ): string | null {
+    if (!path) return null;
+    if (size === 'w1280' || size === 'w300') {
+      return this.getBackdropUrl(path, size as any);
+    }
+    return this.getPosterUrl(path, size as any);
   }
 
   static getImageUrl(
     path?: string | null,
     size: 'w92' | 'w185' | 'w342' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'
   ): string {
-    return this.getPosterUrl(path, size as any) || '';
+    return this.getTMDBImageUrl(path, size as any) || '';
   }
 }
 
 export const tmdbService = {
-  searchMovies: (query: string, year?: number) => TMDBService.search(query, year),
+  searchMovies: (query: string, year?: number, page?: number, signal?: AbortSignal) =>
+    TMDBService.search(query, year, page, signal),
   getMovieDetails: (id: number) => TMDBService.getById(id),
-  getTrending: (window: 'day' | 'week' = 'week') => TMDBService.getTrending(window),
-  getPopular: (page: number = 1) => TMDBService.getPopular(page),
+  getTrending: (window: 'day' | 'week' = 'week', onRevalidate?: (movies: Movie[]) => void) =>
+    TMDBService.getTrending(window, onRevalidate),
+  getPopular: (page: number = 1, onRevalidate?: (movies: Movie[]) => void) =>
+    TMDBService.getPopular(page, onRevalidate),
   getSimilar: (id: number) => TMDBService.getSimilar(id),
   getCredits: (id: number) => TMDBService.getCredits(id),
   getGenres: () => TMDBService.getGenres(),
@@ -457,6 +752,7 @@ export const tmdbService = {
       genreIds: params.with_genres ? params.with_genres.split(',').map((g) => parseInt(g, 10)) : undefined,
       sortBy: params.sort_by,
     }),
+  getTMDBImageUrl: (path?: string | null, size?: any) => TMDBService.getTMDBImageUrl(path, size),
   getImageUrl: (path?: string | null, size?: any) => TMDBService.getImageUrl(path, size),
   getPosterUrl: (path?: string | null, size?: any) => TMDBService.getPosterUrl(path, size),
   getBackdropUrl: (path?: string | null, size?: any) => TMDBService.getBackdropUrl(path, size),

@@ -111,12 +111,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     );
   }
 
-  const backdropUrl = movie.backdropPath
-    ? tmdbService.getImageUrl(movie.backdropPath, 'original')
-    : null;
-  const posterUrl = movie.posterPath
-    ? tmdbService.getImageUrl(movie.posterPath, 'w500')
-    : null;
+  const backdropUrl = tmdbService.getBackdropUrl(movie.backdropPath, 'w1280');
+  const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
 
@@ -199,6 +195,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           <img
             src={backdropUrl}
             alt=""
+            loading="eager"
+            decoding="async"
             className="w-full h-full object-cover object-center filter brightness-[0.72] contrast-[1.08]"
           />
         )}
@@ -213,7 +211,13 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           {/* Overlapping Poster Artwork with Ambient Halo */}
           <div className="w-44 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden bg-[#171924] shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/10 flex-shrink-0">
             {posterUrl ? (
-              <img src={posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+              <img
+                src={posterUrl}
+                alt={movie.title}
+                loading="eager"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-[#5C5B64]">
                 No Poster

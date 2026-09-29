@@ -32,10 +32,12 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
     else openMovieDetail(movie.id);
   };
 
-  const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w342');
+  const tmdbSize = size === 'sm' ? 'w185' : size === 'lg' ? 'w500' : 'w342';
+  const posterUrl = tmdbService.getPosterUrl(movie.posterPath, tmdbSize);
 
-  // Verify cached image status on mount for Safari / PWA
+  // Reset state and verify cached image status on mount for Safari / PWA
   useEffect(() => {
+    setImageError(false);
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
       setImageLoaded(true);
     }
@@ -75,6 +77,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
             src={posterUrl}
             alt={movie.title}
             loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
             className={`w-full h-full object-cover transition-all duration-400 group-hover:scale-105 group-hover:brightness-105 ${

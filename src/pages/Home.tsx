@@ -118,7 +118,7 @@ export const Home: React.FC = () => {
         });
         const hours = Math.round((minutes / 60) * 10) / 10;
 
-        // Choose Hero: first watching movie, or first watchlist item, or latest trending
+        // Choose Hero: first watching movie, or first watchlist item, or first library item
         let chosenHero: MovieWithUserData | null = null;
         if (watchingList.length > 0) {
           chosenHero = watchingList[0];
@@ -126,17 +126,9 @@ export const Home: React.FC = () => {
           chosenHero = watchListItems[0];
         } else if (allLibrary.length > 0) {
           chosenHero = allLibrary[0];
-        } else {
-          // If library is brand new, fetch a trending movie for hero
-          const trending = await tmdbService.getTrending('week');
-          if (trending.length > 0) {
-            chosenHero = { movie: trending[0] };
-          }
         }
 
-        // Fetch recommendations / trending for recommendations rail
-        const trendingList = await tmdbService.getTrending('week');
-
+        // Render local state immediately (Section 21: TMDB must NOT block local sections)
         if (isMounted) {
           setHeroMovie(chosenHero);
           setContinueWatching(watchingList);
@@ -144,18 +136,32 @@ export const Home: React.FC = () => {
           setRecentlyWatched(watchedListItems);
           setCollections(allCollections);
           setActiveJourney(foundJourney);
-          setRecommendations(trendingList.slice(0, 10));
           setStats({
             totalWatched: watchedListItems.length,
             totalHours: hours,
             streak: watchedListItems.length > 0 ? 1 : 0,
           });
 
-          // Dynamic Ambient Atmosphere (Layer 1)
           if (chosenHero?.movie.backdropPath) {
             setAmbientColor('rgba(237, 194, 87, 0.12)');
           }
         }
+
+        // Load TMDB-dependent recommendations independently in background (Non-blocking)
+        tmdbService.getTrending('week').then((trendingList) => {
+          if (!isMounted) return;
+          setRecommendations(trendingList.slice(0, 10));
+
+          // If library was empty, use trending for hero
+          if (!chosenHero && trendingList.length > 0) {
+            setHeroMovie({ movie: trendingList[0] });
+            if (trendingList[0].backdropPath) {
+              setAmbientColor('rgba(237, 194, 87, 0.12)');
+            }
+          }
+        }).catch((err) => {
+          console.warn('Home recommendations background fetch error:', err);
+        });
       } catch (err) {
         console.error('Failed to load home data:', err);
       }

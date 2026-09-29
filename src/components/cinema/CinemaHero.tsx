@@ -35,9 +35,9 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
 
   const { movie, userData } = movieWithData;
   const backdropUrl = movie.backdropPath
-    ? tmdbService.getImageUrl(movie.backdropPath, 'original')
+    ? tmdbService.getBackdropUrl(movie.backdropPath, 'w1280')
     : movie.posterPath
-    ? tmdbService.getImageUrl(movie.posterPath, 'w780')
+    ? tmdbService.getPosterUrl(movie.posterPath, 'w780')
     : null;
 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
@@ -55,6 +55,7 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
             alt=""
             className="w-full h-full object-cover object-center filter brightness-[0.75] contrast-[1.08] transform scale-100 group-hover:scale-[1.02] transition-transform duration-1000 ease-out"
             loading="eager"
+            decoding="async"
           />
         </div>
       )}

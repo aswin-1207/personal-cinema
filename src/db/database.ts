@@ -3,6 +3,13 @@ import { Movie, UserMovie, MovieNight } from '../types/movie';
 import { Collection, CollectionMovie } from '../types/collection';
 import { Achievement } from '../types/backup';
 
+export interface TMDBCacheEntry {
+  key: string;
+  data: any;
+  timestamp: number;
+  ttlMs: number;
+}
+
 export interface PersonalCinemaDBSchema extends DBSchema {
   movies: {
     key: number;
@@ -46,10 +53,15 @@ export interface PersonalCinemaDBSchema extends DBSchema {
     key: string;
     value: Achievement;
   };
+  tmdbCache: {
+    key: string;
+    value: TMDBCacheEntry;
+    indexes: { 'by-timestamp': number };
+  };
 }
 
 const DB_NAME = 'personal-cinema-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<PersonalCinemaDBSchema>> | null = null;
 
@@ -102,6 +114,12 @@ export function getDB(): Promise<IDBPDatabase<PersonalCinemaDBSchema>> {
         if (!db.objectStoreNames.contains('achievements')) {
           db.createObjectStore('achievements', { keyPath: 'id' });
         }
+
+        // TMDB Persistent Cache Store (Decoupled from Personal Data)
+        if (!db.objectStoreNames.contains('tmdbCache')) {
+          const cacheStore = db.createObjectStore('tmdbCache', { keyPath: 'key' });
+          cacheStore.createIndex('by-timestamp', 'timestamp');
+        }
       },
     });
   }
@@ -122,5 +140,12 @@ export async function clearAllLocalData(): Promise<void> {
     tx.objectStore('movieNights').clear(),
     tx.objectStore('achievements').clear(),
   ]);
+  await tx.done;
+}
+
+export async function clearTMDBCache(): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction('tmdbCache', 'readwrite');
+  await tx.objectStore('tmdbCache').clear();
   await tx.done;
 }

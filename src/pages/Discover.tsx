@@ -57,60 +57,101 @@ export const Discover: React.FC = () => {
     });
   }, [dataVersion]);
 
-  // Load discovery data (Trending, Popular, Genres)
+  // Load discovery data (Trending, Popular, Genres) with SWR (Section 7 & 11)
   const loadDiscoveryData = async () => {
     setFetchError(null);
     setIsLoadingTrending(true);
     setIsLoadingPopular(true);
 
-    try {
-      const [genreList, trendingList, popularList] = await Promise.all([
-        tmdbService.getGenres().catch(() => []),
-        tmdbService.getTrending(trendingTime).catch(() => []),
-        tmdbService.getPopular(1).catch(() => []),
-      ]);
+    // Fetch genres
+    tmdbService.getGenres().then(setGenres).catch(() => {});
 
-      setGenres(genreList);
-      setTrendingMovies(Array.isArray(trendingList) ? trendingList : []);
-      setPopularMovies(Array.isArray(popularList) ? popularList : []);
-    } catch (err: any) {
-      console.error('Failed to load discovery data:', err);
-      setFetchError('Unable to sync latest cinema feeds. Showing curated vault.');
-    } finally {
-      setIsLoadingTrending(false);
-      setIsLoadingPopular(false);
-    }
+    // SWR Trending
+    tmdbService
+      .getTrending(trendingTime, (fresh) => {
+        setTrendingMovies(fresh);
+        setIsLoadingTrending(false);
+      })
+      .then((cachedOrFresh) => {
+        setTrendingMovies(cachedOrFresh);
+        setIsLoadingTrending(false);
+      })
+      .catch((err: any) => {
+        console.warn('Trending fetch error:', err);
+        setFetchError('Unable to sync live TMDB feeds. Showing cached vault.');
+        setIsLoadingTrending(false);
+      });
+
+    // SWR Popular
+    tmdbService
+      .getPopular(1, (fresh) => {
+        setPopularMovies(fresh);
+        setIsLoadingPopular(false);
+      })
+      .then((cachedOrFresh) => {
+        setPopularMovies(cachedOrFresh);
+        setIsLoadingPopular(false);
+      })
+      .catch(() => {
+        setIsLoadingPopular(false);
+      });
   };
 
   useEffect(() => {
     loadDiscoveryData();
   }, [trendingTime, isOnline]);
 
-  // Perform search or genre discover
+  // Perform search or genre discover with AbortController (Section 12 & 13)
   useEffect(() => {
+    const controller = new AbortController();
+
     if (debouncedQuery) {
       setIsSearching(true);
       tmdbService
-        .searchMovies(debouncedQuery)
+        .searchMovies(debouncedQuery, undefined, 1, controller.signal)
         .then((res) => {
-          setSearchResults(res.results || []);
+          if (!controller.signal.aborted) {
+            setSearchResults(res.results || []);
+          }
         })
-        .catch(() => setSearchResults([]))
-        .finally(() => setIsSearching(false));
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setSearchResults([]);
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setIsSearching(false);
+          }
+        });
     } else if (selectedGenreId) {
       setIsSearching(true);
       tmdbService
         .discoverMovies({ with_genres: String(selectedGenreId), sort_by: 'popularity.desc' })
         .then((res: any) => {
-          // discoverMovies returns Movie[] directly
-          const list = Array.isArray(res) ? res : res.results || [];
-          setSearchResults(list);
+          if (!controller.signal.aborted) {
+            const list = Array.isArray(res) ? res : res.results || [];
+            setSearchResults(list);
+          }
         })
-        .catch(() => setSearchResults([]))
-        .finally(() => setIsSearching(false));
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setSearchResults([]);
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setIsSearching(false);
+          }
+        });
     } else {
       setSearchResults([]);
+      setIsSearching(false);
     }
+
+    return () => {
+      controller.abort();
+    };
   }, [debouncedQuery, selectedGenreId]);
 
   const handleSelectMood = (genreId: number) => {

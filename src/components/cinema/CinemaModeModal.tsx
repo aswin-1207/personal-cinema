@@ -19,12 +19,8 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
   const { preferences, updatePreference } = useCinema();
   const [controlsVisible, setControlsVisible] = useState(true);
 
-  const backdropUrl = movie.backdropPath
-    ? tmdbService.getImageUrl(movie.backdropPath, 'original')
-    : null;
-  const posterUrl = movie.posterPath
-    ? tmdbService.getImageUrl(movie.posterPath, 'w500')
-    : null;
+  const backdropUrl = tmdbService.getBackdropUrl(movie.backdropPath, 'w1280');
+  const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
 

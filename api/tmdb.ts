@@ -25,8 +25,10 @@ export default async function handler(req: IncomingMessage & { query?: Record<st
       return;
     }
 
-    // Determine TMDB API Key from environment or verified fallback
+    // Determine TMDB API Key from client header, environment, or verified fallback
+    const clientAuth = (req.headers.authorization || '').trim();
     const apiKey =
+      (clientAuth.startsWith('Bearer ') ? clientAuth.slice(7).trim() : '') ||
       process.env.VITE_TMDB_API_KEY ||
       process.env.TMDB_API_KEY ||
       process.env.VITE_TMDB_ACCESS_TOKEN ||
