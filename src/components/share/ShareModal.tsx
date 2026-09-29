@@ -15,9 +15,9 @@ interface ShareModalProps {
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, userData }) => {
   const [style, setStyle] = useState<ShareCardStyle>('poster');
-  const [includeStatus, setIncludeStatus] = useState<boolean>(true);
-  const [includeRating, setIncludeRating] = useState<boolean>(true);
-  const [includeReview, setIncludeReview] = useState<boolean>(true);
+  const [includeStatus, setIncludeStatus] = useState<boolean>(false);
+  const [includeRating, setIncludeRating] = useState<boolean>(false);
+  const [includeReview, setIncludeReview] = useState<boolean>(false);
 
   const [shareUrl, setShareUrl] = useState<string>('');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');

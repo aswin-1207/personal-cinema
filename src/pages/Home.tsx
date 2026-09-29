@@ -15,8 +15,6 @@ import { CinemaButton } from '../components/common/CinemaButton';
 import {
   Sparkles,
   Film,
-  Clock,
-  Flame,
   ChevronRight,
   TrendingUp,
   Play,
@@ -43,11 +41,7 @@ export const Home: React.FC = () => {
     nextMovie: MovieWithUserData;
   } | null>(null);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
-  const [stats, setStats] = useState<{ totalWatched: number; totalHours: number; streak: number }>({
-    totalWatched: 0,
-    totalHours: 0,
-    streak: 0,
-  });
+
 
   // Cinema Mode Modal state
   const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
@@ -111,12 +105,7 @@ export const Home: React.FC = () => {
           }
         }
 
-        // Calculate hours and streak
-        let minutes = 0;
-        watchedListItems.forEach((item) => {
-          minutes += item.movie.runtime || 110;
-        });
-        const hours = Math.round((minutes / 60) * 10) / 10;
+
 
         // Choose Hero: first watching movie, or first watchlist item, or first library item
         let chosenHero: MovieWithUserData | null = null;
@@ -136,11 +125,7 @@ export const Home: React.FC = () => {
           setRecentlyWatched(watchedListItems);
           setCollections(allCollections);
           setActiveJourney(foundJourney);
-          setStats({
-            totalWatched: watchedListItems.length,
-            totalHours: hours,
-            streak: watchedListItems.length > 0 ? 1 : 0,
-          });
+
 
           if (chosenHero?.movie.backdropPath) {
             setAmbientColor('rgba(237, 194, 87, 0.12)');
@@ -291,44 +276,7 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-      {/* Stats Quick Strip */}
-      <div className="grid grid-cols-3 gap-3 bg-[#171924]/60 border border-white/[0.06] rounded-2xl p-4">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
-            <Film size={18} />
-          </div>
-          <div>
-            <div className="text-[11px] text-[#9E9DA5]">Watched</div>
-            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
-              {stats.totalWatched} {stats.totalWatched === 1 ? 'Film' : 'Films'}
-            </div>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3 px-2 border-x border-white/[0.06]">
-          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
-            <Clock size={18} />
-          </div>
-          <div>
-            <div className="text-[11px] text-[#9E9DA5]">Screen Time</div>
-            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
-              {stats.totalHours} hrs
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EDC257]/10 border border-[#EDC257]/20 flex items-center justify-center text-[#EDC257]">
-            <Flame size={18} />
-          </div>
-          <div>
-            <div className="text-[11px] text-[#9E9DA5]">Curated Sagas</div>
-            <div className="font-bold text-[#F5F2F0] text-sm sm:text-base">
-              {collections.length}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Intentional Cinema Onboarding Card (Section 16) */}
       {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (

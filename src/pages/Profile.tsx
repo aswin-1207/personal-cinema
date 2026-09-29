@@ -128,7 +128,7 @@ export const Profile: React.FC = () => {
           MY CINEMA
         </span>
         <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F2F0] tracking-tight mt-0.5">
-          {preferences.displayName || 'Aswin'}'s Cinema
+          {preferences.displayName ? `${preferences.displayName}'s Cinema` : 'Personal Cinema'}
         </h1>
         <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
           Your personal movie archive and private screening vault.
@@ -369,7 +369,7 @@ export const Profile: React.FC = () => {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Aswin"
+              placeholder="e.g. Cinema Curator"
               className="cinema-input flex-1 text-sm"
             />
             <CinemaButton
