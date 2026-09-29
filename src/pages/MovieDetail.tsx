@@ -10,6 +10,7 @@ import { WatchedButton } from '../components/movie/WatchedButton';
 import { RatingControl } from '../components/movie/RatingControl';
 import { ShareModal } from '../components/share/ShareModal';
 import { MovieCard } from '../components/movie/MovieCard';
+import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import {
   ArrowLeft,
   Share2,
@@ -20,6 +21,7 @@ import {
   Plus,
   Trash2,
   FolderPlus,
+  Play,
 } from 'lucide-react';
 
 interface MovieDetailProps {
@@ -54,6 +56,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   // Modals
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isCollectionPickerOpen, setIsCollectionPickerOpen] = useState(false);
+  const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -259,6 +262,15 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
             {/* Primary Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                onClick={() => setIsCinemaModeOpen(true)}
+                className="cinema-button-primary px-4 py-3 flex items-center gap-2 text-xs font-semibold shadow-gold"
+                title="Enter Atmospheric Cinema Mode"
+              >
+                <Play size={15} className="fill-cinema-black" />
+                <span>Cinema Mode</span>
+              </button>
+
               <WatchedButton movie={movie} userData={userData || undefined} style="prominent" />
 
               <button
@@ -465,6 +477,15 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           onClose={() => setIsShareOpen(false)}
           movie={movie}
           userData={userData || undefined}
+        />
+      )}
+
+      {/* Atmospheric Cinema Mode Modal */}
+      {isCinemaModeOpen && (
+        <CinemaModeModal
+          movie={movie}
+          userData={userData || undefined}
+          onClose={() => setIsCinemaModeOpen(false)}
         />
       )}
     </div>

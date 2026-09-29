@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, BookOpen, Layers, User, LucideIcon } from 'lucide-react';
+import { Home, Compass, BookOpen, Calendar, User, LucideIcon } from 'lucide-react';
 import { useCinema, TabType } from '../../context/CinemaContext';
 
 export const Navbar: React.FC = () => {
@@ -16,7 +16,7 @@ export const Navbar: React.FC = () => {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'discover', label: 'Discover', icon: Compass },
     { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'collections', label: 'Collections', icon: Layers },
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'profile', label: 'My Cinema', icon: User },
   ];
 

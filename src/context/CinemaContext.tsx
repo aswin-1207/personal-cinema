@@ -9,7 +9,7 @@ import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
 
-export type TabType = 'home' | 'discover' | 'library' | 'collections' | 'profile';
+export type TabType = 'home' | 'discover' | 'library' | 'collections' | 'calendar' | 'profile';
 
 interface ToastState {
   id: string;

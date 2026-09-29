@@ -15,10 +15,12 @@ import {
   Search,
   ArrowUpDown,
   Film,
+  Layers,
 } from 'lucide-react';
 import { tmdbService } from '../services/tmdbService';
+import { CollectionsPage } from './CollectionsPage';
 
-type TabType = 'watchlist' | 'watched' | 'favorites' | 'all';
+type TabType = 'watchlist' | 'watched' | 'favorites' | 'collections' | 'all';
 type SortOption = 'addedAt' | 'releaseDate' | 'title' | 'personalRating' | 'tmdbRating';
 
 export const Library: React.FC = () => {
@@ -212,6 +214,18 @@ export const Library: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTabFilter('collections')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'collections'
+                ? 'bg-cinema-gold text-cinema-black shadow-gold'
+                : 'text-cinema-silver hover:text-cinema-white'
+            }`}
+          >
+            <Layers size={14} />
+            <span>Collections</span>
+          </button>
+
+          <button
             onClick={() => setActiveTabFilter('all')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'all'
@@ -249,19 +263,23 @@ export const Library: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Search */}
-        <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-cinema-subtle" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter library by title, notes..."
-            className="cinema-input w-full pl-9 py-2 text-xs"
-          />
-        </div>
+      {activeTab === 'collections' ? (
+        <CollectionsPage />
+      ) : (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-cinema-subtle" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter library by title, notes..."
+                className="cinema-input w-full pl-9 py-2 text-xs"
+              />
+            </div>
 
         {/* Genre Filter */}
         <select
@@ -401,6 +419,8 @@ export const Library: React.FC = () => {
           })}
         </div>
       )}
-    </div>
-  );
+    </>
+  )}
+</div>
+);
 };

@@ -15,6 +15,8 @@ import { CollectionDetail } from './pages/CollectionDetail';
 import { MovieDetail } from './pages/MovieDetail';
 import { Profile } from './pages/Profile';
 import { SharedMoviePage } from './pages/SharedMoviePage';
+import { CalendarPage } from './pages/CalendarPage';
+import { CinemaIsland } from './components/island/CinemaIsland';
 
 const AppContent: React.FC = () => {
   const {
@@ -45,6 +47,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cinema-black text-cinema-white flex flex-col md:flex-row relative antialiased selection:bg-cinema-gold selection:text-cinema-black">
+      {/* Signature Cinema Island */}
+      <CinemaIsland />
+
       {/* Offline Status Bar */}
       <OfflineIndicator />
 
@@ -64,6 +69,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'discover' && <Discover />}
             {activeTab === 'library' && <Library />}
             {activeTab === 'collections' && <CollectionsPage />}
+            {activeTab === 'calendar' && <CalendarPage />}
             {activeTab === 'profile' && <Profile />}
           </>
         )}
