@@ -454,8 +454,8 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                       : 'border-cinema-gold/30 bg-cinema-surface/70'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Thumbnail */}
                       <div className="w-10 h-14 bg-cinema-charcoal rounded overflow-hidden flex-shrink-0">
                         {movie?.posterPath ? (
@@ -472,27 +472,27 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                       </div>
 
                       {/* Info */}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-cinema-white text-sm">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-semibold text-cinema-white text-sm truncate">
                             {movie ? movie.title : candidate.row.detectedTitle}
                           </span>
                           {movie?.releaseDate && (
-                            <span className="text-xs text-cinema-subtle">
+                            <span className="text-xs text-cinema-subtle flex-shrink-0">
                               ({movie.releaseDate.substring(0, 4)})
                             </span>
                           )}
                           {candidate.status === 'duplicate' && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cinema-charcoal text-cinema-silver">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cinema-charcoal text-cinema-silver flex-shrink-0">
                               Duplicate
                             </span>
                           )}
                         </div>
 
-                        <div className="text-xs text-cinema-subtle flex items-center gap-2 mt-0.5">
-                          <span>Raw: "{candidate.row.rawText}"</span>
+                        <div className="text-xs text-cinema-subtle flex items-center gap-2 mt-0.5 min-w-0">
+                          <span className="truncate">Raw: "{candidate.row.rawText}"</span>
                           {candidate.row.detectedStatus && (
-                            <span className="text-cinema-gold">
+                            <span className="text-cinema-gold flex-shrink-0">
                               · Status: {candidate.row.detectedStatus}
                             </span>
                           )}
@@ -591,12 +591,12 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                           <div
                             key={res.id}
                             onClick={() => handleApplyOverride(originalIdx, res)}
-                            className="flex items-center justify-between p-1.5 rounded hover:bg-cinema-charcoal cursor-pointer text-xs"
+                            className="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-cinema-charcoal cursor-pointer text-xs min-w-0"
                           >
-                            <span className="text-cinema-white">
+                            <span className="text-cinema-white truncate min-w-0 flex-1">
                               {res.title} ({res.releaseDate?.substring(0, 4)})
                             </span>
-                            <span className="text-[10px] text-cinema-gold">Select</span>
+                            <span className="text-[10px] text-cinema-gold flex-shrink-0">Select</span>
                           </div>
                         ))}
                       </div>

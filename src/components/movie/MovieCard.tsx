@@ -157,24 +157,30 @@ export const MovieCard: React.FC<MovieCardProps> = ({
         )}
       </div>
 
-      {/* Title & Metadata */}
-      <div>
-        <h4
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: 'var(--cinema-white)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {movie.title}
-        </h4>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--cinema-subtle)' }}>
+      {/* Title & Metadata Container (Guaranteed Strict Containment) */}
+      <div className="w-full min-w-0 flex flex-col justify-between pt-1">
+        <div className="min-h-[2.35rem] flex items-start">
+          <h4
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--cinema-white)',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word',
+              lineHeight: 1.25,
+            }}
+            title={movie.title}
+          >
+            {movie.title}
+          </h4>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--cinema-subtle)', marginTop: 4 }}>
           {releaseYear && <span>{releaseYear}</span>}
           {movie.voteAverage > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--cinema-gold)' }}>
               • ★ {movie.voteAverage.toFixed(1)}
             </span>
           )}

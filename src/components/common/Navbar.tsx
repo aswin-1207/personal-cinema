@@ -49,18 +49,18 @@ export const CinemaDesktopNav: React.FC = () => {
         {/* Cinema Brand Mark */}
         <div className="flex items-center gap-3 px-3 py-3 mb-8">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-[#09090D] shadow-[0_4px_20px_rgba(237,194,87,0.35)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-[#09090B] shadow-[0_4px_20px_rgba(224,173,82,0.35)]"
             style={{
-              background: 'linear-gradient(135deg, #EDC257 0%, #D99C33 100%)',
+              background: 'linear-gradient(135deg, #E0AD52 0%, #D19830 100%)',
             }}
           >
             ▶
           </div>
           <div>
-            <div className="font-serif font-black text-[15px] tracking-[0.14em] text-[#F5F2F0] leading-none">
+            <div className="font-serif font-black text-[15px] tracking-[0.14em] text-[#F5F3EB] leading-none">
               PERSONAL
             </div>
-            <div className="text-[10px] tracking-[0.24em] text-[#EDC257] font-extrabold mt-1">
+            <div className="text-[10px] tracking-[0.24em] text-[#E0AD52] font-extrabold mt-1">
               CINEMA
             </div>
           </div>
@@ -78,17 +78,17 @@ export const CinemaDesktopNav: React.FC = () => {
                 onClick={() => handleTabClick(item.id)}
                 className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold text-left transition-all duration-200 border-none cursor-pointer group ${
                   isActive
-                    ? 'bg-[rgba(237,194,87,0.12)] text-[#EDC257] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-                    : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F2F0] hover:bg-white/[0.04]'
+                    ? 'bg-[rgba(224,173,82,0.12)] text-[#E0AD52] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                    : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.04]'
                 }`}
                 style={{
-                  borderLeft: isActive ? '3px solid #EDC257' : '3px solid transparent',
+                  borderLeft: isActive ? '3px solid #E0AD52' : '3px solid transparent',
                 }}
               >
                 <Icon
                   size={18}
                   className={`transition-transform duration-200 ${
-                    isActive ? 'text-[#EDC257] scale-110' : 'text-[#9E9DA5] group-hover:text-[#F5F2F0]'
+                    isActive ? 'text-[#E0AD52] scale-110' : 'text-[#9E9DA5] group-hover:text-[#F5F3EB]'
                   }`}
                 />
                 <span className="tracking-wide">{item.label}</span>
@@ -99,12 +99,12 @@ export const CinemaDesktopNav: React.FC = () => {
       </div>
 
       {/* Footer System Status */}
-      <div className="px-3 py-3 border-t border-white/[0.06] text-[11px] text-[#5C5B64] flex items-center justify-between">
+      <div className="px-3 py-3 border-t border-white/[0.06] text-[11px] text-[#63626B] flex items-center justify-between">
         <div>
           <div className="text-[#9E9DA5] font-semibold">Private Cinema</div>
           <div>Local-First Vault</div>
         </div>
-        <Sparkles size={14} className="text-[#EDC257]/60" />
+        <Sparkles size={14} className="text-[#E0AD52]/60" />
       </div>
     </aside>
   );
@@ -121,46 +121,48 @@ export const CinemaMobileNav: React.FC = () => {
   };
 
   return (
-    <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around"
-      style={{
-        height: 'calc(60px + env(safe-area-inset-bottom, 12px))',
-        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
-        backgroundColor: 'rgba(10, 11, 18, 0.92)',
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.6)',
-      }}
+    <div
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-3 pb-[calc(env(safe-area-inset-bottom,8px)+6px)] pointer-events-none"
     >
-      {MOBILE_NAV_ITEMS.map((item) => {
-        const Icon = item.icon;
-        const isActive = activeTab === item.id && !selectedMovieId && !selectedCollectionId;
+      <nav
+        className="pointer-events-auto max-w-lg mx-auto flex items-center justify-around px-2 py-1.5 rounded-2xl"
+        style={{
+          backgroundColor: 'rgba(19, 19, 25, 0.88)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+        }}
+      >
+        {MOBILE_NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id && !selectedMovieId && !selectedCollectionId;
 
-        return (
-          <button
-            key={item.id}
-            onClick={() => handleTabClick(item.id)}
-            className="flex flex-col items-center justify-center flex-1 py-1.5 bg-transparent border-none cursor-pointer transition-all duration-200"
-          >
-            <div
-              className={`p-1 rounded-xl transition-all duration-200 ${
-                isActive ? 'bg-[#EDC257]/15 text-[#EDC257] -translate-y-0.5' : 'text-[#8E8D94]'
-              }`}
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleTabClick(item.id)}
+              className="flex flex-col items-center justify-center flex-1 py-1 bg-transparent border-none cursor-pointer transition-all duration-200"
             >
-              <Icon size={19} />
-            </div>
-            <span
-              className={`text-[10px] tracking-wider mt-0.5 transition-colors ${
-                isActive ? 'font-bold text-[#EDC257]' : 'font-medium text-[#737177]'
-              }`}
-            >
-              {item.label}
-            </span>
-          </button>
-        );
-      })}
-    </nav>
+              <div
+                className={`p-1 rounded-xl transition-all duration-200 ${
+                  isActive ? 'bg-[#E0AD52]/15 text-[#E0AD52] -translate-y-0.5 shadow-[0_0_12px_rgba(224,173,82,0.25)]' : 'text-[#8E8D94]'
+                }`}
+              >
+                <Icon size={19} />
+              </div>
+              <span
+                className={`text-[10px] tracking-wider mt-0.5 transition-colors ${
+                  isActive ? 'font-bold text-[#E0AD52]' : 'font-medium text-[#737177]'
+                }`}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
   );
 };
 

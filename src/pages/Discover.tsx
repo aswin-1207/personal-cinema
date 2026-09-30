@@ -175,28 +175,28 @@ export const Discover: React.FC = () => {
       {/* Refined Header (Section 9) */}
       <div className="space-y-4">
         <div>
-          <span className="font-caps-label text-[#EDC257] tracking-widest text-[11px] block">
-            DISCOVER
+          <span className="font-caps-label text-[#8C7AD0] tracking-widest text-[11px] block">
+            DISCOVERY CONSOLE
           </span>
-          <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F2F0] tracking-tight mt-0.5">
+          <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight mt-0.5">
             Find your next film.
           </h1>
         </div>
 
-        {/* Unified Search Field (Section 10) */}
-        <div className="relative w-full max-w-2xl flex items-center bg-[#171924]/90 border border-white/10 focus-within:border-[#EDC257] rounded-2xl px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] focus-within:shadow-[0_0_24px_rgba(237,194,87,0.22)] transition-all duration-300">
-          <Search size={18} className="text-[#EDC257] flex-shrink-0 mr-3" />
+        {/* Unified Search Console (Section 10 & 17) */}
+        <div className="relative w-full max-w-2xl flex items-center bg-[#131319]/90 border border-white/10 focus-within:border-[#8C7AD0] rounded-2xl px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] focus-within:shadow-[0_0_24px_rgba(140,122,208,0.25)] transition-all duration-300">
+          <Search size={18} className="text-[#8C7AD0] flex-shrink-0 mr-3" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search movies, directors, actors..."
-            className="w-full bg-transparent border-none text-sm text-[#F5F2F0] placeholder-[#5C5B64] outline-none font-sans"
+            className="w-full bg-transparent border-none text-sm text-[#F5F3EB] placeholder-[#63626B] outline-none font-sans"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="p-1 text-[#9E9DA5] hover:text-[#F5F2F0] cursor-pointer border-none bg-transparent flex-shrink-0 ml-2"
+              className="p-1 text-[#9E9DA5] hover:text-[#F5F3EB] cursor-pointer border-none bg-transparent flex-shrink-0 ml-2"
               aria-label="Clear search"
             >
               <X size={16} />
@@ -205,17 +205,18 @@ export const Discover: React.FC = () => {
         </div>
       </div>
 
-      {/* Screening Moods (Section 11) */}
+      {/* Screening Moods with Cinema Purple Accents (Section 11) */}
       {!query && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
-              Screening Moods
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8C7AD0]" />
+              <span>Exploration Moods</span>
             </h3>
             {selectedGenreId && (
               <button
                 onClick={clearFilters}
-                className="text-xs text-[#EDC257] hover:underline cursor-pointer border-none bg-transparent"
+                className="text-xs text-[#E0AD52] hover:underline cursor-pointer border-none bg-transparent"
               >
                 Reset
               </button>
@@ -231,8 +232,8 @@ export const Discover: React.FC = () => {
                   onClick={() => handleSelectMood(mood.genreId)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] shadow-[0_2px_14px_rgba(237,194,87,0.35)] scale-[1.02] font-bold'
-                      : 'bg-[#171924]/80 text-[#F5F2F0] border-white/[0.08] hover:border-white/20 hover:bg-[#1E202E]'
+                      ? 'bg-[#8C7AD0] text-[#09090B] border-[#8C7AD0] shadow-[0_2px_14px_rgba(140,122,208,0.35)] scale-[1.02] font-bold'
+                      : 'bg-[#131319]/80 text-[#F5F3EB] border-white/[0.08] hover:border-[#8C7AD0]/40 hover:bg-[#1A1A24]'
                   }`}
                 >
                   {mood.label}
@@ -337,6 +338,7 @@ export const Discover: React.FC = () => {
                   key={movie.id}
                   movie={movie}
                   userData={userMovieMap.get(movie.id)}
+                  className="w-full"
                   onClick={() => openMovieDetail(movie.id)}
                 />
               ))}

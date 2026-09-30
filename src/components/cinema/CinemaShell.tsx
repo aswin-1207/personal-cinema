@@ -53,13 +53,13 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
   return (
     <CinemaShellContext.Provider value={{ ambientColor, setAmbientColor }}>
       {/* LAYER 0: Base Cinema Canvas */}
-      <div className="min-h-screen bg-[#09090D] text-[#F5F2F0] flex flex-col md:flex-row relative antialiased selection:bg-[#EDC257] selection:text-[#09090D] overflow-x-hidden">
+      <div className="min-h-[100dvh] bg-[#09090B] text-[#F5F3EB] flex flex-col md:flex-row relative antialiased selection:bg-[#E0AD52] selection:text-[#09090B] overflow-x-hidden">
         
-        {/* LAYER 1: Dynamic Ambient Glow (Atmosphere derived from active artwork) */}
+        {/* LAYER 1: Dynamic Ambient Glow (Atmosphere derived from active artwork with gold and purple undertones) */}
         <div
-          className="fixed top-0 left-0 right-0 h-[65vh] pointer-events-none z-0 transition-all duration-1000 ease-out opacity-70 blur-[100px]"
+          className="fixed top-0 left-0 right-0 h-[70vh] pointer-events-none z-0 transition-all duration-1000 ease-out opacity-80 blur-[100px]"
           style={{
-            background: `radial-gradient(circle at 50% 15%, ${ambientColor}, transparent 75%)`,
+            background: `radial-gradient(circle at 50% 12%, ${ambientColor}, transparent 72%), radial-gradient(circle at 85% 35%, rgba(140, 122, 208, 0.07), transparent 65%)`,
           }}
         />
 
@@ -73,8 +73,8 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <CinemaDesktopNav />
         <CinemaMobileNav />
 
-        {/* LAYER 4: Main Cinema Content Area */}
-        <main className="flex-1 min-w-0 md:ml-[240px] px-4 sm:px-8 py-5 md:py-8 max-w-7xl mx-auto w-full mb-20 md:mb-0 relative z-10">
+        {/* LAYER 4: Main Cinema Content Area with iPhone 15 Safe Area Compliance */}
+        <main className="flex-1 min-w-0 md:ml-[240px] px-4 sm:px-8 pt-[calc(env(safe-area-inset-top,0px)+16px)] pb-[calc(env(safe-area-inset-bottom,0px)+84px)] md:pt-6 md:pb-8 max-w-7xl mx-auto w-full relative z-10">
           {selectedCollectionId ? (
             renderCollectionDetail(selectedCollectionId)
           ) : (

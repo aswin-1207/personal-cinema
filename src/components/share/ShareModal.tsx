@@ -81,7 +81,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 )}
               </div>
               <div className="p-3 text-center">
-                <h4 className="font-serif font-bold text-sm text-cinema-white line-clamp-1">{movie.title}</h4>
+                <h4 className="font-serif font-bold text-sm text-cinema-white line-clamp-2 break-words" title={movie.title}>{movie.title}</h4>
                 <p className="text-[11px] text-cinema-subtle mt-0.5">{year} {movie.runtime ? `· ${movie.runtime}m` : ''}</p>
                 {includeRating && userData?.personalRating && (
                   <div className="flex items-center justify-center gap-1 mt-1 text-cinema-gold text-xs font-semibold">
@@ -90,7 +90,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   </div>
                 )}
                 {includeReview && userData?.review && (
-                  <p className="text-[10px] italic text-cinema-silver mt-1.5 line-clamp-2 bg-cinema-surface/50 p-1.5 rounded">
+                  <p className="text-[10px] italic text-cinema-silver mt-1.5 line-clamp-2 bg-cinema-surface/50 p-1.5 rounded break-words">
                     "{userData.review}"
                   </p>
                 )}
@@ -109,13 +109,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   <img src={backdropImg || posterImg} alt="" className="w-full h-full object-cover" />
                 ) : null}
                 <div className="absolute inset-0 bg-gradient-to-t from-cinema-surface via-cinema-surface/40 to-transparent" />
-                <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                  <div>
-                    <h4 className="font-serif font-bold text-base text-cinema-white drop-shadow-md">{movie.title}</h4>
+                <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-serif font-bold text-base text-cinema-white drop-shadow-md line-clamp-2 break-words" title={movie.title}>{movie.title}</h4>
                     <p className="text-xs text-cinema-silver drop-shadow">{year} {movie.runtime ? `· ${movie.runtime}m` : ''}</p>
                   </div>
                   {includeRating && userData?.personalRating && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-cinema-black/80 text-cinema-gold text-xs font-bold border border-cinema-gold/40">
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-cinema-black/80 text-cinema-gold text-xs font-bold border border-cinema-gold/40 flex-shrink-0">
                       <Star size={12} className="fill-cinema-gold" />
                       <span>{userData.personalRating.toFixed(1)}</span>
                     </div>
@@ -124,7 +124,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
               </div>
               <div className="p-3">
                 {includeReview && userData?.review && (
-                  <p className="text-xs italic text-cinema-silver line-clamp-2 mb-2">
+                  <p className="text-xs italic text-cinema-silver line-clamp-2 mb-2 break-words">
                     "{userData.review}"
                   </p>
                 )}
@@ -145,8 +145,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 <div className="w-12 h-16 rounded overflow-hidden flex-shrink-0 bg-cinema-black">
                   {posterImg && <img src={posterImg} alt="" className="w-full h-full object-cover" />}
                 </div>
-                <div>
-                  <h4 className="font-semibold text-cinema-white text-sm">{movie.title}</h4>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-cinema-white text-sm line-clamp-2 break-words" title={movie.title}>{movie.title}</h4>
                   <p className="text-xs text-cinema-subtle">{year} {movie.runtime ? `· ${movie.runtime}m` : ''}</p>
                   {includeRating && userData?.personalRating && (
                     <div className="flex items-center gap-1 text-cinema-gold text-xs mt-1">

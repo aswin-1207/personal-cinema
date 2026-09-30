@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Check, CheckCircle2, Circle } from 'lucide-react';
 import { Movie, UserMovie } from '../../types/movie';
 import { useCinema } from '../../context/CinemaContext';
 import { soundService } from '../../services/soundService';
@@ -24,6 +23,12 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const isWatched = userData?.status === 'watched';
+  const watchedDate = userData?.watchedAt
+    ? new Date(userData.watchedAt).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,8 +37,9 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
     setIsPressing(true);
     setIsMorphing(true);
 
-    setTimeout(() => setIsPressing(false), 180);
-    setTimeout(() => setIsMorphing(false), 650);
+    setTimeout(() => setIsPressing(false), 160);
+    // 750ms signature sequence (600-900ms requirement in Section 12)
+    setTimeout(() => setIsMorphing(false), 750);
 
     try {
       if (isWatched) {
@@ -50,62 +56,98 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
     }
   };
 
+  // 1. Icon Style (for cards, lists, rails)
   if (style === 'icon') {
     return (
       <button
         onClick={handleToggle}
-        title={isWatched ? 'Mark as Unwatched' : 'Mark as Watched'}
+        title={isWatched ? `Watched ${watchedDate ? `(${watchedDate})` : ''} — Click to unmark` : 'Mark as Watched'}
+        aria-label={isWatched ? 'Mark as Unwatched' : 'Mark as Watched'}
+        aria-pressed={isWatched}
         className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-out border ${
           isWatched
-            ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] shadow-[0_2px_12px_rgba(237,194,87,0.4)]'
-            : 'bg-[#181A24]/90 text-[#F5F2F0] border-white/10 hover:border-[#EDC257] hover:scale-105'
-        } ${isPressing ? 'scale-90' : isMorphing ? 'scale-110' : 'scale-100'} ${className}`}
+            ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] shadow-[0_2px_14px_rgba(224,173,82,0.45)]'
+            : 'bg-[#131319]/90 text-[#F5F3EB] border-white/10 hover:border-[#E0AD52] hover:scale-105'
+        } ${isPressing ? 'scale-90' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
       >
-        <Check
-          size={16}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
           strokeWidth={isWatched ? 3 : 2}
-          className={isMorphing ? 'animate-bounce' : ''}
-        />
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={isMorphing ? 'animate-check-draw' : ''}
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
       </button>
     );
   }
 
+  // 2. Pill Style (for headers, chips, modal bars)
   if (style === 'pill') {
     return (
       <button
         onClick={handleToggle}
-        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold cursor-pointer transition-all duration-300 ease-out border backdrop-blur-md ${
+        title={isWatched ? `Watched on ${watchedDate || 'archive'} — Click to undo` : 'Mark as Watched'}
+        aria-pressed={isWatched}
+        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition-all duration-300 ease-out border backdrop-blur-md ${
           isWatched
-            ? 'bg-[#EDC257]/15 text-[#EDC257] border-[#EDC257]/30 shadow-[0_0_12px_rgba(237,194,87,0.2)]'
-            : 'bg-white/[0.06] text-[#9E9DA5] border-white/10 hover:text-[#F5F2F0] hover:border-[#EDC257]/40 hover:bg-white/[0.1]'
-        } ${isPressing ? 'scale-95' : isMorphing ? 'scale-[1.03]' : 'scale-100'} ${className}`}
+            ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/40 shadow-[0_0_16px_rgba(224,173,82,0.25)]'
+            : 'bg-white/[0.06] text-[#9E9DA5] border-white/10 hover:text-[#F5F3EB] hover:border-[#E0AD52]/40 hover:bg-white/[0.1]'
+        } ${isPressing ? 'scale-95' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
       >
-        {isWatched ? (
-          <CheckCircle2 size={14} className="text-[#EDC257]" />
-        ) : (
-          <Circle size={14} className="text-[#5C5B64]" />
-        )}
-        <span>{isWatched ? '✓ Watched' : 'Mark as Watched'}</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={isMorphing ? 'animate-check-draw text-[#E0AD52]' : isWatched ? 'text-[#E0AD52]' : 'text-[#63626B]'}
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span>
+          {isWatched ? (watchedDate ? `✓ Watched · ${watchedDate}` : '✓ Watched') : 'Mark as Watched'}
+        </span>
       </button>
     );
   }
 
-  // Prominent CTA (Movie Detail & Hero)
+  // 3. Prominent CTA (Movie Detail & Hero primary action)
   return (
     <button
       onClick={handleToggle}
-      className={`h-[48px] px-6 rounded-xl font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 ease-out flex items-center justify-center gap-2 cursor-pointer border ${
+      aria-pressed={isWatched}
+      title={isWatched ? `Watched on ${watchedDate || 'vault'} — Click to unmark` : 'Mark as Watched'}
+      className={`h-[48px] px-6 rounded-xl font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 ease-out flex items-center justify-center gap-2.5 cursor-pointer border ${
         isWatched
-          ? 'bg-[rgba(237,194,87,0.12)] text-[#EDC257] border-[#EDC257]/40 shadow-[0_0_20px_rgba(237,194,87,0.2)]'
-          : 'bg-gradient-to-r from-[#EDC257] to-[#D99C33] text-[#09090D] border-transparent shadow-[0_4px_24px_rgba(237,194,87,0.35)] hover:shadow-[0_6px_28px_rgba(237,194,87,0.5)]'
-      } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'scale-[1.02]' : 'scale-100'} ${className}`}
+          ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/40 shadow-[0_0_24px_rgba(224,173,82,0.25)]'
+          : 'bg-gradient-to-r from-[#E0AD52] to-[#D19830] text-[#09090B] border-transparent shadow-[0_4px_24px_rgba(224,173,82,0.35)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.5)]'
+      } ${isPressing ? 'scale-95' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
     >
-      <Check
-        size={17}
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
         strokeWidth={3}
-        className={isMorphing ? 'animate-cinema-watched' : ''}
-      />
-      <span>{isWatched ? '✓ Watched' : 'Mark as Watched'}</span>
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={isMorphing ? 'animate-check-draw' : ''}
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      <span className="truncate">
+        {isWatched ? (watchedDate ? `✓ Watched (${watchedDate})` : '✓ Watched') : 'Mark as Watched'}
+      </span>
     </button>
   );
 };

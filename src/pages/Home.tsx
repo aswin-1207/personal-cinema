@@ -195,21 +195,21 @@ export const Home: React.FC = () => {
 
       {/* Continue Your Journey: Active Collection Feature (Section 86 & 87) */}
       {activeJourney && (
-        <section className="bg-gradient-to-r from-[#171924] to-[#10121A] border border-[#EDC257]/30 rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
+        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
-              <div className="flex items-center gap-2 text-[#EDC257] text-[11px] font-bold tracking-[0.16em] uppercase">
+              <div className="flex items-center gap-2 text-[#E0AD52] text-[11px] font-bold tracking-[0.16em] uppercase">
                 <TrendingUp size={14} />
                 <span>CONTINUE YOUR JOURNEY</span>
               </div>
-              <h2 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F2F0] mt-1">
+              <h2 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F3EB] mt-1 break-words">
                 {activeJourney.collection.name}
               </h2>
             </div>
 
             <button
               onClick={() => openCollectionDetail(activeJourney.collection.id)}
-              className="text-xs text-[#EDC257] hover:underline flex items-center gap-1 font-bold tracking-wide"
+              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-bold tracking-wide"
             >
               <span>View Full Saga</span>
               <ChevronRight size={14} />
@@ -222,19 +222,19 @@ export const Home: React.FC = () => {
               <span>
                 {activeJourney.progress.watched} of {activeJourney.progress.total} watched
               </span>
-              <span className="font-bold text-[#EDC257]">{activeJourney.progress.percent}%</span>
+              <span className="font-bold text-[#E0AD52]">{activeJourney.progress.percent}%</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-[#09090D] overflow-hidden border border-white/5">
+            <div className="w-full h-1.5 rounded-full bg-[#09090B] overflow-hidden border border-white/5">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#EDC257] to-[#D99C33] transition-all duration-700 ease-out shadow-[0_0_10px_rgba(237,194,87,0.3)]"
+                className="h-full rounded-full bg-gradient-to-r from-[#E0AD52] to-[#D19830] transition-all duration-700 ease-out shadow-[0_0_10px_rgba(224,173,82,0.35)]"
                 style={{ width: `${activeJourney.progress.percent}%` }}
               />
             </div>
           </div>
 
-          {/* Next Up in Saga Movie Card */}
-          <div className="flex items-center gap-4 bg-[#09090D]/60 border border-white/[0.08] rounded-2xl p-3.5 sm:p-5">
-            <div className="w-16 sm:w-20 aspect-[2/3] rounded-xl overflow-hidden bg-[#171924] flex-shrink-0 shadow-lg border border-[#EDC257]/20">
+          {/* Next Up in Saga Movie Card with Strict Boundary Containment */}
+          <div className="flex items-center gap-4 bg-[#09090B]/70 border border-white/[0.08] rounded-2xl p-3.5 sm:p-5">
+            <div className="w-16 sm:w-20 aspect-[2/3] rounded-xl overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
               {activeJourney.nextMovie.movie.posterPath ? (
                 <img
                   src={tmdbService.getImageUrl(activeJourney.nextMovie.movie.posterPath, 'w185')}
@@ -242,17 +242,20 @@ export const Home: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#5C5B64]">
+                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#63626B]">
                   No Poster
                 </div>
               )}
             </div>
 
-            <div className="flex-grow min-w-0">
-              <div className="text-[10px] text-[#EDC257] font-black uppercase tracking-widest">
+            <div className="flex-grow min-w-0 pr-2">
+              <div className="text-[10px] text-[#E0AD52] font-black uppercase tracking-widest">
                 NEXT UP IN SAGA
               </div>
-              <h3 className="font-serif font-bold text-base sm:text-lg text-[#F5F2F0] truncate mt-0.5">
+              <h3
+                className="font-serif font-bold text-base sm:text-lg text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
+                title={activeJourney.nextMovie.movie.title}
+              >
                 {activeJourney.nextMovie.movie.title}
               </h3>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
@@ -264,9 +267,9 @@ export const Home: React.FC = () => {
             <div className="flex items-center gap-2.5 flex-shrink-0">
               <button
                 onClick={() => openMovieDetail(activeJourney.nextMovie.movie.id)}
-                className="cinema-button-primary px-4 py-2.5 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(237,194,87,0.3)]"
+                className="cinema-button-primary px-4 py-2.5 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(224,173,82,0.3)]"
               >
-                <Play size={13} className="fill-[#09090D]" />
+                <Play size={13} className="fill-[#09090B]" />
                 <span>Screen Now</span>
               </button>
               <WatchedButton

@@ -232,35 +232,39 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           onAction={() => setIsAddOpen(true)}
         />
       ) : reorderMode ? (
-        /* Reorder Sequence Mode */
+        /* Reorder Sequence Mode with Strict Boundary Containment */
         <div className="space-y-2">
           {movies.map((item, index) => (
             <div
               key={item.movie.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-[#171924] border border-white/5"
+              className="flex items-center justify-between p-3 rounded-xl bg-[#131319] border border-white/5 gap-2"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-[#EDC257] w-6">{index + 1}.</span>
-                <span className="text-sm font-semibold text-[#F5F2F0]">{item.movie.title}</span>
+              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                <span className="text-xs font-mono text-[#E0AD52] w-6 flex-shrink-0">{index + 1}.</span>
+                <span className="text-sm font-semibold text-[#F5F3EB] line-clamp-1 break-words truncate" title={item.movie.title}>
+                  {item.movie.title}
+                </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={() => handleMoveMovie(index, index - 1)}
                   disabled={index === 0}
-                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F2F0]"
+                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F3EB] cursor-pointer"
+                  title="Move Up"
                 >
                   <MoveUp size={14} />
                 </button>
                 <button
                   onClick={() => handleMoveMovie(index, index + 1)}
                   disabled={index === movies.length - 1}
-                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F2F0]"
+                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F3EB] cursor-pointer"
+                  title="Move Down"
                 >
                   <MoveDown size={14} />
                 </button>
                 <button
                   onClick={() => handleRemoveMovie(item.movie.id)}
-                  className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 ml-2"
+                  className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 ml-2 cursor-pointer"
                   title="Remove from Collection"
                 >
                   <X size={14} />
@@ -271,12 +275,13 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         </div>
       ) : (
         /* Visual Poster Wall with 2:3 Aspect Ratio */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {filteredMovies.map((item) => (
             <MoviePoster
               key={item.movie.id}
               movie={item.movie}
               userData={item.userData}
+              className="w-full"
               onClick={() => openMovieDetail(item.movie.id)}
             />
           ))}

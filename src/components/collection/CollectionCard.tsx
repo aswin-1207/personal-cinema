@@ -134,41 +134,44 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
 
         {/* Completion Badge */}
         {isComplete && (
-          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EDC257] text-[#09090D] text-[10px] font-black shadow-[0_2px_12px_rgba(237,194,87,0.4)] backdrop-blur-md">
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_14px_rgba(224,173,82,0.45)] backdrop-blur-md animate-watched-morph">
             <Trophy size={12} strokeWidth={2.5} />
-            <span>COMPLETE</span>
+            <span>100% COMPLETE</span>
           </div>
         )}
       </div>
 
       {/* Collection Metadata & Integrated Thin Progress Bar */}
-      <div className="p-4 bg-[#171924] flex-grow flex flex-col justify-between space-y-3">
-        <div>
-          <h4 className="font-serif font-bold text-sm sm:text-base text-[#F5F2F0] line-clamp-1 group-hover:text-[#EDC257] group-hover:-translate-y-0.5 transition-all duration-200">
+      <div className="p-4 bg-[#131319] flex-grow flex flex-col justify-between space-y-3 w-full min-w-0">
+        <div className="min-w-0">
+          <h4
+            className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] line-clamp-2 break-words group-hover:text-[#E0AD52] transition-all duration-200"
+            title={collection.name}
+          >
             {collection.name}
           </h4>
           {collection.description && (
-            <p className="text-xs text-[#9E9DA5] line-clamp-1 mt-0.5">
+            <p className="text-xs text-[#9E9DA5] line-clamp-1 mt-0.5 break-words">
               {collection.description}
             </p>
           )}
         </div>
 
-        {/* Cinematic Universe Progress */}
+        {/* Cinematic Universe Progress (Section 18 Format) */}
         <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
           <div className="flex items-center justify-between text-[11px] text-[#9E9DA5]">
-            <span>
-              {progress.total} {progress.total === 1 ? 'Movie' : 'Movies'} · {progress.watched} Watched
+            <span className="font-semibold tracking-wider uppercase text-[10px]">
+              {progress.watched} / {progress.total} WATCHED
             </span>
-            <span className={`font-bold ${isComplete ? 'text-[#EDC257]' : 'text-[#F5F2F0]'}`}>
-              {progress.percent}%
+            <span className={`font-bold ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
+              {isComplete ? '100% COMPLETE' : `${progress.percent}%`}
             </span>
           </div>
 
           {/* Thin Cinematic Progress Bar */}
-          <div className="w-full h-1.5 bg-[#09090D] rounded-full overflow-hidden border border-white/5">
+          <div className="w-full h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#EDC257] to-[#D99C33] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(237,194,87,0.3)]"
+              className="h-full rounded-full bg-gradient-to-r from-[#E0AD52] to-[#D19830] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(224,173,82,0.35)]"
               style={{ width: `${progress.percent}%` }}
             />
           </div>

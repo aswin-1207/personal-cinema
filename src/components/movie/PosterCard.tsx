@@ -122,14 +122,19 @@ export const PosterCard: React.FC<PosterCardProps> = ({
         </div>
       </div>
 
-      {/* Card Info (Title & Year) */}
-      <div className="p-3 bg-cinema-surface/70 flex-grow flex flex-col justify-between">
-        <h4 className="font-semibold text-xs text-cinema-white line-clamp-1 group-hover:text-cinema-gold transition-colors">
-          {movie.title}
-        </h4>
-        <div className="flex items-center justify-between text-[11px] text-cinema-subtle mt-1">
-          <span>{year}</span>
-          {movie.runtime && <span>{movie.runtime}m</span>}
+      {/* Card Info (Title & Year with Guaranteed Containment) */}
+      <div className="p-3 bg-cinema-surface/70 flex-grow flex flex-col justify-between w-full min-w-0">
+        <div className="min-h-[2.5rem] flex items-start w-full min-w-0">
+          <h4
+            className="font-semibold text-xs text-cinema-white line-clamp-2 break-words leading-snug group-hover:text-cinema-gold transition-colors w-full"
+            title={movie.title}
+          >
+            {movie.title}
+          </h4>
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-cinema-subtle mt-1 pt-0.5 border-t border-white/[0.04]">
+          <span>{year || '—'}</span>
+          {movie.runtime ? <span>{movie.runtime}m</span> : movie.voteAverage > 0 ? <span className="text-cinema-gold">★ {movie.voteAverage.toFixed(1)}</span> : null}
         </div>
       </div>
     </div>

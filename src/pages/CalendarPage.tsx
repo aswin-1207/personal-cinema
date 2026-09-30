@@ -149,7 +149,7 @@ export const CalendarPage: React.FC = () => {
                       : 'border-white/5 bg-cinema-surface/60'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Poster */}
                     <div
                       onClick={() => movie && openMovieDetail(movie.id)}
@@ -168,8 +168,8 @@ export const CalendarPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Info */}
-                    <div>
+                    {/* Info with Strict Boundary Containment */}
+                    <div className="min-w-0 flex-1 pr-2">
                       {isToday && (
                         <span className="px-2 py-0.5 rounded-full bg-cinema-gold text-cinema-black text-[10px] font-bold uppercase tracking-wider mb-1 inline-block">
                           Tonight
@@ -177,7 +177,8 @@ export const CalendarPage: React.FC = () => {
                       )}
                       <h4
                         onClick={() => movie && openMovieDetail(movie.id)}
-                        className="font-serif font-bold text-base text-cinema-white cursor-pointer hover:text-cinema-gold transition-colors line-clamp-1"
+                        className="font-serif font-bold text-base text-cinema-white cursor-pointer hover:text-cinema-gold transition-colors line-clamp-2 break-words"
+                        title={movie?.title}
                       >
                         {movie?.title || 'Unknown Title'}
                       </h4>
@@ -195,7 +196,7 @@ export const CalendarPage: React.FC = () => {
                       </div>
 
                       {night.notes && (
-                        <p className="text-xs text-cinema-subtle italic mt-1 line-clamp-1">
+                        <p className="text-xs text-cinema-subtle italic mt-1 line-clamp-1 truncate">
                           "{night.notes}"
                         </p>
                       )}

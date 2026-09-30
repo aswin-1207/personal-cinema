@@ -340,18 +340,19 @@ export const Library: React.FC = () => {
         />
       ) : displayMode === 'grid' ? (
         /* Visual Poster Grid with 2:3 Aspect Ratio */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {filteredItems.map((item) => (
             <MoviePoster
               key={item.movie.id}
               movie={item.movie}
               userData={item.userData}
+              className="w-full"
               onClick={() => openMovieDetail(item.movie.id)}
             />
           ))}
         </div>
       ) : (
-        /* List Mode */
+        /* List Mode with Strict Boundary Containment */
         <div className="space-y-2">
           {filteredItems.map((item) => {
             const poster = item.movie.posterPath
@@ -363,11 +364,11 @@ export const Library: React.FC = () => {
               <div
                 key={item.movie.id}
                 onClick={() => openMovieDetail(item.movie.id)}
-                className="flex items-center justify-between p-3 rounded-xl bg-cinema-surface/50 border border-white/5 hover:border-cinema-gold/40 hover:bg-cinema-surface cursor-pointer transition-all"
+                className="flex items-center justify-between p-3 rounded-xl bg-cinema-surface/60 border border-white/5 hover:border-cinema-gold/40 hover:bg-cinema-surface cursor-pointer transition-all gap-2"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1 pr-2">
                   {/* Poster Thumbnail */}
-                  <div className="w-12 h-16 bg-cinema-charcoal rounded overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-16 bg-cinema-charcoal rounded-lg overflow-hidden flex-shrink-0 shadow">
                     {poster ? (
                       <img src={poster} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -377,29 +378,32 @@ export const Library: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Title & details */}
-                  <div>
-                    <h3 className="font-semibold text-cinema-white text-sm line-clamp-1">
+                  {/* Title & details with Guaranteed Strict Containment */}
+                  <div className="min-w-0 flex-1">
+                    <h3
+                      className="font-semibold text-cinema-white text-sm line-clamp-2 break-words leading-snug"
+                      title={item.movie.title}
+                    >
                       {item.movie.title}
                     </h3>
                     <div className="text-xs text-cinema-subtle flex items-center gap-2 mt-0.5">
-                      <span>{year}</span>
+                      <span>{year || '—'}</span>
                       {item.movie.runtime && <span>· {item.movie.runtime}m</span>}
                       {item.movie.genres && (
-                        <span>· {item.movie.genres.slice(0, 2).map((g) => g.name).join(', ')}</span>
+                        <span className="truncate">· {item.movie.genres.slice(0, 2).map((g) => g.name).join(', ')}</span>
                       )}
                     </div>
                     {item.userData?.notes && (
-                      <p className="text-xs text-cinema-silver mt-1 line-clamp-1 italic">
+                      <p className="text-xs text-cinema-silver mt-1 line-clamp-1 italic truncate">
                         "{item.userData.notes}"
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Rating & Actions */}
+                {/* Rating & Actions (Never Pushed Off-Screen) */}
                 <div
-                  className="flex items-center gap-4 flex-shrink-0"
+                  className="flex items-center gap-3 sm:gap-4 flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <RatingControl

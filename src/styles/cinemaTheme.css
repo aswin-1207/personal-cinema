@@ -3,32 +3,35 @@
 /* Personal Cinema Design System - Master Cinematic Theme & Tokens */
 
 :root {
-  /* Layer 0 & 1: Base Backgrounds & Surfaces (Luxury Cinema Room) */
-  --cinema-bg: #09090D;
-  --cinema-bg-elevated: #10121A;
-  --cinema-surface: #171924;
-  --cinema-surface-elevated: #222534;
-  --cinema-surface-glass: rgba(18, 20, 30, 0.72);
-  --cinema-surface-glass-heavy: rgba(13, 14, 22, 0.88);
+  /* Layer 0 & 1: Base Backgrounds & Surfaces (Luxury Cinema Room - Figma Specs) */
+  --cinema-bg: #09090B;
+  --cinema-bg-elevated: #0F0F14;
+  --cinema-surface: #131319;
+  --cinema-surface-elevated: #1C1C24;
+  --cinema-surface-glass: rgba(19, 19, 25, 0.78);
+  --cinema-surface-glass-heavy: rgba(14, 14, 20, 0.92);
 
   /* Cinema Accents */
-  --cinema-accent: #EDC257;
-  --cinema-accent-glow: rgba(237, 194, 87, 0.32);
-  --cinema-amber: #D99C33;
+  --cinema-accent: #E0AD52;
+  --cinema-accent-glow: rgba(224, 173, 82, 0.36);
+  --cinema-amber: #D19830;
+  --cinema-purple: #8C7AD0;
+  --cinema-purple-glow: rgba(140, 122, 208, 0.32);
   --cinema-crimson: #B81C28;
   --cinema-crimson-soft: #D94048;
 
   /* Cinema Typography */
-  --cinema-text: #F5F2F0;
+  --cinema-text: #F5F3EB;
   --cinema-text-muted: #9E9DA5;
-  --cinema-subtle: #5C5B64;
-  --cinema-white: #FFFFFF;
-  --cinema-black: #050508;
+  --cinema-subtle: #63626B;
+  --cinema-white: #F5F3EB;
+  --cinema-black: #09090B;
 
   /* Borders & Highlights */
   --cinema-border: rgba(255, 255, 255, 0.08);
   --cinema-border-bright: rgba(255, 255, 255, 0.16);
-  --cinema-border-accent: rgba(237, 194, 87, 0.4);
+  --cinema-border-accent: rgba(224, 173, 82, 0.45);
+  --cinema-border-purple: rgba(140, 122, 208, 0.40);
 
   /* Fonts */
   --font-display: 'Cinzel', Georgia, serif;
@@ -43,12 +46,13 @@
   --cinema-radius-pill: 9999px;
 
   /* Shadows */
-  --cinema-shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --cinema-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --cinema-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.7);
-  --cinema-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
-  --cinema-shadow-gold: 0 4px 24px rgba(237, 194, 87, 0.28);
-  --cinema-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --cinema-shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --cinema-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --cinema-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.75);
+  --cinema-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.88);
+  --cinema-shadow-gold: 0 4px 24px rgba(224, 173, 82, 0.30);
+  --cinema-shadow-purple: 0 4px 24px rgba(140, 122, 208, 0.28);
+  --cinema-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   /* Spacing */
   --cinema-spacing-xs: 4px;
@@ -457,6 +461,28 @@ input, select, textarea {
 
 .animate-cinema-sheet {
   animation: cinemaSheet var(--cinema-duration-normal) var(--cinema-ease) forwards;
+}
+
+/* Signature Watched Interaction Keyframes (Section 12) */
+@keyframes cinemaWatchedMorph {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 rgba(224, 173, 82, 0); }
+  40% { transform: scale(1.03); box-shadow: 0 0 24px rgba(224, 173, 82, 0.45); }
+  100% { transform: scale(1); box-shadow: 0 0 12px rgba(224, 173, 82, 0.25); }
+}
+
+@keyframes cinemaCheckDraw {
+  0% { stroke-dashoffset: 24; opacity: 0; transform: scale(0.7); }
+  50% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; transform: scale(1); }
+}
+
+.animate-watched-morph {
+  animation: cinemaWatchedMorph 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-check-draw {
+  stroke-dasharray: 24;
+  animation: cinemaCheckDraw 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Reduced Motion Override */

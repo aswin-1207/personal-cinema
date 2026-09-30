@@ -134,12 +134,12 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090D] select-none animate-cinema-fade">
-      {/* Top Floating Cinema Navigation Header */}
-      <div className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between bg-gradient-to-b from-[#09090D]/90 via-[#09090D]/40 to-transparent backdrop-blur-md">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] select-none animate-cinema-fade">
+      {/* Top Floating Cinema Navigation Header (Below Dynamic Island) */}
+      <div className="sticky top-0 z-40 px-5 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+12px)] pb-3 flex items-center justify-between bg-gradient-to-b from-[#09090B]/95 via-[#09090B]/60 to-transparent backdrop-blur-md">
         <button
           onClick={onClose}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#171924]/80 hover:bg-[#171924] border border-white/10 text-xs font-semibold text-[#F5F2F0] hover:text-[#EDC257] transition-all"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#131319]/80 hover:bg-[#131319] border border-white/10 text-xs font-semibold text-[#F5F3EB] hover:text-[#E0AD52] transition-all cursor-pointer"
         >
           <ArrowLeft size={16} />
           <span>Back to Cinema</span>
@@ -225,14 +225,14 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             )}
           </div>
 
-          {/* Details & Actions */}
-          <div className="flex-grow space-y-4">
+          {/* Details & Actions with Strict Boundary Containment */}
+          <div className="flex-grow space-y-4 min-w-0 w-full">
             <div>
-              <h1 className="font-hero-title">
+              <h1 className="font-hero-title break-words leading-tight" title={movie.title}>
                 {movie.title}
               </h1>
               {movie.tagline && (
-                <p className="text-xs sm:text-sm text-[#EDC257] italic mt-1 font-serif">
+                <p className="text-xs sm:text-sm text-[#E0AD52] italic mt-1 font-serif break-words">
                   "{movie.tagline}"
                 </p>
               )}
@@ -481,18 +481,18 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
       {/* MOBILE STICKY ACTION BAR (Section 40) respecting safe-area-inset-bottom */}
       <div
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#09090D]/95 backdrop-blur-2xl border-t border-white/10 flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
-        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 8px))' }}
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#09090B]/95 backdrop-blur-2xl border-t border-white/10 flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
+        style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 8px))' }}
       >
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <WatchedButton movie={movie} userData={userData || undefined} style="prominent" />
         </div>
         <button
           onClick={() => setIsCinemaModeOpen(true)}
-          className="p-3.5 rounded-xl bg-white/[0.08] border border-white/10 text-[#EDC257] active:scale-95 transition-transform"
+          className="p-3.5 rounded-xl bg-white/[0.08] border border-white/10 text-[#E0AD52] active:scale-95 transition-transform cursor-pointer flex-shrink-0"
           title="Cinema Mode"
         >
-          <Play size={18} className="fill-[#EDC257]" />
+          <Play size={18} className="fill-[#E0AD52]" />
         </button>
       </div>
 
