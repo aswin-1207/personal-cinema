@@ -46,6 +46,25 @@ export class ExportService {
   }
 
   /**
+   * Export all Reviews and Notes to CSV or JSON
+   */
+  static async exportReviews(format: 'csv' | 'json'): Promise<void> {
+    const all = await UserMovieRepository.getAllWithMovies();
+    const reviewed = all.filter((item) => item.userData?.review || item.userData?.notes);
+
+    const rows = reviewed.map((item) => ({
+      'Movie ID': item.movie.id,
+      'Title': item.movie.title,
+      'Personal Rating': item.userData?.personalRating ?? '',
+      'Review': item.userData?.review || '',
+      'Notes': item.userData?.notes || '',
+      'Watched At': item.userData?.watchedAt || '',
+    }));
+
+    this.downloadFormattedData(rows, `PersonalCinema_Reviews`, format);
+  }
+
+  /**
    * Export a single collection to CSV or JSON
    */
   static async exportCollection(collectionId: string, format: 'csv' | 'json'): Promise<void> {

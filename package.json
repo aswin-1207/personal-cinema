@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/run_phase2_tests.mjs"
+    "test": "node scripts/run_phase3_tests.mjs"
   },
   "dependencies": {
     "idb": "^8.0.2",

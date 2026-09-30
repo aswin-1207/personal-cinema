@@ -162,7 +162,10 @@ export const Home: React.FC = () => {
     setIsSurpriseOpen(true);
     setIsRolling(true);
 
-    const candidates = watchlist.length > 0 ? watchlist : await UserMovieRepository.getAllWithMovies();
+    const unwatchedLibrary = (await UserMovieRepository.getAllWithMovies()).filter(
+      (m) => m.userData?.status !== 'watched'
+    );
+    const candidates = watchlist.length > 0 ? watchlist : unwatchedLibrary;
     if (candidates.length > 0) {
       const randomIdx = Math.floor(Math.random() * candidates.length);
       setTimeout(() => {
