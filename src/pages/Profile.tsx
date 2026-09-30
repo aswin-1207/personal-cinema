@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
-import { StatsService, CinemaOverviewStats } from '../services/statsService';
-import { ExportService } from '../services/exportService';
+import { StatsService } from '../services/statsService';
 import { BackupCenterModal } from '../components/backup/BackupCenterModal';
 import { ImportWizard } from '../components/import/ImportWizard';
 import { Modal } from '../components/common/Modal';
@@ -11,34 +10,25 @@ import { clearAllLocalData } from '../db/database';
 import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { Achievement } from '../types/backup';
 import {
-  Film,
-  Clock,
-  Star,
   Trophy,
   Database,
   Upload,
-  Download,
-  Settings,
   Volume2,
   Vibrate,
   Sliders,
   Trash2,
   Lock,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Eye,
   EyeOff,
   KeyRound,
   AlertTriangle,
-  Heart,
-  Layers,
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { preferences, updatePreference, dataVersion, notifyDataChanged, showToast } = useCinema();
 
-  const [stats, setStats] = useState<CinemaOverviewStats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -71,7 +61,6 @@ export const Profile: React.FC = () => {
   };
 
   useEffect(() => {
-    StatsService.getOverview().then(setStats);
     StatsService.evaluateAchievements().then(setAchievements);
   }, [dataVersion]);
 
@@ -101,15 +90,6 @@ export const Profile: React.FC = () => {
     showToast('Reset to default TMDB configuration.');
   };
 
-  const handleExportData = async (format: 'json' | 'csv') => {
-    try {
-      await ExportService.exportLibrary(format);
-      showToast(`Exported cinema archive as ${format.toUpperCase()}`);
-    } catch (err) {
-      showToast('Export failed. Please check permissions.');
-    }
-  };
-
   const handleConfirmClear = async () => {
     setIsConfirmClearOpen(false);
     await clearAllLocalData();
@@ -117,164 +97,100 @@ export const Profile: React.FC = () => {
     showToast('All local cinema data wiped.');
   };
 
-  const totalMovies = stats ? stats.totalWatched + stats.totalWatchlist + stats.totalWatching : 0;
   const unlockedCount = achievements.filter((a) => a.unlockedAt).length;
 
   return (
-    <div className="space-y-8 pb-28 select-none animate-cinema-fade max-w-4xl mx-auto">
-      {/* Profile Header (Section 18) */}
-      <div className="border-b border-white/[0.08] pb-5">
-        <span className="font-caps-label text-[#EDC257] tracking-widest text-[11px] block">
-          MY CINEMA
-        </span>
-        <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F2F0] tracking-tight mt-0.5">
-          {preferences.displayName ? `${preferences.displayName}'s Cinema` : 'Personal Cinema'}
+    <div className="space-y-6 pb-28 select-none animate-cinema-fade max-w-3xl mx-auto">
+      {/* Header matching Figma 2:451 */}
+      <div className="space-y-1">
+        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+          My Cinema
         </h1>
-        <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
-          Your personal movie archive and private screening vault.
+        <p className="text-xs sm:text-sm text-[#9E9DA5]">
+          Your profile, preferences and data.
         </p>
       </div>
 
-      {/* Cinema Snapshot (Section 19) */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
-            Cinema Snapshot
-          </h2>
-          {totalMovies === 0 && (
-            <span className="text-[11px] text-[#EDC257] font-serif italic">
-              Your cinema is waiting
-            </span>
-          )}
+      {/* User Profile Card matching Figma 2:451 */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <div className="w-14 h-14 rounded-2xl bg-[#1B1B22] border border-[#E0AD52]/30 flex items-center justify-center font-bold text-lg text-[#E0AD52] shadow-[0_0_16px_rgba(224,173,82,0.15)] flex-shrink-0">
+          {displayName ? displayName.substring(0, 2).toUpperCase() : 'AS'}
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
-              <Film size={20} />
-            </div>
-            <div>
-              <span className="text-[11px] text-[#9E9DA5] font-medium block">Total Films</span>
-              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">{totalMovies}</span>
-            </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-bold text-base sm:text-lg text-[#F5F3EB] tracking-wide uppercase truncate">
+            {displayName || 'ASWIN'}
           </div>
-
-          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 size={20} />
-            </div>
-            <div>
-              <span className="text-[11px] text-[#9E9DA5] font-medium block">Watched</span>
-              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
-                {stats?.totalWatched ?? 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
-              <Layers size={20} />
-            </div>
-            <div>
-              <span className="text-[11px] text-[#9E9DA5] font-medium block">Collections</span>
-              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
-                {stats?.totalCollections ?? 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.07] flex items-center gap-3.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center flex-shrink-0">
-              <Heart size={20} />
-            </div>
-            <div>
-              <span className="text-[11px] text-[#9E9DA5] font-medium block">Favorites</span>
-              <span className="font-extrabold text-[#F5F2F0] text-lg sm:text-xl">
-                {stats?.totalFavorites ?? 0}
-              </span>
-            </div>
+          <div className="text-xs text-[#9E9DA5] mt-0.5">
+            MyCinema member
           </div>
         </div>
+      </div>
 
-        {/* Runtime & Rating metrics if watched > 0 */}
-        {stats && stats.totalWatched > 0 && (
-          <div className="p-3.5 rounded-xl bg-[#171924]/50 border border-white/5 flex flex-wrap items-center justify-between text-xs text-[#9E9DA5] gap-4">
-            <div className="flex items-center gap-2">
-              <Clock size={15} className="text-[#EDC257]" />
-              <span>
-                Screen Time: <strong className="text-[#F5F2F0]">{stats.totalRuntimeHours} hrs</strong>
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star size={15} className="text-[#EDC257]" />
-              <span>
-                Average Rating:{' '}
-                <strong className="text-[#F5F2F0]">
-                  {stats.averageRating ? `${stats.averageRating} ★` : '—'}
-                </strong>
-              </span>
-            </div>
-          </div>
-        )}
+      {/* PREFERENCES matching Figma 2:451 */}
+      <section className="space-y-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Preferences
+        </h2>
+        <div className="p-2 sm:p-3 rounded-2xl bg-[#131319] border border-white/[0.08] space-y-1 divide-y divide-white/[0.04]">
+          <CinemaToggle
+            icon={<Volume2 size={18} className="text-[#E0AD52]" />}
+            label="Sound"
+            description="Synthesized harmonic chimes and audio interactions."
+            checked={preferences.soundEnabled}
+            onChange={(checked) => updatePreference('soundEnabled', checked)}
+          />
+
+          <CinemaToggle
+            icon={<Vibrate size={18} className="text-[#E0AD52]" />}
+            label="Haptics"
+            description="Tactile vibration pulses on supported mobile devices."
+            checked={preferences.hapticsEnabled}
+            onChange={(checked) => updatePreference('hapticsEnabled', checked)}
+          />
+
+          <CinemaToggle
+            icon={<Sliders size={18} className="text-[#E0AD52]" />}
+            label="Reduced Motion"
+            description="Minimize complex cinematic zooms and animations."
+            checked={preferences.motionReduced}
+            onChange={(checked) => updatePreference('motionReduced', checked)}
+          />
+        </div>
       </section>
 
-      {/* Quick Actions (Section 20) */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
-          Quick Actions
+      {/* DATA & BACKUP matching Figma 2:451 */}
+      <section className="space-y-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Data & Backup
         </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div
-            onClick={() => setIsImportOpen(true)}
-            role="button"
-            tabIndex={0}
-            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
-          >
-            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-              <Upload size={18} />
-            </div>
-            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
-              Import Movies
-            </div>
-            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
-              Bring your movie lists, spreadsheets, or text files into Personal Cinema.
-            </p>
-          </div>
-
-          <div
+        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
+          <button
             onClick={() => setIsBackupOpen(true)}
-            role="button"
-            tabIndex={0}
-            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-              <Database size={18} />
+            <div className="flex items-center gap-3">
+              <Database size={18} className="text-[#E0AD52]" />
+              <div>
+                <div className="text-sm font-semibold text-[#F5F3EB]">Backup Center</div>
+                <div className="text-xs text-[#9E9DA5]">Protect your catalog with encrypted snapshots and restore.</div>
+              </div>
             </div>
-            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
-              Backup Center
-            </div>
-            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
-              Protect your catalog with encrypted snapshots and instant restore.
-            </p>
-          </div>
+            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
+          </button>
 
-          <div
-            onClick={() => handleExportData('json')}
-            role="button"
-            tabIndex={0}
-            className="p-4 rounded-2xl bg-[#171924]/80 border border-white/[0.08] hover:border-[#EDC257]/40 hover:bg-[#1C1F2E] cursor-pointer transition-all duration-200 group text-left"
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
           >
-            <div className="w-9 h-9 rounded-xl bg-[#EDC257]/15 text-[#EDC257] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-              <Download size={18} />
+            <div className="flex items-center gap-3">
+              <Upload size={18} className="text-[#E0AD52]" />
+              <div>
+                <div className="text-sm font-semibold text-[#F5F3EB]">Import / Export</div>
+                <div className="text-xs text-[#9E9DA5]">Ingest external lists or export structured JSON / CSV.</div>
+              </div>
             </div>
-            <div className="font-bold text-sm text-[#F5F2F0] group-hover:text-[#EDC257] transition-colors">
-              Export Archive
-            </div>
-            <p className="text-xs text-[#9E9DA5] mt-1 leading-relaxed">
-              Download your entire library and watch records as structured JSON or CSV.
-            </p>
-          </div>
+            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
+          </button>
         </div>
       </section>
 
@@ -352,63 +268,35 @@ export const Profile: React.FC = () => {
         </div>
       </section>
 
-      {/* Cinema Preferences (Section 22, 23, 24, 25, 26) */}
-      <section className="p-5 sm:p-6 rounded-2xl bg-[#171924]/80 border border-white/[0.08] space-y-6">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-white/[0.06]">
-          <Settings size={18} className="text-[#EDC257]" />
-          <h2 className="font-serif font-bold text-base text-[#F5F2F0]">Cinema Preferences</h2>
-        </div>
-
-        {/* Display Name Row (Section 23) */}
-        <form onSubmit={handleSaveDisplayName} className="space-y-2">
-          <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-            Display Name
-          </label>
-          <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg">
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. Cinema Curator"
-              className="cinema-input flex-1 text-sm"
-            />
-            <CinemaButton
-              type="submit"
-              variant="secondary"
-              size="md"
-              isLoading={isSavingName}
-              className="sm:w-auto w-full"
-            >
-              Save Changes
-            </CinemaButton>
-          </div>
-        </form>
-
-        {/* Custom Switches (Section 22, 24, 25, 26) */}
-        <div className="space-y-1 divide-y divide-white/[0.04]">
-          <CinemaToggle
-            icon={<Volume2 size={18} />}
-            label="Cinematic Audio"
-            description="Synthesized harmonic chimes and audio interactions via Web Audio API."
-            checked={preferences.soundEnabled}
-            onChange={(checked) => updatePreference('soundEnabled', checked)}
-          />
-
-          <CinemaToggle
-            icon={<Vibrate size={18} />}
-            label="Haptic Feedback"
-            description="Tactile vibration pulses on supported mobile devices."
-            checked={preferences.hapticsEnabled}
-            onChange={(checked) => updatePreference('hapticsEnabled', checked)}
-          />
-
-          <CinemaToggle
-            icon={<Sliders size={18} />}
-            label="Reduce Motion"
-            description="Minimize complex cinematic zoom and background transitions."
-            checked={preferences.motionReduced}
-            onChange={(checked) => updatePreference('motionReduced', checked)}
-          />
+      {/* ACCOUNT matching Figma 2:451 */}
+      <section className="space-y-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Account
+        </h2>
+        <div className="p-4 sm:p-5 rounded-2xl bg-[#131319] border border-white/[0.08]">
+          <form onSubmit={handleSaveDisplayName} className="space-y-2">
+            <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
+              Display Name
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg">
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="e.g. Aswin"
+                className="cinema-input flex-1 text-sm bg-[#1B1B22]"
+              />
+              <CinemaButton
+                type="submit"
+                variant="secondary"
+                size="md"
+                isLoading={isSavingName}
+                className="sm:w-auto w-full"
+              >
+                Save
+              </CinemaButton>
+            </div>
+          </form>
         </div>
       </section>
 

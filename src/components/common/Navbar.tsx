@@ -46,22 +46,22 @@ export const CinemaDesktopNav: React.FC = () => {
       }}
     >
       <div>
-        {/* Cinema Brand Mark */}
+        {/* MyCinema Brand Mark */}
         <div className="flex items-center gap-3 px-3 py-3 mb-8">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-[#09090B] shadow-[0_4px_20px_rgba(224,173,82,0.35)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center font-sans font-black text-xs text-[#09090B] tracking-wider shadow-[0_4px_20px_rgba(224,173,82,0.35)]"
             style={{
               background: 'linear-gradient(135deg, #E0AD52 0%, #D19830 100%)',
             }}
           >
-            ▶
+            PC
           </div>
           <div>
-            <div className="font-serif font-black text-[15px] tracking-[0.14em] text-[#F5F3EB] leading-none">
-              PERSONAL
+            <div className="font-serif font-black text-[16px] tracking-[0.16em] text-[#F5F3EB] leading-none">
+              MYCINEMA
             </div>
-            <div className="text-[10px] tracking-[0.24em] text-[#E0AD52] font-extrabold mt-1">
-              CINEMA
+            <div className="text-[9px] tracking-[0.22em] text-[#E0AD52] font-semibold mt-1">
+              PRIVATE CINEMA
             </div>
           </div>
         </div>

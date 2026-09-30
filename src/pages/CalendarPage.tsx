@@ -92,17 +92,14 @@ export const CalendarPage: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Header */}
+      {/* Header matching Figma 2:341 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-cinema-gold font-semibold mb-1">
-            Planned Screenings
-          </div>
-          <h1 className="font-serif font-bold text-3xl sm:text-4xl text-cinema-white">
-            Cinema Calendar
+        <div className="space-y-1">
+          <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+            Movie Night
           </h1>
-          <p className="text-xs text-cinema-subtle mt-1">
-            Plan movie nights and schedule your next home theater screening.
+          <p className="text-xs sm:text-sm text-[#9E9DA5]">
+            Plan a film for later.
           </p>
         </div>
 

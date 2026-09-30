@@ -10,14 +10,10 @@ import { CinemaButton } from '../components/common/CinemaButton';
 import { Search, X, Film, RefreshCw, KeyRound } from 'lucide-react';
 
 const SCREENING_MOODS = [
-  { label: 'Mind-Bending', genreId: 878 },
-  { label: 'Adrenaline', genreId: 28 },
-  { label: 'Cozy', genreId: 35 },
-  { label: 'Suspense', genreId: 53 },
-  { label: 'Emotional', genreId: 18 },
-  { label: 'Eerie', genreId: 27 },
-  { label: 'Sci-Fi', genreId: 878 },
-  { label: 'Horror', genreId: 27 },
+  { label: 'FEEL GOOD', genreId: 35 },
+  { label: 'DARK', genreId: 53 },
+  { label: 'EPIC', genreId: 12 },
+  { label: 'MIND-BENDING', genreId: 878 },
 ];
 
 export const Discover: React.FC = () => {
@@ -232,8 +228,8 @@ export const Discover: React.FC = () => {
                   onClick={() => handleSelectMood(mood.genreId)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
                     isSelected
-                      ? 'bg-[#8C7AD0] text-[#09090B] border-[#8C7AD0] shadow-[0_2px_14px_rgba(140,122,208,0.35)] scale-[1.02] font-bold'
-                      : 'bg-[#131319]/80 text-[#F5F3EB] border-white/[0.08] hover:border-[#8C7AD0]/40 hover:bg-[#1A1A24]'
+                      ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] shadow-[0_2px_14px_rgba(224,173,82,0.35)] scale-[1.02] font-bold'
+                      : 'bg-[#1B1B22] text-[#F5F3EB] border-white/[0.08] hover:border-[#E0AD52]/40 hover:bg-[#24242E]'
                   }`}
                 >
                   {mood.label}
@@ -246,34 +242,39 @@ export const Discover: React.FC = () => {
 
       {/* Genre Filter Scroll Strip */}
       {!query && genres.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
-          <button
-            onClick={() => setSelectedGenreId(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
-              selectedGenreId === null
-                ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] font-bold shadow-sm'
-                : 'bg-white/[0.05] text-[#9E9DA5] border-white/5 hover:text-white'
-            }`}
-          >
-            All Genres
-          </button>
-          {genres.map((g) => {
-            const isSelected = selectedGenreId === g.id;
-            return (
-              <button
-                key={g.id}
-                onClick={() => setSelectedGenreId(isSelected ? null : g.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
-                  isSelected
-                    ? 'bg-[#EDC257] text-[#09090D] border-[#EDC257] font-bold shadow-sm'
-                    : 'bg-white/[0.05] text-[#9E9DA5] border-white/5 hover:text-white hover:bg-white/[0.08]'
-                }`}
-              >
-                {g.name}
-              </button>
-            );
-          })}
-        </div>
+        <section className="space-y-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
+            Genres
+          </h3>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
+            <button
+              onClick={() => setSelectedGenreId(null)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                selectedGenreId === null
+                  ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] font-bold shadow-sm'
+                  : 'bg-[#1B1B22] text-[#9E9DA5] border-white/5 hover:text-[#F5F3EB]'
+              }`}
+            >
+              ALL
+            </button>
+            {genres.map((g) => {
+              const isSelected = selectedGenreId === g.id;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setSelectedGenreId(isSelected ? null : g.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase whitespace-nowrap transition-all cursor-pointer border ${
+                    isSelected
+                      ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] font-bold shadow-sm'
+                      : 'bg-[#1B1B22] text-[#9E9DA5] border-white/5 hover:text-[#F5F3EB] hover:bg-[#24242E]'
+                  }`}
+                >
+                  {g.name}
+                </button>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Network Alert (if sync error occurs) */}

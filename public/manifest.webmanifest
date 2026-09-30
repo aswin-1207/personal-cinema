@@ -1,12 +1,12 @@
 {
-  "name": "Personal Cinema",
-  "short_name": "Cinema",
-  "description": "Your personal cinematic movie companion and private film tracker.",
+  "name": "MyCinema",
+  "short_name": "MyCinema",
+  "description": "A private cinema living inside your phone.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0D0D12",
-  "theme_color": "#0D0D12",
+  "background_color": "#09090B",
+  "theme_color": "#09090B",
   "icons": [
     {
       "src": "/icon-192.png",

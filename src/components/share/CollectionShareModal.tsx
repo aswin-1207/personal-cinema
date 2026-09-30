@@ -32,7 +32,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
   const handleShare = async () => {
     const success = await ShareService.shareOrCopy(
       shareUrl,
-      `Check out "${collectionData.collection.name}" on Personal Cinema`,
+      `Check out "${collectionData.collection.name}" on MyCinema`,
       `Explore this curated collection: ${collectionData.collection.name} (${collectionData.progress.percent}% watched).`
     );
     if (!success) {
@@ -101,7 +101,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
           )}
 
           <div className="text-[10px] tracking-wider text-cinema-subtle uppercase border-t border-white/5 pt-2 flex justify-between">
-            <span>Personal Cinema Collection</span>
+            <span className="font-bold text-[#E0AD52]">MyCinema Collection</span>
             <span>Curated Library</span>
           </div>
         </div>

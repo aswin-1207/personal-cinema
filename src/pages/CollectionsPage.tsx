@@ -5,7 +5,7 @@ import { Collection } from '../types/collection';
 import { CollectionCard } from '../components/collection/CollectionCard';
 import { CreateCollectionModal } from '../components/collection/CreateCollectionModal';
 import { EmptyState } from '../components/common/EmptyState';
-import { FolderPlus, Trophy } from 'lucide-react';
+import { FolderPlus } from 'lucide-react';
 
 export const CollectionsPage: React.FC = () => {
   const { openCollectionDetail, dataVersion } = useCinema();
@@ -28,38 +28,32 @@ export const CollectionsPage: React.FC = () => {
     loadCollections();
   }, [dataVersion]);
 
-  const completedCount = collections.filter((c) => Boolean(c.completedAt)).length;
-
   return (
     <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-serif font-bold text-3xl text-cinema-white">Curated Collections</h1>
-          <p className="text-xs text-cinema-subtle mt-0.5">
-            Organize films by director, franchise, cinematic universe, or personal theme.
+      {/* Header matching Figma 2:209 */}
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+            Collections
+          </h1>
+          <p className="text-xs sm:text-sm text-[#9E9DA5]">
+            Organize movies your way.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {completedCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cinema-gold/10 border border-cinema-gold/20 text-cinema-gold text-xs font-semibold">
-              <Trophy size={14} />
-              <span>
-                {completedCount} {completedCount === 1 ? 'Collection' : 'Collections'} Mastered
-              </span>
-            </div>
-          )}
-
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="cinema-button-primary px-4 py-2 text-xs flex items-center gap-1.5 shadow-gold"
-          >
-            <FolderPlus size={15} />
-            <span>New Collection</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(224,173,82,0.35)] active:scale-95 cursor-pointer"
+        >
+          <FolderPlus size={16} />
+          <span>+ CREATE COLLECTION</span>
+        </button>
       </div>
+
+      <div className="pt-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] mb-4">
+          YOUR COLLECTIONS
+        </h2>
 
       {/* Grid of collections */}
       {isLoading ? (
@@ -84,6 +78,7 @@ export const CollectionsPage: React.FC = () => {
           ))}
         </div>
       )}
+      </div>
 
       {/* Create Modal */}
       <CreateCollectionModal

@@ -15,10 +15,8 @@ import {
   Search,
   ArrowUpDown,
   Film,
-  Layers,
 } from 'lucide-react';
 import { tmdbService } from '../services/tmdbService';
-import { CollectionsPage } from './CollectionsPage';
 
 type TabType = 'watchlist' | 'watched' | 'favorites' | 'collections' | 'all';
 type SortOption = 'addedAt' | 'releaseDate' | 'title' | 'personalRating' | 'tmdbRating';
@@ -59,27 +57,6 @@ export const Library: React.FC = () => {
       item.movie.genres?.forEach((g) => genreSet.add(g.name));
     });
     return Array.from(genreSet).sort();
-  }, [libraryItems]);
-
-  // Watched stats calculation
-  const watchedStats = useMemo(() => {
-    const watched = libraryItems.filter((i) => i.userData?.status === 'watched');
-    let totalMinutes = 0;
-    let ratingSum = 0;
-    let ratingCount = 0;
-
-    watched.forEach((item) => {
-      totalMinutes += item.movie.runtime || 110;
-      if (typeof item.userData?.personalRating === 'number') {
-        ratingSum += item.userData.personalRating;
-        ratingCount++;
-      }
-    });
-
-    const hours = Math.round((totalMinutes / 60) * 10) / 10;
-    const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : '—';
-
-    return { count: watched.length, hours, avgRating };
   }, [libraryItems]);
 
   // Filtered and Sorted list
@@ -143,108 +120,76 @@ export const Library: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Title & Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-hero-title">My Cinema Library</h1>
-          <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
-            Your personal, canonical film catalog, watchlist, and screening history.
-          </p>
-        </div>
-
-        {/* Watched stats pill strip (shown when Watched or All selected) */}
-        {(activeTab === 'watched' || activeTab === 'all') && (
-          <div className="flex items-center gap-3 bg-cinema-surface/60 border border-white/5 rounded-xl px-4 py-2 text-xs">
-            <div>
-              <span className="text-cinema-subtle block">Watched</span>
-              <span className="font-bold text-cinema-white">{watchedStats.count}</span>
-            </div>
-            <div className="w-px h-6 bg-white/5" />
-            <div>
-              <span className="text-cinema-subtle block">Hours</span>
-              <span className="font-bold text-cinema-white">{watchedStats.hours}h</span>
-            </div>
-            <div className="w-px h-6 bg-white/5" />
-            <div>
-              <span className="text-cinema-subtle block">Avg Score</span>
-              <span className="font-bold text-cinema-gold">{watchedStats.avgRating} ★</span>
-            </div>
-          </div>
-        )}
+      {/* Title Header matching Figma 2:177 */}
+      <div className="space-y-1">
+        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+          My Cinema
+        </h1>
+        <p className="text-xs sm:text-sm text-[#9E9DA5]">
+          Your personal movie library.
+        </p>
       </div>
 
       {/* Tabs & Display Mode Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-        {/* Segmented Tab Controls */}
-        <div className="flex bg-cinema-surface rounded-xl p-1 border border-white/5 overflow-x-auto no-scrollbar max-w-full">
+        {/* Segmented Tab Controls matching Figma 2:177 */}
+        <div className="flex bg-[#131319] rounded-xl p-1 border border-white/5 overflow-x-auto no-scrollbar max-w-full">
           <button
             onClick={() => setActiveTabFilter('watchlist')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'watchlist'
-                ? 'bg-cinema-gold text-cinema-black shadow-gold'
-                : 'text-cinema-silver hover:text-cinema-white'
+                ? 'bg-[#E0AD52] text-[#09090B] shadow-[0_2px_12px_rgba(224,173,82,0.35)]'
+                : 'text-[#9E9DA5] hover:text-[#F5F3EB]'
             }`}
           >
-            <Bookmark size={14} />
-            <span>Watchlist</span>
+            <Bookmark size={13} />
+            <span>WATCHLIST</span>
           </button>
 
           <button
             onClick={() => setActiveTabFilter('watched')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'watched'
-                ? 'bg-cinema-gold text-cinema-black shadow-gold'
-                : 'text-cinema-silver hover:text-cinema-white'
+                ? 'bg-[#E0AD52] text-[#09090B] shadow-[0_2px_12px_rgba(224,173,82,0.35)]'
+                : 'text-[#9E9DA5] hover:text-[#F5F3EB]'
             }`}
           >
-            <CheckCircle size={14} />
-            <span>Watched</span>
+            <CheckCircle size={13} />
+            <span>WATCHED</span>
           </button>
 
           <button
             onClick={() => setActiveTabFilter('favorites')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'favorites'
-                ? 'bg-cinema-gold text-cinema-black shadow-gold'
-                : 'text-cinema-silver hover:text-cinema-white'
+                ? 'bg-[#E0AD52] text-[#09090B] shadow-[0_2px_12px_rgba(224,173,82,0.35)]'
+                : 'text-[#9E9DA5] hover:text-[#F5F3EB]'
             }`}
           >
-            <Heart size={14} />
-            <span>Favorites</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTabFilter('collections')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'collections'
-                ? 'bg-cinema-gold text-cinema-black shadow-gold'
-                : 'text-cinema-silver hover:text-cinema-white'
-            }`}
-          >
-            <Layers size={14} />
-            <span>Collections</span>
+            <Heart size={13} />
+            <span>FAVORITES</span>
           </button>
 
           <button
             onClick={() => setActiveTabFilter('all')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               activeTab === 'all'
-                ? 'bg-cinema-gold text-cinema-black shadow-gold'
-                : 'text-cinema-silver hover:text-cinema-white'
+                ? 'bg-[#E0AD52] text-[#09090B] shadow-[0_2px_12px_rgba(224,173,82,0.35)]'
+                : 'text-[#9E9DA5] hover:text-[#F5F3EB]'
             }`}
           >
-            <Film size={14} />
-            <span>All</span>
+            <Film size={13} />
+            <span>ALL</span>
           </button>
         </div>
 
         {/* Display Mode (Grid / List) */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex bg-cinema-surface rounded-lg p-1 border border-white/5">
+          <div className="flex bg-[#131319] rounded-lg p-1 border border-white/5">
             <button
               onClick={() => setDisplayMode('grid')}
-              className={`p-1.5 rounded transition-colors ${
-                displayMode === 'grid' ? 'bg-cinema-charcoal text-cinema-gold' : 'text-cinema-subtle'
+              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                displayMode === 'grid' ? 'bg-[#24242E] text-[#E0AD52]' : 'text-[#9E9DA5]'
               }`}
               title="Grid View"
             >
@@ -252,8 +197,8 @@ export const Library: React.FC = () => {
             </button>
             <button
               onClick={() => setDisplayMode('list')}
-              className={`p-1.5 rounded transition-colors ${
-                displayMode === 'list' ? 'bg-cinema-charcoal text-cinema-gold' : 'text-cinema-subtle'
+              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                displayMode === 'list' ? 'bg-[#24242E] text-[#E0AD52]' : 'text-[#9E9DA5]'
               }`}
               title="List View"
             >
@@ -263,23 +208,19 @@ export const Library: React.FC = () => {
         </div>
       </div>
 
-      {activeTab === 'collections' ? (
-        <CollectionsPage />
-      ) : (
-        <>
-          {/* Filter and Search Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-cinema-subtle" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter library by title, notes..."
-                className="cinema-input w-full pl-9 py-2 text-xs"
-              />
-            </div>
+      {/* Filter and Search Bar matching Figma 2:177 */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Search */}
+          <div className="relative sm:col-span-2">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9E9DA5]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter library by title..."
+              className="w-full bg-[#131319]/90 border border-white/10 focus:border-[#E0AD52] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#F5F3EB] placeholder-[#63626B] outline-none transition-colors"
+            />
+          </div>
 
         {/* Genre Filter */}
         <select
@@ -423,8 +364,6 @@ export const Library: React.FC = () => {
           })}
         </div>
       )}
-    </>
-  )}
-</div>
-);
+    </div>
+  );
 };

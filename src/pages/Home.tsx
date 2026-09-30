@@ -26,6 +26,7 @@ export const Home: React.FC = () => {
     openCollectionDetail,
     setActiveTab,
     dataVersion,
+    preferences,
   } = useCinema();
 
   const { setAmbientColor } = useCinemaShell();
@@ -182,10 +183,26 @@ export const Home: React.FC = () => {
     }
   };
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+  const displayName = preferences.displayName?.trim() || 'Aswin';
+
   return (
-    <div className="pb-24 space-y-12 select-none">
-      
-      {/* LAYER 2 & 3 & 4: Cinematic Hero Stage */}
+    <div className="pb-24 space-y-10 select-none">
+      {/* Figma 2:2 Brand & Personalized Header */}
+      <div className="pt-2 pb-1 space-y-1.5 animate-cinema-fade">
+        <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#E0AD52]">
+          MYCINEMA
+        </div>
+        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+          Good {greeting}, {displayName}.
+        </h1>
+        <p className="text-xs sm:text-sm text-[#9E9DA5]">
+          Your private cinema is ready.
+        </p>
+      </div>
+
+      {/* Featured Screening Stage */}
       <CinemaHero
         movieWithData={heroMovie}
         onWatchNow={() => setIsCinemaModeOpen(true)}

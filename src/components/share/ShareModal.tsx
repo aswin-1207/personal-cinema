@@ -41,8 +41,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   const handleShare = async () => {
     const success = await ShareService.shareOrCopy(
       shareUrl,
-      `Check out ${movie.title} on Personal Cinema`,
-      `I'm tracking "${movie.title}" on Personal Cinema.`
+      `Check out ${movie.title} on MyCinema`,
+      `I'm tracking "${movie.title}" on MyCinema.`
     );
     if (!success) {
       handleCopy();
@@ -94,8 +94,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                     "{userData.review}"
                   </p>
                 )}
-                <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-center gap-1 text-[9px] tracking-widest text-cinema-gold uppercase">
-                  Personal Cinema
+                <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-center gap-1 text-[9px] tracking-widest text-cinema-gold uppercase font-bold">
+                  MYCINEMA
                 </div>
               </div>
             </div>
@@ -129,7 +129,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   </p>
                 )}
                 <div className="flex items-center justify-between text-[10px] text-cinema-subtle">
-                  <span>PERSONAL CINEMA ARCHIVE</span>
+                  <span className="font-bold tracking-wider text-[#E0AD52]">MYCINEMA</span>
                   {includeStatus && userData?.status && (
                     <span className="text-cinema-gold font-medium uppercase">{userData.status.replace('_', ' ')}</span>
                   )}

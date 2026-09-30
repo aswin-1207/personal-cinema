@@ -27,7 +27,7 @@ export const OfflineIndicator: React.FC = () => {
       }}
     >
       <WifiOff size={14} />
-      <span>Offline Mode — Your personal cinema library is safely stored on this device.</span>
+      <span>Offline Mode — Your MyCinema library is safely stored on this device.</span>
     </div>
   );
 };

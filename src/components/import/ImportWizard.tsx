@@ -212,7 +212,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Import Movies into Personal Cinema"
+      title="Import Movies into MyCinema"
       maxWidth="max-w-3xl"
     >
       {/* Step 1: Source & Configuration */}

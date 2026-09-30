@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
 import { CinemaDesktopNav, CinemaMobileNav } from '../common/Navbar';
-import { CinemaIsland } from '../island/CinemaIsland';
 import { OfflineIndicator } from '../common/OfflineIndicator';
 import { Toast } from '../common/Toast';
 import { CompletionMoment } from '../movie/CompletionMoment';
@@ -63,9 +62,6 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
           }}
         />
 
-        {/* LAYER 7: Signature Cinema Island */}
-        <CinemaIsland />
-
         {/* System Offline Status */}
         <OfflineIndicator />
 
@@ -73,8 +69,8 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <CinemaDesktopNav />
         <CinemaMobileNav />
 
-        {/* LAYER 4: Main Cinema Content Area with iPhone 15 Safe Area Compliance */}
-        <main className="flex-1 min-w-0 md:ml-[240px] px-4 sm:px-8 pt-[calc(env(safe-area-inset-top,0px)+16px)] pb-[calc(env(safe-area-inset-bottom,0px)+84px)] md:pt-6 md:pb-8 max-w-7xl mx-auto w-full relative z-10">
+        {/* Main Cinema Content Area */}
+        <main className="flex-1 min-w-0 md:ml-[240px] px-4 sm:px-8 pt-4 sm:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+84px)] md:pt-6 md:pb-8 max-w-7xl mx-auto w-full relative z-10">
           {selectedCollectionId ? (
             renderCollectionDetail(selectedCollectionId)
           ) : (

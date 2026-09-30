@@ -243,7 +243,7 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-emerald-400 font-medium">
                     <span className="flex items-center gap-1">
-                      <CheckCircle size={14} /> Valid Personal Cinema Backup (v{validation.backupVersion})
+                      <CheckCircle size={14} /> Valid MyCinema Backup (v{validation.backupVersion})
                     </span>
                     <span className="text-cinema-subtle">
                       Created: {new Date(validation.createdAt).toLocaleDateString()}

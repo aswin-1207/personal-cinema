@@ -31,3 +31,7 @@ __pycache__/
 .env
 *.db
 scratch/
+scripts/figma*
+scripts/inspect_figma.mjs
+scripts/export_figma_images.mjs
+public/figma_exports/

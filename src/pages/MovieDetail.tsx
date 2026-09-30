@@ -135,8 +135,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] select-none animate-cinema-fade">
-      {/* Top Floating Cinema Navigation Header (Below Dynamic Island) */}
-      <div className="sticky top-0 z-40 px-5 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+12px)] pb-3 flex items-center justify-between bg-gradient-to-b from-[#09090B]/95 via-[#09090B]/60 to-transparent backdrop-blur-md">
+      {/* Top Floating Cinema Navigation Header */}
+      <div className="sticky top-0 z-40 px-5 sm:px-6 pt-4 sm:pt-5 pb-3 flex items-center justify-between bg-gradient-to-b from-[#09090B]/95 via-[#09090B]/60 to-transparent backdrop-blur-md">
         <button
           onClick={onClose}
           className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#131319]/80 hover:bg-[#131319] border border-white/10 text-xs font-semibold text-[#F5F3EB] hover:text-[#E0AD52] transition-all cursor-pointer"

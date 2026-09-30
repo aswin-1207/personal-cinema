@@ -9,10 +9,10 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
     navigator.serviceWorker
       .register('/sw.js')
       .then((reg) => {
-        console.log('Personal Cinema Service Worker registered:', reg.scope);
+        console.log('MyCinema Service Worker registered:', reg.scope);
       })
       .catch((err) => {
-        console.warn('Personal Cinema Service Worker registration failed:', err);
+        console.warn('MyCinema Service Worker registration failed:', err);
       });
   });
 }

@@ -47,7 +47,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
         <div className="text-center space-y-3">
           <p className="text-cinema-silver text-sm">Invalid or expired share link.</p>
           <button onClick={onDismiss} className="cinema-button-primary px-5 py-2 text-xs">
-            Enter Personal Cinema
+            Enter MyCinema
           </button>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
       {moviePayload && (
         <div className="w-full max-w-md bg-cinema-surface border border-cinema-gold/40 rounded-3xl shadow-2xl overflow-hidden p-6 text-center animate-scale-in">
           <div className="text-xs uppercase tracking-widest text-cinema-gold font-semibold mb-3">
-            Shared from Personal Cinema
+            Shared from MyCinema
           </div>
 
           <div className="aspect-[2/3] w-48 mx-auto rounded-2xl overflow-hidden shadow-2xl border border-white/10 mb-4 bg-cinema-charcoal">
@@ -129,7 +129,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
               onClick={onDismiss}
               className="cinema-button-secondary py-2.5 text-xs"
             >
-              Open Personal Cinema
+              Open MyCinema
             </button>
           </div>
         </div>
@@ -188,7 +188,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
             onClick={onDismiss}
             className="cinema-button-primary w-full py-3 text-sm font-semibold flex items-center justify-center gap-2"
           >
-            <span>Explore in Personal Cinema</span>
+            <span>Explore in MyCinema</span>
             <ArrowRight size={16} />
           </button>
         </div>
