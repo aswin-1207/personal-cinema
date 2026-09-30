@@ -149,3 +149,45 @@ export async function clearTMDBCache(): Promise<void> {
   await tx.objectStore('tmdbCache').clear();
   await tx.done;
 }
+
+export async function validateAndRepairDatabase(): Promise<{
+  orphanCollectionMoviesRemoved: number;
+  invalidEntriesRepaired: number;
+}> {
+  const db = await getDB();
+  let orphanCollectionMoviesRemoved = 0;
+  let invalidEntriesRepaired = 0;
+
+  try {
+    const collections = await db.getAll('collections');
+    const collectionIds = new Set(collections.map((c) => c.id));
+    const colMovies = await db.getAll('collectionMovies');
+
+    const tx = db.transaction(['collectionMovies', 'userMovies'], 'readwrite');
+    const colMovieStore = tx.objectStore('collectionMovies');
+    const userMovieStore = tx.objectStore('userMovies');
+
+    for (const cm of colMovies) {
+      if (!collectionIds.has(cm.collectionId)) {
+        await colMovieStore.delete(cm.id);
+        orphanCollectionMoviesRemoved++;
+      }
+    }
+
+    const userMovies = await db.getAll('userMovies');
+    for (const um of userMovies) {
+      if (!['want_to_watch', 'watching', 'watched', 'dropped'].includes(um.status)) {
+        um.status = 'want_to_watch';
+        await userMovieStore.put(um);
+        invalidEntriesRepaired++;
+      }
+    }
+
+    await tx.done;
+  } catch (err) {
+    console.warn('Database integrity check skipped or encountered error:', err);
+  }
+
+  return { orphanCollectionMoviesRemoved, invalidEntriesRepaired };
+}
+

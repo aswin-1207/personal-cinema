@@ -21,25 +21,32 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
   const { markAsWatched, unmarkWatched } = useCinema();
   const [isPressing, setIsPressing] = useState(false);
   const [isMorphing, setIsMorphing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const isWatched = userData?.status === 'watched';
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isProcessing) return;
+    setIsProcessing(true);
     setIsPressing(true);
     setIsMorphing(true);
 
     setTimeout(() => setIsPressing(false), 180);
     setTimeout(() => setIsMorphing(false), 650);
 
-    if (isWatched) {
-      soundService.playSubtleClick();
-      hapticsService.tap();
-      await unmarkWatched(movie.id);
-    } else {
-      soundService.playWatchedChime();
-      hapticsService.success();
-      await markAsWatched(movie);
+    try {
+      if (isWatched) {
+        soundService.playSubtleClick();
+        hapticsService.tap();
+        await unmarkWatched(movie.id);
+      } else {
+        soundService.playWatchedChime();
+        hapticsService.success();
+        await markAsWatched(movie);
+      }
+    } finally {
+      setIsProcessing(false);
     }
   };
 

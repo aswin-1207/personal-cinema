@@ -5,6 +5,7 @@ import { MovieRepository } from '../db/repositories/movieRepository';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { PreferencesRepository, DEFAULT_PREFERENCES } from '../db/repositories/preferencesRepository';
+import { validateAndRepairDatabase } from '../db/database';
 import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
@@ -75,18 +76,31 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [dataVersion, setDataVersion] = useState<number>(1);
 
-  // Monitor network status
+  // In-flight operation tracker to prevent rapid double-clicks and race conditions
+  const inFlightOps = React.useRef(new Set<string>());
+
+  // Monitor network status & initialize local preferences safely
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Load user preferences
-    PreferencesRepository.getPreferences().then((p) => {
-      setPreferences(p);
-      soundService.setSoundEnabled(p.soundEnabled);
-      hapticsService.setHapticsEnabled(p.hapticsEnabled);
+    // Safely load user preferences and run integrity audit
+    PreferencesRepository.getPreferences()
+      .then((p) => {
+        setPreferences(p);
+        soundService.setSoundEnabled(p.soundEnabled);
+        hapticsService.setHapticsEnabled(p.hapticsEnabled);
+      })
+      .catch((err) => {
+        console.warn('Storage unavailable or restricted, using default preferences:', err);
+        setPreferences(DEFAULT_PREFERENCES);
+      });
+
+    // Run background integrity check to prune orphaned records
+    validateAndRepairDatabase().catch((err) => {
+      console.warn('Database integrity repair skipped:', err);
     });
 
     return () => {
@@ -113,10 +127,15 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const updatePreference = async <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
-    const updated = await PreferencesRepository.updatePreference(key, value);
-    setPreferences(updated);
-    if (key === 'soundEnabled') soundService.setSoundEnabled(value as boolean);
-    if (key === 'hapticsEnabled') hapticsService.setHapticsEnabled(value as boolean);
+    try {
+      const updated = await PreferencesRepository.updatePreference(key, value);
+      setPreferences(updated);
+      if (key === 'soundEnabled') soundService.setSoundEnabled(value as boolean);
+      if (key === 'hapticsEnabled') hapticsService.setHapticsEnabled(value as boolean);
+    } catch (err) {
+      console.error('Failed to update preference:', err);
+      showToast('Could not save preference change');
+    }
   };
 
   const openMovieDetail = (movieId: number) => {
@@ -137,111 +156,204 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setSelectedCollectionId(null);
   };
 
-  // --- Centralized Movie Actions ---
+  // --- Centralized Movie Actions with Concurrency and Error Guards ---
 
   const markAsWatched = async (
     movie: Movie,
     options?: { rating?: number | null; notes?: string; review?: string; isFavorite?: boolean }
-  ) => {
-    // 1. Ensure movie metadata is stored
-    await MovieRepository.save(movie);
+  ): Promise<UserMovie> => {
+    const opKey = `watched_${movie.id}`;
+    if (inFlightOps.current.has(opKey)) {
+      const existing = await UserMovieRepository.getByMovieId(movie.id);
+      if (existing) return existing;
+    }
+    inFlightOps.current.add(opKey);
 
-    // 2. Mark as watched in UserMovie repository
-    const updated = await UserMovieRepository.markWatched(movie.id, options);
+    try {
+      // 1. Ensure movie metadata is stored
+      await MovieRepository.save(movie);
 
-    // 3. Audio & tactile feedback
-    soundService.playWatchedChime();
-    hapticsService.confirm();
+      // 2. Mark as watched in UserMovie repository
+      const updated = await UserMovieRepository.markWatched(movie.id, options);
 
-    // 4. Trigger celebratory moment
-    setCelebrationMovie(movie);
+      // 3. Audio & tactile feedback
+      soundService.playWatchedChime();
+      hapticsService.confirm();
 
-    // 5. Check if any collections containing this movie are now 100% complete!
-    const collections = await CollectionRepository.getAll();
-    for (const c of collections) {
-      const colMovies = await CollectionRepository.getCollectionMovies(c.id);
-      if (colMovies.some((cm) => cm.movieId === movie.id)) {
-        const progress = await CollectionRepository.calculateProgress(c.id);
-        if (progress.isComplete) {
-          // Play triumph chord and show collection completed dialog
-          soundService.playCollectionTriumph();
-          hapticsService.success();
-          setCelebrationCollection(c);
-          break;
+      // 4. Trigger celebratory moment
+      setCelebrationMovie(movie);
+
+      // 5. Check if any collections containing this movie are now 100% complete!
+      const collections = await CollectionRepository.getAll();
+      for (const c of collections) {
+        const colMovies = await CollectionRepository.getCollectionMovies(c.id);
+        if (colMovies.some((cm) => cm.movieId === movie.id)) {
+          const progress = await CollectionRepository.calculateProgress(c.id);
+          if (progress.isComplete) {
+            soundService.playCollectionTriumph();
+            hapticsService.success();
+            setCelebrationCollection(c);
+            break;
+          }
         }
       }
+
+      // 6. Show Undo Toast
+      showToast(`✓ Marked "${movie.title}" as Watched`, 'Undo', async () => {
+        try {
+          await unmarkWatched(movie.id);
+          showToast(`Restored "${movie.title}"`);
+        } catch {
+          showToast(`Could not restore "${movie.title}"`);
+        }
+      });
+
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to mark movie as watched:', err);
+      showToast(`Storage error: could not record "${movie.title}"`);
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
     }
-
-    // 6. Show Undo Toast
-    showToast(`✓ Marked "${movie.title}" as Watched`, 'Undo', async () => {
-      await unmarkWatched(movie.id);
-      showToast(`Restored "${movie.title}"`);
-    });
-
-    notifyDataChanged();
-    return updated;
   };
 
   const unmarkWatched = async (movieId: number) => {
-    await UserMovieRepository.unmarkWatched(movieId);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    notifyDataChanged();
+    const opKey = `unmark_${movieId}`;
+    if (inFlightOps.current.has(opKey)) return;
+    inFlightOps.current.add(opKey);
+
+    try {
+      await UserMovieRepository.unmarkWatched(movieId);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      notifyDataChanged();
+    } catch (err: any) {
+      console.error('Failed to unmark watched:', err);
+      showToast('Storage error: could not update movie status');
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
+    }
   };
 
-  const addToWatchlist = async (movie: Movie) => {
-    await MovieRepository.save(movie);
-    const updated = await UserMovieRepository.addToWatchlist(movie.id);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    showToast(`Added "${movie.title}" to Watchlist`, 'View', () => {
-      setActiveTab('library');
-    });
-    notifyDataChanged();
-    return updated;
+  const addToWatchlist = async (movie: Movie): Promise<UserMovie> => {
+    const opKey = `watchlist_${movie.id}`;
+    if (inFlightOps.current.has(opKey)) {
+      const existing = await UserMovieRepository.getByMovieId(movie.id);
+      if (existing) return existing;
+    }
+    inFlightOps.current.add(opKey);
+
+    try {
+      await MovieRepository.save(movie);
+      const updated = await UserMovieRepository.addToWatchlist(movie.id);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast(`Added "${movie.title}" to Watchlist`, 'View', () => {
+        setActiveTab('library');
+      });
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to add to watchlist:', err);
+      showToast(`Storage error: could not add "${movie.title}"`);
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
+    }
   };
 
-  const setWatching = async (movie: Movie) => {
-    await MovieRepository.save(movie);
-    const updated = await UserMovieRepository.setWatching(movie.id);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    showToast(`Now watching "${movie.title}"`);
-    notifyDataChanged();
-    return updated;
+  const setWatching = async (movie: Movie): Promise<UserMovie> => {
+    const opKey = `watching_${movie.id}`;
+    if (inFlightOps.current.has(opKey)) {
+      const existing = await UserMovieRepository.getByMovieId(movie.id);
+      if (existing) return existing;
+    }
+    inFlightOps.current.add(opKey);
+
+    try {
+      await MovieRepository.save(movie);
+      const updated = await UserMovieRepository.setWatching(movie.id);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast(`Now watching "${movie.title}"`);
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to set watching status:', err);
+      showToast(`Storage error: could not update "${movie.title}"`);
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
+    }
   };
 
-  const toggleFavorite = async (movie: Movie) => {
-    await MovieRepository.save(movie);
-    const updated = await UserMovieRepository.toggleFavorite(movie.id);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    notifyDataChanged();
-    return updated;
+  const toggleFavorite = async (movie: Movie): Promise<UserMovie> => {
+    const opKey = `fav_${movie.id}`;
+    if (inFlightOps.current.has(opKey)) {
+      const existing = await UserMovieRepository.getByMovieId(movie.id);
+      if (existing) return existing;
+    }
+    inFlightOps.current.add(opKey);
+
+    try {
+      await MovieRepository.save(movie);
+      const updated = await UserMovieRepository.toggleFavorite(movie.id);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to toggle favorite:', err);
+      showToast('Storage error: could not update favorite status');
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
+    }
   };
 
   const setRating = async (movieId: number, rating: number | null) => {
-    const updated = await UserMovieRepository.setRating(movieId, rating);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    notifyDataChanged();
-    return updated;
+    try {
+      const updated = await UserMovieRepository.setRating(movieId, rating);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to save rating:', err);
+      showToast('Storage error: could not save rating');
+      throw err;
+    }
   };
 
   const setReviewAndNotes = async (movieId: number, data: { review?: string; notes?: string }) => {
-    const updated = await UserMovieRepository.setReviewAndNotes(movieId, data);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    notifyDataChanged();
-    return updated;
+    try {
+      const updated = await UserMovieRepository.setReviewAndNotes(movieId, data);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      notifyDataChanged();
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to save review/notes:', err);
+      showToast('Storage error: could not save screening notes');
+      throw err;
+    }
   };
 
   const removeFromLibrary = async (movieId: number) => {
-    await UserMovieRepository.remove(movieId);
-    soundService.playSubtleClick();
-    hapticsService.tap();
-    showToast('Removed movie from library');
-    notifyDataChanged();
+    try {
+      await UserMovieRepository.remove(movieId);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast('Removed movie from library');
+      notifyDataChanged();
+    } catch (err: any) {
+      console.error('Failed to remove from library:', err);
+      showToast('Storage error: could not remove movie');
+      throw err;
+    }
   };
 
   return (
