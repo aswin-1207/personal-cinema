@@ -12,6 +12,7 @@ import { CollectionCard } from '../components/collection/CollectionCard';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import { CinemaButton } from '../components/common/CinemaButton';
+import { CURATED_LANDMARKS } from '../services/curatedLandmarks';
 import {
   Sparkles,
   Film,
@@ -118,17 +119,20 @@ export const Home: React.FC = () => {
           chosenHero = allLibrary[0];
         }
 
+        // Fallback hero if user library is empty: use first curated landmark immediately
+        const initialHero = chosenHero || (CURATED_LANDMARKS.length > 0 ? { movie: CURATED_LANDMARKS[0] } : null);
+
         // Render local state immediately (Section 21: TMDB must NOT block local sections)
         if (isMounted) {
-          setHeroMovie(chosenHero);
+          setHeroMovie(initialHero);
           setContinueWatching(watchingList);
           setWatchlist(watchListItems);
           setRecentlyWatched(watchedListItems);
           setCollections(allCollections);
           setActiveJourney(foundJourney);
+          setRecommendations(CURATED_LANDMARKS.slice(1, 9));
 
-
-          if (chosenHero?.movie.backdropPath) {
+          if (initialHero?.movie.backdropPath) {
             setAmbientColor('rgba(237, 194, 87, 0.12)');
           }
         }
@@ -136,13 +140,15 @@ export const Home: React.FC = () => {
         // Load TMDB-dependent recommendations independently in background (Non-blocking)
         tmdbService.getTrending('week').then((trendingList) => {
           if (!isMounted) return;
-          setRecommendations(trendingList.slice(0, 10));
+          if (trendingList.length > 0) {
+            setRecommendations(trendingList.slice(0, 10));
 
-          // If library was empty, use trending for hero
-          if (!chosenHero && trendingList.length > 0) {
-            setHeroMovie({ movie: trendingList[0] });
-            if (trendingList[0].backdropPath) {
-              setAmbientColor('rgba(237, 194, 87, 0.12)');
+            // If library was empty and using fallback landmark, upgrade to live weekly trending hero
+            if (!chosenHero) {
+              setHeroMovie({ movie: trendingList[0] });
+              if (trendingList[0].backdropPath) {
+                setAmbientColor('rgba(237, 194, 87, 0.12)');
+              }
             }
           }
         }).catch((err) => {

@@ -1,5 +1,5 @@
-// Personal Cinema Service Worker v3 (Offline-First App Shell & TMDB Image Cache)
-const CACHE_NAME = 'personal-cinema-v3';
+// MyCinema Production Service Worker v4 (Resilient Network-First App Shell & TMDB Image Cache)
+const CACHE_NAME = 'mycinema-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -33,7 +33,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. Never intercept API calls (allow direct network with proper headers)
+  // 1. Never intercept API calls (always allow direct network)
   if (url.pathname.startsWith('/api/') || url.hostname.includes('themoviedb.org')) {
     return;
   }
@@ -58,15 +58,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. App Shell & Static assets
+  // 3. Navigation requests (HTML pages): NETWORK FIRST, falling back to cache if offline
+  // This guarantees users always get the latest bundle and never get trapped in stale HTML.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('/index.html') || caches.match('/'));
+        })
+    );
+    return;
+  }
+
+  // 4. Static assets (JS, CSS, fonts, icons): Cache first, fallback to network
   if (event.request.method === 'GET') {
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
-        return fetch(event.request).catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
+          return networkResponse;
         });
       })
     );

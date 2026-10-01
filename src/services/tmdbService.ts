@@ -194,9 +194,14 @@ export class TMDBService {
       directUrl = `${TMDB_BASE_URL}${endpoint}?${directParams.toString()}`;
     }
 
-    // Fast-path: If direct TMDB has previously encountered an ISP block/DNS hang in this session,
+    // Fast-path: On Vercel / production or if direct TMDB has previously encountered an ISP block/DNS hang,
     // hit the /api/tmdb proxy immediately without wasting seconds on a dead DNS connection.
-    if (this.directTMDBFailed && typeof window !== 'undefined') {
+    const isVercelOrProduction = typeof window !== 'undefined' && (
+      window.location.hostname.includes('vercel.app') ||
+      window.location.protocol === 'https:'
+    );
+
+    if ((isVercelOrProduction || this.directTMDBFailed) && typeof window !== 'undefined') {
       try {
         const proxyParams = new URLSearchParams(params);
         proxyParams.set('endpoint', endpoint);

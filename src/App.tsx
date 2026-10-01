@@ -1,6 +1,7 @@
 import React from 'react';
 import { CinemaProvider, useCinema } from './context/CinemaContext';
 import { CinemaShell } from './components/cinema/CinemaShell';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Pages
 import { Home } from './pages/Home';
@@ -44,10 +45,13 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <CinemaProvider>
-      <AppContent />
-    </CinemaProvider>
+    <ErrorBoundary>
+      <CinemaProvider>
+        <AppContent />
+      </CinemaProvider>
+    </ErrorBoundary>
   );
 };
 
 export default App;
+
