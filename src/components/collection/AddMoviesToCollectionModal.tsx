@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { MovieRepository } from '../../db/repositories/movieRepository';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { Movie } from '../../types/movie';
 import { tmdbService } from '../../services/tmdbService';
-import { Search, Check, Plus, Film } from 'lucide-react';
+import { UnifiedSearchService } from '../../services/unifiedSearchService';
+import { Search, Check, Plus, Film, Loader2, WifiOff } from 'lucide-react';
 
 interface AddMoviesToCollectionModalProps {
   isOpen: boolean;
@@ -21,36 +22,115 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
   onClose,
   onAdded,
 }) => {
-  const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [existingMovieIds, setExistingMovieIds] = useState<Set<number>>(new Set());
   const [selectedMovieIds, setSelectedMovieIds] = useState<Set<number>>(new Set());
+  const [selectedMoviesMap, setSelectedMoviesMap] = useState<Map<number, Movie>>(new Map());
+
   const [searchQuery, setSearchQuery] = useState('');
+  const [displayedMovies, setDisplayedMovies] = useState<Movie[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Keep a cache of all available local movies not in this collection
+  const localAvailableRef = useRef<Movie[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
 
+    let isMounted = true;
     async function load() {
-      const libraryMovies = await MovieRepository.getAll();
       const colMovies = await CollectionRepository.getCollectionMovies(collectionId);
       const existing = new Set(colMovies.map((cm) => cm.movieId));
 
-      setAllMovies(libraryMovies);
-      setExistingMovieIds(existing);
-      setSelectedMovieIds(new Set());
-      setSearchQuery('');
+      const allLocal = await MovieRepository.getAll();
+      const availableLocal = allLocal.filter((m) => !existing.has(m.id));
+
+      if (isMounted) {
+        localAvailableRef.current = availableLocal;
+        setExistingMovieIds(existing);
+        setSelectedMovieIds(new Set());
+        setSelectedMoviesMap(new Map());
+        setSearchQuery('');
+        setDisplayedMovies(availableLocal.slice(0, 50));
+        setIsOffline(typeof navigator !== 'undefined' && !navigator.onLine);
+      }
     }
 
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, collectionId]);
 
-  const toggleSelect = (movieId: number) => {
+  // Two-layer search: Local catalog immediate + TMDB on-demand
+  useEffect(() => {
+    const rawQuery = searchQuery.trim();
+    if (!rawQuery) {
+      setDisplayedMovies(localAvailableRef.current.slice(0, 50));
+      setIsSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let isCancelled = false;
+
+    // 1. Instantly show local results
+    UnifiedSearchService.searchLocal(rawQuery, {
+      excludeMovieIds: existingMovieIds,
+      maxResults: 40,
+    }).then((localMatches) => {
+      if (!isCancelled) {
+        setDisplayedMovies(localMatches);
+      }
+    });
+
+    // 2. Query TMDB concurrently and merge
+    setIsSearching(true);
+    UnifiedSearchService.searchUnified(rawQuery, {
+      signal: controller.signal,
+      excludeMovieIds: existingMovieIds,
+      maxResults: 60,
+    })
+      .then((res) => {
+        if (!isCancelled) {
+          setDisplayedMovies(res.merged);
+          setIsOffline(res.isOffline);
+        }
+      })
+      .catch(() => {
+        // Fallback already displayed
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsSearching(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [searchQuery, existingMovieIds]);
+
+  const toggleSelect = (movie: Movie) => {
     setSelectedMovieIds((prev) => {
       const next = new Set(prev);
-      if (next.has(movieId)) {
-        next.delete(movieId);
+      if (next.has(movie.id)) {
+        next.delete(movie.id);
       } else {
-        next.add(movieId);
+        next.add(movie.id);
+      }
+      return next;
+    });
+
+    setSelectedMoviesMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(movie.id)) {
+        next.delete(movie.id);
+      } else {
+        next.set(movie.id, movie);
       }
       return next;
     });
@@ -60,6 +140,12 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
     if (selectedMovieIds.size === 0) return;
     try {
       setIsSubmitting(true);
+
+      // Ensure any newly added movie from TMDB is canonicalized into MovieRepository
+      for (const movie of selectedMoviesMap.values()) {
+        await UnifiedSearchService.ensureCanonicalMovie(movie);
+      }
+
       await CollectionRepository.addMoviesToCollection(collectionId, Array.from(selectedMovieIds));
       onAdded();
       onClose();
@@ -67,12 +153,6 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
       setIsSubmitting(false);
     }
   };
-
-  const filteredMovies = allMovies.filter((m) => {
-    if (existingMovieIds.has(m.id)) return false;
-    if (!searchQuery.trim()) return true;
-    return m.title.toLowerCase().includes(searchQuery.toLowerCase());
-  });
 
   return (
     <Modal
@@ -82,32 +162,48 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
       maxWidth="max-w-2xl"
     >
       <div className="flex flex-col h-[70vh] max-h-[600px]">
-        {/* Search input */}
-        <div className="relative mb-4">
+        {/* Search input with live status indicator */}
+        <div className="relative mb-3">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cinema-subtle" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search your library..."
-            className="cinema-input w-full pl-9"
+            placeholder="Search movie title, Marvel, DC, Batman, Avengers..."
+            className="cinema-input w-full pl-9 pr-10 text-xs sm:text-sm"
+            autoFocus
           />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-cinema-gold animate-spin">
+              <Loader2 size={16} />
+            </div>
+          )}
         </div>
 
-        {/* Movie list */}
+        {/* Offline indicator if searching without connection */}
+        {isOffline && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-2 text-[11px] text-cinema-subtle">
+            <WifiOff size={13} className="text-amber-400" />
+            <span>Offline mode — searching your local catalog</span>
+          </div>
+        )}
+
+        {/* Movie list with 2-layer feedback */}
         <div className="flex-grow overflow-y-auto pr-1 space-y-2">
-          {filteredMovies.length === 0 ? (
+          {displayedMovies.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-center text-cinema-subtle">
               <Film size={36} className="mb-2 opacity-40 text-cinema-gold" />
-              <p className="text-sm font-medium">No available movies found</p>
-              <p className="text-xs text-cinema-subtle mt-1">
-                {allMovies.length === 0
-                  ? 'Your library is empty. Add movies to your library first!'
-                  : 'All matching movies are already in this collection.'}
+              <p className="text-sm font-medium text-cinema-white">
+                {isSearching ? 'Searching catalog & TMDB...' : 'No available movies found'}
+              </p>
+              <p className="text-xs text-cinema-subtle mt-1 max-w-sm">
+                {searchQuery
+                  ? `No matching movies found for "${searchQuery}". All matching films may already be in this collection.`
+                  : 'Start typing to search hundreds of superhero, trending, or international films.'}
               </p>
             </div>
           ) : (
-            filteredMovies.map((movie) => {
+            displayedMovies.map((movie) => {
               const isSelected = selectedMovieIds.has(movie.id);
               const poster = movie.posterPath ? tmdbService.getImageUrl(movie.posterPath, 'w92') : null;
               const year = movie.releaseDate ? movie.releaseDate.split('-')[0] : '';
@@ -115,33 +211,46 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
               return (
                 <div
                   key={movie.id}
-                  onClick={() => toggleSelect(movie.id)}
+                  onClick={() => toggleSelect(movie)}
                   className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'border-cinema-gold bg-cinema-gold/10'
-                      : 'border-white/5 bg-cinema-charcoal/40 hover:bg-cinema-surface hover:border-white/15'
+                      ? 'border-cinema-gold bg-cinema-gold/10 shadow-sm'
+                      : 'border-white/5 bg-[#131319] hover:bg-[#1C1C24] hover:border-white/15'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-14 bg-cinema-charcoal rounded overflow-hidden flex-shrink-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
+                    <div className="w-10 h-14 bg-[#09090B] rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
                       {poster ? (
-                        <img src={poster} alt="" className="w-full h-full object-cover" />
+                        <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-cinema-subtle text-[10px]">
+                        <div className="w-full h-full flex items-center justify-center text-cinema-subtle text-[9px] text-center p-1">
                           No Poster
                         </div>
                       )}
                     </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-cinema-white line-clamp-1">{movie.title}</h4>
-                      <p className="text-xs text-cinema-subtle">
-                        {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-sm font-semibold text-cinema-white line-clamp-1 break-words" title={movie.title}>
+                          {movie.title}
+                        </h4>
+                        {movie.source === 'seed' && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cinema-gold/15 text-cinema-gold uppercase tracking-wider">
+                            Catalog
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-cinema-subtle mt-0.5">
+                        {year}
+                        {movie.voteAverage > 0 ? ` · ★ ${movie.voteAverage}` : ''}
+                        {movie.franchiseTags && movie.franchiseTags.length > 0
+                          ? ` · ${movie.franchiseTags.slice(0, 2).join(', ')}`
+                          : ''}
                       </p>
                     </div>
                   </div>
 
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                       isSelected
                         ? 'bg-cinema-gold text-cinema-black shadow-gold'
                         : 'border border-white/20 text-transparent'
@@ -156,20 +265,24 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/5">
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/[0.08]">
           <div className="text-xs text-cinema-silver">
             {selectedMovieIds.size} movie{selectedMovieIds.size === 1 ? '' : 's'} selected
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="cinema-button-secondary px-4 py-2 text-sm">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cinema-button-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+            >
               Cancel
             </button>
             <button
               onClick={handleAdd}
               disabled={isSubmitting || selectedMovieIds.size === 0}
-              className="cinema-button-primary px-5 py-2 text-sm flex items-center gap-2 disabled:opacity-50"
+              className="cinema-button-primary px-5 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-40 cursor-pointer"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>Add to Collection</span>
             </button>
           </div>

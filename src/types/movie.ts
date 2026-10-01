@@ -43,6 +43,9 @@ export interface Movie {
   budget?: number;
   revenue?: number;
   lastFetched: string; // ISO string
+  source?: 'seed' | 'tmdb' | 'user' | 'import';
+  seedCategory?: string;
+  franchiseTags?: string[];
 }
 
 export type MovieStatus = 'want_to_watch' | 'watching' | 'watched';

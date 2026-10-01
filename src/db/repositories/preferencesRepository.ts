@@ -30,6 +30,21 @@ export class PreferencesRepository {
     await db.put('preferences', { key: 'user_preferences', value: prefs });
   }
 
+  static async getPreference<T = any>(key: string): Promise<T | undefined> {
+    try {
+      const db = await getDB();
+      const stored = await db.get('preferences', key);
+      return stored ? stored.value : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  static async setPreference(key: string, value: any): Promise<void> {
+    const db = await getDB();
+    await db.put('preferences', { key, value });
+  }
+
   static async updatePreference<K extends keyof UserPreferences>(
     key: K,
     value: UserPreferences[K]

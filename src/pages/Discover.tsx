@@ -3,6 +3,7 @@ import { useCinema } from '../context/CinemaContext';
 import { tmdbService } from '../services/tmdbService';
 import { Movie, Genre } from '../types/movie';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
+import { UnifiedSearchService } from '../services/unifiedSearchService';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CinemaSegmentedControl } from '../components/common/CinemaSegmentedControl';
@@ -14,7 +15,7 @@ import { MovieGrid } from '../components/ui/MovieGrid';
 import { LoadingState } from '../components/ui/LoadingState';
 import { EmptyState } from '../components/common/EmptyState';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { Film, RefreshCw, KeyRound, Sparkles } from 'lucide-react';
+import { Film, RefreshCw, KeyRound, Sparkles, WifiOff } from 'lucide-react';
 
 const SCREENING_MOODS: Array<{ label: string; genreId: number }> = [
   { label: 'FEEL GOOD', genreId: 35 },
@@ -33,6 +34,7 @@ export const Discover: React.FC = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [isSearchOffline, setIsSearchOffline] = useState(false);
 
   const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedGenreId, setSelectedGenreId] = useState<number | null>(null);
@@ -51,7 +53,7 @@ export const Discover: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 300);
+    }, 250);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -107,58 +109,73 @@ export const Discover: React.FC = () => {
     loadDiscoveryData();
   }, [trendingTime, isOnline]);
 
-  // Perform search or genre discover with AbortController
+  // Perform search (Local Catalog + TMDB fallback) or genre discover
   useEffect(() => {
     const controller = new AbortController();
+    let isCancelled = false;
 
     if (debouncedQuery) {
+      // 1. Instant local search (Layer 1)
+      UnifiedSearchService.searchLocal(debouncedQuery).then((localMatches) => {
+        if (!isCancelled) {
+          setSearchResults(localMatches);
+        }
+      });
+
+      // 2. Full unified search (Layer 1 + Layer 2)
       setIsSearching(true);
-      tmdbService
-        .searchMovies(debouncedQuery, undefined, 1, controller.signal)
+      UnifiedSearchService.searchUnified(debouncedQuery, { signal: controller.signal })
         .then((res) => {
-          if (!controller.signal.aborted) {
-            setSearchResults(res.results || []);
+          if (!isCancelled && !controller.signal.aborted) {
+            setSearchResults(res.merged);
+            setIsSearchOffline(res.isOffline);
           }
         })
         .catch(() => {
-          if (!controller.signal.aborted) {
-            setSearchResults([]);
-          }
+          // Local results already displayed
         })
         .finally(() => {
-          if (!controller.signal.aborted) {
+          if (!isCancelled && !controller.signal.aborted) {
             setIsSearching(false);
           }
         });
     } else if (selectedGenreId) {
       setIsSearching(true);
+      setIsSearchOffline(false);
       tmdbService
         .discoverMovies({ with_genres: String(selectedGenreId), sort_by: 'popularity.desc' })
         .then((res: any) => {
-          if (!controller.signal.aborted) {
+          if (!controller.signal.aborted && !isCancelled) {
             const list = Array.isArray(res) ? res : res.results || [];
             setSearchResults(list);
           }
         })
         .catch(() => {
-          if (!controller.signal.aborted) {
+          if (!controller.signal.aborted && !isCancelled) {
             setSearchResults([]);
           }
         })
         .finally(() => {
-          if (!controller.signal.aborted) {
+          if (!controller.signal.aborted && !isCancelled) {
             setIsSearching(false);
           }
         });
     } else {
       setSearchResults([]);
       setIsSearching(false);
+      setIsSearchOffline(false);
     }
 
     return () => {
+      isCancelled = true;
       controller.abort();
     };
   }, [debouncedQuery, selectedGenreId]);
+
+  const handleMovieClick = async (movie: Movie) => {
+    await UnifiedSearchService.ensureCanonicalMovie(movie);
+    openMovieDetail(movie.id);
+  };
 
   const handleSelectMood = (genreId: number) => {
     if (selectedGenreId === genreId && !query) {
@@ -297,7 +314,14 @@ export const Discover: React.FC = () => {
             onAction={clearFilters}
           />
 
-          {isSearching ? (
+          {isSearchOffline && (
+            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2 text-xs text-[#9E9DA5]">
+              <WifiOff size={14} className="text-amber-400" />
+              <span>Offline mode — showing matches from your local catalog</span>
+            </div>
+          )}
+
+          {isSearching && searchResults.length === 0 ? (
             <LoadingState count={8} layout="grid" />
           ) : searchResults.length === 0 ? (
             <EmptyState
@@ -316,7 +340,7 @@ export const Discover: React.FC = () => {
                   movie={movie}
                   userData={userMovieMap.get(movie.id)}
                   className="w-full"
-                  onClick={() => openMovieDetail(movie.id)}
+                  onClick={() => handleMovieClick(movie)}
                 />
               ))}
             </MovieGrid>

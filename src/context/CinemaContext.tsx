@@ -6,6 +6,7 @@ import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { PreferencesRepository, DEFAULT_PREFERENCES } from '../db/repositories/preferencesRepository';
 import { validateAndRepairDatabase } from '../db/database';
+import { SeedCatalogService } from '../services/seedCatalogService';
 import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
@@ -102,6 +103,15 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     validateAndRepairDatabase().catch((err) => {
       console.warn('Database integrity repair skipped:', err);
     });
+
+    // Initialize curated seed catalog (non-blocking, idempotent)
+    SeedCatalogService.initializeSeedCatalog()
+      .then((didSeed) => {
+        if (didSeed) notifyDataChanged();
+      })
+      .catch((err) => {
+        console.warn('Seed catalog initialization deferred:', err);
+      });
 
     return () => {
       window.removeEventListener('online', handleOnline);
