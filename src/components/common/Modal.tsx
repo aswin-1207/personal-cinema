@@ -39,7 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       {/* Dialog Box: Desktop Centered Glass vs Mobile Bottom Sheet */}
       <div
-        className={`w-full bg-[#171924] border border-white/[0.1] shadow-2xl overflow-hidden flex flex-col rounded-t-[24px] sm:rounded-2xl max-h-[88vh] animate-cinema-sheet sm:animate-cinema-scale ${
+        className={`w-full bg-[#131319] border border-white/[0.1] shadow-2xl overflow-hidden flex flex-col rounded-t-[24px] sm:rounded-2xl max-h-[88vh] animate-cinema-sheet sm:animate-cinema-scale ${
           typeof maxWidth === 'string' && maxWidth.startsWith('max-w-') ? maxWidth : ''
         }`}
         style={{
@@ -54,7 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Modal Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
-            <h3 className="font-serif font-bold text-base sm:text-lg text-[#F5F2F0]">
+            <h3 className="font-serif font-bold text-base sm:text-lg text-[#F5F3EB]">
               {title}
             </h3>
             <button

@@ -307,14 +307,14 @@ export const Home: React.FC = () => {
 
 
 
-      {/* Intentional Cinema Onboarding Card (Section 16) */}
+      {/* Intentional Cinema Onboarding Card */}
       {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#171924]/80 border border-white/[0.08] text-center space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#EDC257]/15 text-[#EDC257] mx-auto flex items-center justify-center">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#131319] border border-white/[0.08] text-center space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#E0AD52]/15 text-[#E0AD52] mx-auto flex items-center justify-center border border-[#E0AD52]/20">
             <Film size={24} />
           </div>
           <div className="max-w-md mx-auto">
-            <h3 className="font-serif font-bold text-lg sm:text-xl text-[#F5F2F0]">
+            <h3 className="font-serif font-black text-lg sm:text-xl text-[#F5F3EB]">
               Your Cinema Is Waiting
             </h3>
             <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1.5 leading-relaxed">
@@ -357,14 +357,14 @@ export const Home: React.FC = () => {
         <section className="space-y-3.5">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h3 className="font-section-title text-[#F5F2F0]">Curated Collections</h3>
+              <h3 className="font-section-title text-[#F5F3EB]">Curated Collections</h3>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
                 Thematic universes and cinematic marathons
               </p>
             </div>
             <button
               onClick={() => setActiveTab('collections')}
-              className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#EDC257] hover:text-[#EDC257] p-0"
+              className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#E0AD52] hover:text-[#D49B35] p-0 cursor-pointer"
             >
               <span>All Collections</span>
               <ChevronRight size={14} />
@@ -415,29 +415,29 @@ export const Home: React.FC = () => {
 
       {/* Surprise Me Modal */}
       {isSurpriseOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050508]/85 backdrop-blur-md animate-cinema-fade">
-          <div className="relative w-full max-w-sm bg-[#171924] border border-[#EDC257]/40 rounded-2xl shadow-2xl p-6 text-center animate-cinema-scale">
-            <div className="inline-flex p-3 rounded-2xl bg-[#EDC257]/15 text-[#EDC257] mb-3 shadow-[0_2px_12px_rgba(237,194,87,0.3)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090B]/85 backdrop-blur-xl animate-cinema-fade">
+          <div className="relative w-full max-w-sm bg-[#131319] border border-[#E0AD52]/40 rounded-3xl shadow-2xl p-6 text-center animate-cinema-scale">
+            <div className="inline-flex p-3 rounded-2xl bg-[#E0AD52]/15 text-[#E0AD52] mb-3 shadow-[0_2px_12px_rgba(224,173,82,0.3)] border border-[#E0AD52]/20">
               <Sparkles size={28} className={isRolling ? 'animate-spin' : ''} />
             </div>
 
-            <h3 className="font-serif font-bold text-xl text-[#F5F2F0] mb-1">
+            <h3 className="font-serif font-black text-xl text-[#F5F3EB] mb-1">
               Tonight's Mystery Selection
             </h3>
             <p className="text-xs text-[#9E9DA5] mb-4">
-              Hand-picked by Personal Cinema from your library queue.
+              Hand-picked by MyCinema from your screening vault.
             </p>
 
             {isRolling || !surpriseMovie ? (
               <div className="py-12 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full border-2 border-[#222534] border-t-[#EDC257] animate-spin mb-3" />
-                <span className="text-xs text-[#EDC257] font-mono uppercase tracking-wider">
+                <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-[#E0AD52] animate-spin mb-3" />
+                <span className="text-xs text-[#E0AD52] font-mono uppercase tracking-wider">
                   Scanning Vault...
                 </span>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="aspect-[2/3] w-36 mx-auto rounded-xl overflow-hidden shadow-2xl border border-[#EDC257]/30">
+                <div className="aspect-[2/3] w-36 mx-auto rounded-2xl overflow-hidden shadow-2xl border border-[#E0AD52]/30">
                   {surpriseMovie.posterPath ? (
                     <img
                       src={tmdbService.getImageUrl(surpriseMovie.posterPath, 'w342')}
@@ -448,7 +448,7 @@ export const Home: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-[#F5F2F0] text-base">{surpriseMovie.title}</h4>
+                  <h4 className="font-bold text-[#F5F3EB] text-base">{surpriseMovie.title}</h4>
                   <p className="text-xs text-[#9E9DA5]">
                     {surpriseMovie.releaseDate?.substring(0, 4)} {surpriseMovie.runtime ? `· ${surpriseMovie.runtime}m` : ''}
                   </p>
@@ -476,7 +476,7 @@ export const Home: React.FC = () => {
 
             <button
               onClick={() => setIsSurpriseOpen(false)}
-              className="mt-4 text-xs text-[#9E9DA5] hover:text-[#F5F2F0] underline block mx-auto cursor-pointer bg-transparent border-none"
+              className="mt-4 text-xs text-[#9E9DA5] hover:text-[#F5F3EB] underline block mx-auto cursor-pointer bg-transparent border-none"
             >
               Close
             </button>

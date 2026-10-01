@@ -58,8 +58,8 @@ export class ShareService {
         width: 260,
         margin: 2,
         color: {
-          dark: '#EDC257', // Cinema Gold
-          light: '#0D0D12', // Cinema Black
+          dark: '#E0AD52', // Cinema Gold
+          light: '#09090B', // Cinema Black
         },
       });
     } catch (err) {

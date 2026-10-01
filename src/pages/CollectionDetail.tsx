@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
-import { CollectionWithMovies } from '../../src/types/collection';
+import { CollectionWithMovies } from '../types/collection';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { AddMoviesToCollectionModal } from '../components/collection/AddMoviesToCollectionModal';
 import { CollectionShareModal } from '../components/share/CollectionShareModal';
@@ -45,8 +45,8 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
   if (!collectionData) {
     return (
       <div className="py-20 text-center text-[#5C5B64]">
-        <div className="w-10 h-10 rounded-full border-2 border-[#1E2029] border-t-[#EDC257] animate-spin mx-auto mb-3" />
-        <p className="text-xs font-serif">Entering Universe...</p>
+        <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin mx-auto mb-3" />
+        <p className="text-xs font-serif text-[#9E9DA5]">Entering Universe...</p>
       </div>
     );
   }
@@ -92,7 +92,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F2F0] transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors cursor-pointer border-none"
         >
           <ArrowLeft size={16} />
           <span>Back to Collections</span>
@@ -101,7 +101,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsShareOpen(true)}
-            className="cinema-button-secondary px-3.5 py-1.5 text-xs flex items-center gap-1.5"
+            className="cinema-button-secondary px-3.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer"
           >
             <Share2 size={14} />
             <span>Share Saga</span>
@@ -109,7 +109,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
 
           <button
             onClick={handleDeleteCollection}
-            className="p-2 rounded-xl text-[#9E9DA5] hover:text-[#B81C28] hover:bg-red-950/30 transition-colors"
+            className="p-2 rounded-xl text-[#9E9DA5] hover:text-[#EF4444] hover:bg-red-950/30 transition-colors cursor-pointer border-none bg-transparent"
             title="Delete Collection"
           >
             <Trash2 size={16} />
@@ -117,53 +117,53 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         </div>
       </div>
 
-      {/* Universe Establishing Hero Stage (Section 33) */}
-      <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-[#171924] to-[#10121A] border border-[#EDC257]/30 relative overflow-hidden shadow-2xl">
+      {/* Universe Establishing Hero Stage */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#131319] to-[#0E0E14] border border-[#E0AD52]/30 relative overflow-hidden shadow-2xl">
         {/* Subtle Ambient Glow if 100% complete */}
         {progress.isComplete && (
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#EDC257]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#E0AD52]/20 rounded-full blur-3xl pointer-events-none" />
         )}
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="max-w-2xl space-y-3">
-            <div className="flex items-center gap-2 text-[#EDC257] text-[11px] font-bold tracking-[0.18em] uppercase">
+            <div className="flex items-center gap-2 text-[#E0AD52] text-[11px] font-bold tracking-[0.18em] uppercase">
               <Layers size={14} />
               <span>CURATED MOVIE UNIVERSE</span>
             </div>
 
             {progress.isComplete && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EDC257]/15 border border-[#EDC257]/40 text-[#EDC257] text-xs font-black shadow-[0_2px_12px_rgba(237,194,87,0.3)]">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0AD52]/15 border border-[#E0AD52]/40 text-[#E0AD52] text-xs font-black shadow-[0_2px_12px_rgba(224,173,82,0.3)]">
                 <Trophy size={14} />
                 <span>COLLECTION MASTERED ✓</span>
               </div>
             )}
 
-            <h1 className="font-hero-title">
+            <h1 className="font-hero-title text-2xl sm:text-4xl">
               {collection.name}
             </h1>
 
             {collection.description && (
-              <p className="text-xs sm:text-sm text-[#F5F2F0]/80 leading-relaxed max-w-xl">
+              <p className="text-xs sm:text-sm text-[#F5F3EB]/80 leading-relaxed max-w-xl">
                 {collection.description}
               </p>
             )}
 
-            {/* Derived Thin Progress Bar (Section 34) */}
+            {/* Derived Thin Progress Bar */}
             <div className="space-y-1.5 max-w-md pt-2">
               <div className="flex justify-between text-xs text-[#9E9DA5]">
                 <span>
                   {progress.watched} of {progress.total} movies completed
                 </span>
-                <span className={`font-bold ${progress.isComplete ? 'text-[#EDC257]' : 'text-[#F5F2F0]'}`}>
+                <span className={`font-bold ${progress.isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
                   {progress.percent}%
                 </span>
               </div>
-              <div className="w-full h-2 bg-[#09090D] rounded-full overflow-hidden border border-white/5">
+              <div className="w-full h-2 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ease-out ${
                     progress.isComplete
-                      ? 'bg-gradient-to-r from-[#D99C33] to-[#EDC257] shadow-[0_0_12px_rgba(237,194,87,0.4)]'
-                      : 'bg-[#EDC257]'
+                      ? 'bg-gradient-to-r from-[#D99C33] to-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.4)]'
+                      : 'bg-[#E0AD52]'
                   }`}
                   style={{ width: `${progress.percent}%` }}
                 />
@@ -175,7 +175,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setIsAddOpen(true)}
-              className="cinema-button-primary px-6 py-3 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(237,194,87,0.35)]"
+              className="cinema-button-primary px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(224,173,82,0.35)] cursor-pointer"
             >
               <Plus size={15} />
               <span>Add Movies</span>
@@ -184,8 +184,8 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             {movies.length > 1 && (
               <button
                 onClick={() => setReorderMode(!reorderMode)}
-                className={`cinema-button-secondary px-4 py-3 text-xs font-semibold flex items-center justify-center gap-1.5 ${
-                  reorderMode ? 'border-[#EDC257] text-[#EDC257]' : ''
+                className={`cinema-button-secondary px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
+                  reorderMode ? 'border-[#E0AD52] text-[#E0AD52]' : ''
                 }`}
               >
                 <ArrowUpDown size={15} />
@@ -204,8 +204,8 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             onClick={() => setFilter(mode)}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer border-none ${
               filter === mode
-                ? 'bg-[#EDC257] text-[#09090D] shadow-md'
-                : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F2F0]'
+                ? 'bg-[#E0AD52] text-[#09090B] font-bold shadow-md'
+                : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
             }`}
           >
             {mode === 'all'

@@ -39,12 +39,12 @@ export const CinemaToggle: React.FC<CinemaToggleProps> = ({
     >
       <div className="flex items-start gap-3 flex-1 min-w-0">
         {icon && (
-          <div className="mt-0.5 text-[#EDC257] flex-shrink-0">
+          <div className="mt-0.5 text-[#E0AD52] flex-shrink-0">
             {icon}
           </div>
         )}
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-[#F5F2F0] leading-snug">
+          <div className="text-sm font-semibold text-[#F5F3EB] leading-snug">
             {label}
           </div>
           {description && (
@@ -59,15 +59,15 @@ export const CinemaToggle: React.FC<CinemaToggleProps> = ({
       <div
         className={`relative w-12 h-7 rounded-full flex-shrink-0 transition-colors duration-250 ease-out p-0.5 ${
           checked
-            ? 'bg-[#EDC257] shadow-[0_0_12px_rgba(237,194,87,0.35)]'
-            : 'bg-[#222534] border border-white/10'
+            ? 'bg-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.35)]'
+            : 'bg-[#1C1C24] border border-white/10'
         }`}
       >
         <div
           className={`w-6 h-6 rounded-full shadow-md transition-transform duration-250 ease-out ${
             checked
-              ? 'translate-x-5 bg-[#09090D]'
-              : 'translate-x-0 bg-[#F5F2F0]'
+              ? 'translate-x-5 bg-[#09090B]'
+              : 'translate-x-0 bg-[#F5F3EB]'
           }`}
         />
       </div>

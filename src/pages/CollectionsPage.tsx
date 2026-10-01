@@ -5,6 +5,7 @@ import { Collection } from '../types/collection';
 import { CollectionCard } from '../components/collection/CollectionCard';
 import { CreateCollectionModal } from '../components/collection/CreateCollectionModal';
 import { EmptyState } from '../components/common/EmptyState';
+import { CinemaHeader } from '../components/ui/CinemaHeader';
 import { FolderPlus } from 'lucide-react';
 
 export const CollectionsPage: React.FC = () => {
@@ -29,30 +30,26 @@ export const CollectionsPage: React.FC = () => {
   }, [dataVersion]);
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header matching Figma 2:209 */}
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
-            Collections
-          </h1>
-          <p className="text-xs sm:text-sm text-[#9E9DA5]">
-            Organize movies your way.
-          </p>
-        </div>
+    <div className="space-y-6 pb-24">
+      {/* Header matching Figma Sagas & Collections */}
+      <CinemaHeader
+        badge="SAGAS & CURATION"
+        title="Collections"
+        subtitle="Group filmographies, director retrospectives, and themed universes."
+        action={
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="w-full sm:w-auto h-11 px-5 rounded-xl bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(224,173,82,0.3)] active:scale-95 cursor-pointer"
+          >
+            <FolderPlus size={15} />
+            <span>+ CREATE COLLECTION</span>
+          </button>
+        }
+      />
 
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(224,173,82,0.35)] active:scale-95 cursor-pointer"
-        >
-          <FolderPlus size={16} />
-          <span>+ CREATE COLLECTION</span>
-        </button>
-      </div>
-
-      <div className="pt-2">
+      <div className="pt-1">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] mb-4">
-          YOUR COLLECTIONS
+          YOUR COLLECTIONS ({collections.length})
         </h2>
 
       {/* Grid of collections */}

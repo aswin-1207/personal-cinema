@@ -73,7 +73,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
   return (
     <div
       onClick={onClick}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#171924] border border-white/[0.08] hover:border-[#EDC257]/45 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col ${className}`}
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col ${className}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -84,7 +84,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
       }}
     >
       {/* Visual Collage representing a Movie Universe (2x2 with depth shifts) */}
-      <div className="relative aspect-[16/10] bg-[#10121A] overflow-hidden">
+      <div className="relative aspect-[16/10] bg-[#09090B] overflow-hidden">
         {collection.coverType === 'hero' && heroPosterUrl ? (
           <img
             src={heroPosterUrl}

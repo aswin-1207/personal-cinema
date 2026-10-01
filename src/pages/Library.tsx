@@ -262,7 +262,7 @@ export const Library: React.FC = () => {
       {/* Content Rendering */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mb-3" />
+          <div className="w-10 h-10 rounded-full border-2 border-white/10 border-t-[#E0AD52] animate-spin mb-3" />
         </div>
       ) : filteredItems.length === 0 ? (
         <EmptyState
@@ -280,8 +280,8 @@ export const Library: React.FC = () => {
           onAction={() => setActiveTab('discover')}
         />
       ) : displayMode === 'grid' ? (
-        /* Visual Poster Grid with 2:3 Aspect Ratio */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        /* Visual Poster Grid with Strict 2:3 Aspect Ratio */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-5">
           {filteredItems.map((item) => (
             <MoviePoster
               key={item.movie.id}
@@ -294,10 +294,10 @@ export const Library: React.FC = () => {
         </div>
       ) : (
         /* List Mode with Strict Boundary Containment */
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {filteredItems.map((item) => {
             const poster = item.movie.posterPath
-              ? tmdbService.getImageUrl(item.movie.posterPath, 'w92')
+              ? tmdbService.getImageUrl(item.movie.posterPath, 'w185')
               : null;
             const year = item.movie.releaseDate ? item.movie.releaseDate.substring(0, 4) : '';
 
@@ -305,15 +305,15 @@ export const Library: React.FC = () => {
               <div
                 key={item.movie.id}
                 onClick={() => openMovieDetail(item.movie.id)}
-                className="flex items-center justify-between p-3 rounded-xl bg-cinema-surface/60 border border-white/5 hover:border-cinema-gold/40 hover:bg-cinema-surface cursor-pointer transition-all gap-2"
+                className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-[#131319] border border-white/[0.07] hover:border-[#E0AD52]/40 hover:bg-[#1C1C24] cursor-pointer transition-all gap-3 shadow-md"
               >
                 <div className="flex items-center gap-3.5 min-w-0 flex-1 pr-2">
                   {/* Poster Thumbnail */}
-                  <div className="w-12 h-16 bg-cinema-charcoal rounded-lg overflow-hidden flex-shrink-0 shadow">
+                  <div className="w-12 h-16 sm:w-14 sm:h-20 bg-[#0F0F14] rounded-xl overflow-hidden flex-shrink-0 shadow border border-white/5">
                     {poster ? (
                       <img src={poster} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] text-cinema-subtle">
+                      <div className="w-full h-full flex items-center justify-center text-[10px] text-[#9E9DA5]">
                         No Poster
                       </div>
                     )}
@@ -322,20 +322,20 @@ export const Library: React.FC = () => {
                   {/* Title & details with Guaranteed Strict Containment */}
                   <div className="min-w-0 flex-1">
                     <h3
-                      className="font-semibold text-cinema-white text-sm line-clamp-2 break-words leading-snug"
+                      className="font-semibold text-[#F5F3EB] text-xs sm:text-sm line-clamp-2 break-words leading-snug group-hover:text-[#E0AD52]"
                       title={item.movie.title}
                     >
                       {item.movie.title}
                     </h3>
-                    <div className="text-xs text-cinema-subtle flex items-center gap-2 mt-0.5">
+                    <div className="text-[11px] text-[#9E9DA5] flex items-center gap-2 mt-0.5">
                       <span>{year || '—'}</span>
                       {item.movie.runtime && <span>· {item.movie.runtime}m</span>}
                       {item.movie.genres && (
-                        <span className="truncate">· {item.movie.genres.slice(0, 2).map((g) => g.name).join(', ')}</span>
+                        <span className="truncate hidden sm:inline">· {item.movie.genres.slice(0, 2).map((g) => g.name).join(', ')}</span>
                       )}
                     </div>
                     {item.userData?.notes && (
-                      <p className="text-xs text-cinema-silver mt-1 line-clamp-1 italic truncate">
+                      <p className="text-[11px] text-[#9E9DA5]/80 mt-1 line-clamp-1 italic truncate">
                         "{item.userData.notes}"
                       </p>
                     )}
@@ -344,7 +344,7 @@ export const Library: React.FC = () => {
 
                 {/* Rating & Actions (Never Pushed Off-Screen) */}
                 <div
-                  className="flex items-center gap-3 sm:gap-4 flex-shrink-0"
+                  className="flex items-center gap-2.5 sm:gap-4 flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <RatingControl

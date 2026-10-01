@@ -28,11 +28,11 @@ export const CinemaButton: React.FC<CinemaButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-gradient-to-r from-[#EDC257] to-[#D99C33] text-[#09090D] font-bold shadow-[0_4px_20px_rgba(237,194,87,0.3)] hover:shadow-[0_6px_28px_rgba(237,194,87,0.45)] hover:scale-[1.02] active:scale-[0.98]',
+      'bg-gradient-to-r from-[#E0AD52] to-[#D99C33] text-[#09090B] font-bold shadow-[0_4px_20px_rgba(224,173,82,0.3)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.45)] hover:scale-[1.02] active:scale-[0.98]',
     secondary:
-      'bg-white/[0.07] text-[#F5F2F0] border border-white/10 hover:border-[#EDC257]/50 hover:bg-white/[0.12] active:scale-[0.98]',
+      'bg-white/[0.07] text-[#F5F3EB] border border-white/10 hover:border-[#E0AD52]/50 hover:bg-white/[0.12] active:scale-[0.98]',
     ghost:
-      'bg-transparent text-[#9E9DA5] hover:text-[#F5F2F0] hover:bg-white/[0.05] active:scale-[0.98]',
+      'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.05] active:scale-[0.98]',
     danger:
       'bg-[#B81C28]/15 border border-[#B81C28]/40 text-[#D94048] hover:bg-[#B81C28]/30 active:scale-[0.98]',
   }[variant];
@@ -40,7 +40,7 @@ export const CinemaButton: React.FC<CinemaButtonProps> = ({
   return (
     <button
       disabled={disabled || isLoading}
-      className={`inline-flex items-center justify-center font-medium tracking-wide transition-all duration-200 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-[#EDC257] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none ${sizeStyles} ${variantStyles} ${className}`}
+      className={`inline-flex items-center justify-center font-medium tracking-wide transition-all duration-200 cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-[#E0AD52] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none ${sizeStyles} ${variantStyles} ${className}`}
       {...props}
     >
       {isLoading ? (

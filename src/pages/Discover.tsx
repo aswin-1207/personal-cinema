@@ -7,13 +7,23 @@ import { MoviePoster } from '../components/movie/MoviePoster';
 import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CinemaSegmentedControl } from '../components/common/CinemaSegmentedControl';
 import { CinemaButton } from '../components/common/CinemaButton';
-import { Search, X, Film, RefreshCw, KeyRound } from 'lucide-react';
+import { CinemaHeader } from '../components/ui/CinemaHeader';
+import { SearchField } from '../components/ui/SearchField';
+import { FilterChips, FilterOption } from '../components/ui/FilterChips';
+import { MovieGrid } from '../components/ui/MovieGrid';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/common/EmptyState';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { Film, RefreshCw, KeyRound, Sparkles } from 'lucide-react';
 
-const SCREENING_MOODS = [
+const SCREENING_MOODS: Array<{ label: string; genreId: number }> = [
   { label: 'FEEL GOOD', genreId: 35 },
-  { label: 'DARK', genreId: 53 },
-  { label: 'EPIC', genreId: 12 },
+  { label: 'DARK & GRITTY', genreId: 53 },
+  { label: 'EPIC & GRAND', genreId: 12 },
   { label: 'MIND-BENDING', genreId: 878 },
+  { label: 'DEEP DRAMA', genreId: 18 },
+  { label: 'CHILLING', genreId: 27 },
+  { label: 'HIGH OCTANE', genreId: 28 },
 ];
 
 export const Discover: React.FC = () => {
@@ -53,7 +63,7 @@ export const Discover: React.FC = () => {
     });
   }, [dataVersion]);
 
-  // Load discovery data (Trending, Popular, Genres) with SWR (Section 7 & 11)
+  // Load discovery data (Trending, Popular, Genres) with SWR
   const loadDiscoveryData = async () => {
     setFetchError(null);
     setIsLoadingTrending(true);
@@ -97,7 +107,7 @@ export const Discover: React.FC = () => {
     loadDiscoveryData();
   }, [trendingTime, isOnline]);
 
-  // Perform search or genre discover with AbortController (Section 12 & 13)
+  // Perform search or genre discover with AbortController
   useEffect(() => {
     const controller = new AbortController();
 
@@ -166,53 +176,45 @@ export const Discover: React.FC = () => {
 
   const isFiltering = Boolean(query.trim() || selectedGenreId !== null);
 
+  const genreOptions: FilterOption[] = [
+    { id: 'all', label: 'ALL GENRES' },
+    ...genres.map((g) => ({ id: g.id, label: g.name.toUpperCase() })),
+  ];
+
   return (
     <div className="pb-28 space-y-8 select-none animate-cinema-fade">
-      {/* Refined Header (Section 9) */}
-      <div className="space-y-4">
-        <div>
-          <span className="font-caps-label text-[#8C7AD0] tracking-widest text-[11px] block">
-            DISCOVERY CONSOLE
-          </span>
-          <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight mt-0.5">
-            Find your next film.
-          </h1>
-        </div>
+      {/* Cinematic Header */}
+      <CinemaHeader
+        badge="DISCOVERY CONSOLE"
+        title="Find your next film."
+        subtitle="Search across landmark world cinema, explore curated genres, or browse trending screenings."
+      />
 
-        {/* Unified Search Console (Section 10 & 17) */}
-        <div className="relative w-full max-w-2xl flex items-center bg-[#131319]/90 border border-white/10 focus-within:border-[#8C7AD0] rounded-2xl px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)] focus-within:shadow-[0_0_24px_rgba(140,122,208,0.25)] transition-all duration-300">
-          <Search size={18} className="text-[#8C7AD0] flex-shrink-0 mr-3" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search movies, directors, actors..."
-            className="w-full bg-transparent border-none text-sm text-[#F5F3EB] placeholder-[#63626B] outline-none font-sans"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="p-1 text-[#9E9DA5] hover:text-[#F5F3EB] cursor-pointer border-none bg-transparent flex-shrink-0 ml-2"
-              aria-label="Clear search"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+      {/* Unified Search Console */}
+      <div className="w-full max-w-2xl">
+        <SearchField
+          value={query}
+          onChange={(val) => {
+            setQuery(val);
+            if (val.trim()) setSelectedGenreId(null);
+          }}
+          onClear={clearFilters}
+          placeholder="Search by title, director, actor, or genre..."
+        />
       </div>
 
-      {/* Screening Moods with Cinema Purple Accents (Section 11) */}
+      {/* Screening Moods */}
       {!query && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8C7AD0]" />
+              <Sparkles size={13} className="text-[#8C7AD0]" />
               <span>Exploration Moods</span>
             </h3>
             {selectedGenreId && (
               <button
                 onClick={clearFilters}
-                className="text-xs text-[#E0AD52] hover:underline cursor-pointer border-none bg-transparent"
+                className="text-xs text-[#E0AD52] hover:underline cursor-pointer border-none bg-transparent font-semibold"
               >
                 Reset
               </button>
@@ -220,16 +222,16 @@ export const Discover: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-2 sm:gap-2.5">
-            {SCREENING_MOODS.map((mood, idx) => {
+            {SCREENING_MOODS.map((mood) => {
               const isSelected = selectedGenreId === mood.genreId;
               return (
                 <button
-                  key={`${mood.genreId}-${idx}`}
+                  key={mood.genreId}
                   onClick={() => handleSelectMood(mood.genreId)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer border ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer border active:scale-95 ${
                     isSelected
                       ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] shadow-[0_2px_14px_rgba(224,173,82,0.35)] scale-[1.02] font-bold'
-                      : 'bg-[#1B1B22] text-[#F5F3EB] border-white/[0.08] hover:border-[#E0AD52]/40 hover:bg-[#24242E]'
+                      : 'bg-[#131319] text-[#F5F3EB] border-white/[0.08] hover:border-[#E0AD52]/40 hover:bg-[#1C1C24]'
                   }`}
                 >
                   {mood.label}
@@ -246,34 +248,14 @@ export const Discover: React.FC = () => {
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5]">
             Genres
           </h3>
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
-            <button
-              onClick={() => setSelectedGenreId(null)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
-                selectedGenreId === null
-                  ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] font-bold shadow-sm'
-                  : 'bg-[#1B1B22] text-[#9E9DA5] border-white/5 hover:text-[#F5F3EB]'
-              }`}
-            >
-              ALL
-            </button>
-            {genres.map((g) => {
-              const isSelected = selectedGenreId === g.id;
-              return (
-                <button
-                  key={g.id}
-                  onClick={() => setSelectedGenreId(isSelected ? null : g.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase whitespace-nowrap transition-all cursor-pointer border ${
-                    isSelected
-                      ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] font-bold shadow-sm'
-                      : 'bg-[#1B1B22] text-[#9E9DA5] border-white/5 hover:text-[#F5F3EB] hover:bg-[#24242E]'
-                  }`}
-                >
-                  {g.name}
-                </button>
-              );
-            })}
-          </div>
+          <FilterChips
+            options={genreOptions}
+            selectedId={selectedGenreId || 'all'}
+            onSelect={(id) => {
+              if (id === 'all') setSelectedGenreId(null);
+              else setSelectedGenreId(Number(id));
+            }}
+          />
         </section>
       )}
 
@@ -308,32 +290,26 @@ export const Discover: React.FC = () => {
       {/* Active Search or Mood Filter Results Grid */}
       {isFiltering ? (
         <section className="space-y-4 pt-1">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <h2 className="font-section-title text-[#F5F2F0]">
-              {query ? `Search: "${query}"` : 'Curated Mood Selection'}
-            </h2>
-            <button
-              onClick={clearFilters}
-              className="text-xs text-[#EDC257] hover:underline cursor-pointer border-none bg-transparent"
-            >
-              Clear
-            </button>
-          </div>
+          <SectionHeader
+            title={query ? `Search: "${query}"` : 'Curated Mood Selection'}
+            count={searchResults.length}
+            actionLabel="Clear Filter"
+            onAction={clearFilters}
+          />
 
           {isSearching ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-[2/3] w-full rounded-2xl cinema-skeleton" />
-              ))}
-            </div>
+            <LoadingState count={8} layout="grid" />
           ) : searchResults.length === 0 ? (
-            <div className="py-16 text-center text-[#5C5B64] space-y-2">
-              <Film size={36} className="mx-auto text-[#5C5B64]" />
-              <h3 className="font-serif font-bold text-base text-[#F5F2F0]">No Films Found</h3>
-              <p className="text-xs text-[#9E9DA5]">Try adjusting your title query or mood selection.</p>
-            </div>
+            <EmptyState
+              icon={Film}
+              badge="SEARCH CONSOLE"
+              title="No Films Found"
+              description="Try adjusting your title query or mood selection to find what you're looking for."
+              actionText="Reset Search"
+              onAction={clearFilters}
+            />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+            <MovieGrid>
               {searchResults.map((movie) => (
                 <MoviePoster
                   key={movie.id}
@@ -343,23 +319,24 @@ export const Discover: React.FC = () => {
                   onClick={() => openMovieDetail(movie.id)}
                 />
               ))}
-            </div>
+            </MovieGrid>
           )}
         </section>
       ) : (
         /* Discovery Rails: Trending & Popular */
         <div className="space-y-10">
-          {/* Trending Rail with Segmented Control (Section 12, 13, 14) */}
+          {/* Trending Rail with Segmented Control */}
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="font-section-title text-[#F5F2F0]">Trending Now</h3>
+                <h3 className="font-serif font-bold text-lg sm:text-xl text-[#F5F3EB]">
+                  Trending Now
+                </h3>
                 <p className="text-xs text-[#9E9DA5] mt-0.5">
-                  Most discussed and watched right now
+                  Most discussed and watched worldwide
                 </p>
               </div>
 
-              {/* Polished Segmented Control (Section 14) */}
               <CinemaSegmentedControl
                 size="sm"
                 options={[
@@ -373,14 +350,10 @@ export const Discover: React.FC = () => {
 
             {/* Skeletons while loading */}
             {isLoadingTrending ? (
-              <div className="flex gap-3 overflow-x-hidden pt-1 pb-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-36 sm:w-44 aspect-[2/3] rounded-2xl cinema-skeleton flex-shrink-0" />
-                ))}
-              </div>
+              <LoadingState count={5} layout="rail" />
             ) : trendingMovies.length > 0 ? (
               <div className="relative rail-edge-fade">
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8 scroll-smooth">
+                <div className="flex gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8 scroll-smooth">
                   {trendingMovies.map((movie) => (
                     <MoviePoster
                       key={movie.id}
@@ -392,16 +365,18 @@ export const Discover: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-xs text-[#9E9DA5] bg-[#171924]/40 rounded-2xl border border-white/5">
+              <div className="p-8 text-center text-xs text-[#9E9DA5] bg-[#131319] rounded-2xl border border-white/5">
                 No trending releases available at this moment.
               </div>
             )}
           </section>
 
-          {/* Popular Cinema Rail (Section 15) */}
+          {/* Popular Cinema Rail */}
           <section className="space-y-3">
             <div>
-              <h3 className="font-section-title text-[#F5F2F0]">Popular Cinema</h3>
+              <h3 className="font-serif font-bold text-lg sm:text-xl text-[#F5F3EB]">
+                Popular Cinema
+              </h3>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
                 Films capturing audiences across the globe
               </p>
@@ -409,11 +384,7 @@ export const Discover: React.FC = () => {
 
             {/* Skeletons while loading */}
             {isLoadingPopular ? (
-              <div className="flex gap-3 overflow-x-hidden pt-1 pb-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-36 sm:w-44 aspect-[2/3] rounded-2xl cinema-skeleton flex-shrink-0" />
-                ))}
-              </div>
+              <LoadingState count={5} layout="rail" />
             ) : popularMovies.length > 0 ? (
               <MoviePosterRail
                 title=""
@@ -421,7 +392,7 @@ export const Discover: React.FC = () => {
                 onMovieClick={(m) => openMovieDetail(m.id)}
               />
             ) : (
-              <div className="p-8 text-center text-xs text-[#9E9DA5] bg-[#171924]/40 rounded-2xl border border-white/5">
+              <div className="p-8 text-center text-xs text-[#9E9DA5] bg-[#131319] rounded-2xl border border-white/5">
                 No popular titles found.
               </div>
             )}

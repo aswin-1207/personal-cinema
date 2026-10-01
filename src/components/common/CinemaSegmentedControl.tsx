@@ -25,7 +25,7 @@ export function CinemaSegmentedControl<T extends string>({
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center bg-[#10121A] border border-white/[0.08] rounded-xl ${padClass} ${className}`}
+      className={`inline-flex items-center bg-[#131319] border border-white/[0.08] rounded-xl ${padClass} ${className}`}
     >
       {options.map((opt) => {
         const isSelected = value === opt.id;
@@ -37,8 +37,8 @@ export function CinemaSegmentedControl<T extends string>({
             onClick={() => onChange(opt.id)}
             className={`relative flex items-center justify-center gap-1.5 rounded-lg font-semibold transition-all duration-200 cursor-pointer select-none border-none outline-none ${itemPadClass} ${
               isSelected
-                ? 'bg-[#EDC257] text-[#09090D] shadow-[0_2px_12px_rgba(237,194,87,0.3)] font-bold'
-                : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F2F0] hover:bg-white/[0.04]'
+                ? 'bg-[#E0AD52] text-[#09090B] shadow-[0_2px_12px_rgba(224,173,82,0.3)] font-bold'
+                : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.04]'
             }`}
           >
             <span>{opt.label}</span>
@@ -46,7 +46,7 @@ export function CinemaSegmentedControl<T extends string>({
               <span
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                   isSelected
-                    ? 'bg-[#09090D]/20 text-[#09090D]'
+                    ? 'bg-[#09090B]/20 text-[#09090B]'
                     : 'bg-white/10 text-[#9E9DA5]'
                 }`}
               >

@@ -6,6 +6,7 @@ import { MovieNight, Movie } from '../types/movie';
 import { tmdbService } from '../services/tmdbService';
 import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
+import { CinemaHeader } from '../components/ui/CinemaHeader';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -91,32 +92,28 @@ export const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-8 pb-24">
       {/* Header matching Figma 2:341 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-        <div className="space-y-1">
-          <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
-            Movie Night
-          </h1>
-          <p className="text-xs sm:text-sm text-[#9E9DA5]">
-            Plan a film for later.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setIsScheduleOpen(true)}
-          className="cinema-button-primary px-5 py-2.5 text-xs flex items-center gap-1.5 shadow-gold self-start sm:self-auto"
-        >
-          <Plus size={15} />
-          <span>Schedule Movie Night</span>
-        </button>
-      </div>
+      <CinemaHeader
+        badge="SCREENING CALENDAR"
+        title="Movie Night"
+        subtitle="Plan a film for later. Set reminders and schedule cinema nights."
+        action={
+          <button
+            onClick={() => setIsScheduleOpen(true)}
+            className="w-full sm:w-auto h-11 px-5 rounded-xl bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(224,173,82,0.3)] active:scale-95 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span>Schedule Movie Night</span>
+          </button>
+        }
+      />
 
       {/* Upcoming Screenings Section */}
       <section className="space-y-4">
-        <h3 className="font-serif font-bold text-xl text-cinema-white flex items-center gap-2">
-          <Sparkles size={18} className="text-cinema-gold" />
-          <span>Upcoming Screenings</span>
+        <h3 className="font-serif font-bold text-lg text-[#F5F3EB] flex items-center gap-2">
+          <Sparkles size={16} className="text-[#E0AD52]" />
+          <span>Upcoming Screenings ({upcomingNights.length})</span>
         </h3>
 
         {upcomingNights.length === 0 ? (

@@ -35,11 +35,11 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
       <div className="flex items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-section-title text-[#F5F2F0]">
+            <h3 className="font-section-title text-[#F5F3EB]">
               {title}
             </h3>
             {badge && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EDC257]/15 text-[#EDC257] border border-[#EDC257]/20 uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 uppercase tracking-wider">
                 {badge}
               </span>
             )}
@@ -54,7 +54,7 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
         {actionLabel && onAction && (
           <button
             onClick={onAction}
-            className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#EDC257] hover:text-[#EDC257] p-0"
+            className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#E0AD52] hover:text-[#D49B35] p-0 cursor-pointer"
           >
             <span>{actionLabel}</span>
             <ChevronRight size={14} />

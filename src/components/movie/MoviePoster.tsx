@@ -5,13 +5,14 @@ import { useCinema } from '../../context/CinemaContext';
 import { WatchedButton } from './WatchedButton';
 import { Star, Heart, CheckCircle2, Eye, Bookmark, Film } from 'lucide-react';
 
-interface MoviePosterProps {
+export interface MoviePosterProps {
   movie: Movie;
   userData?: UserMovie;
   onClick?: () => void;
   priority?: boolean;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'compact';
+  aspect?: 'portrait' | 'compact';
 }
 
 export const MoviePoster: React.FC<MoviePosterProps> = ({
@@ -35,7 +36,6 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   const tmdbSize = size === 'sm' ? 'w185' : size === 'lg' ? 'w500' : 'w342';
   const posterUrl = tmdbService.getPosterUrl(movie.posterPath, tmdbSize);
 
-  // Reset state and verify cached image status on mount for Safari / PWA
   useEffect(() => {
     setImageError(false);
     if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
@@ -50,7 +50,13 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   const isFavorite = userData?.isFavorite;
 
   const hasExplicitWidth = className.includes('w-');
-  const widthClass = hasExplicitWidth ? '' : (size === 'sm' ? 'w-32 sm:w-36' : size === 'lg' ? 'w-44 sm:w-56' : 'w-36 sm:w-44');
+  const widthClass = hasExplicitWidth
+    ? ''
+    : size === 'sm'
+    ? 'w-32 sm:w-36'
+    : size === 'lg'
+    ? 'w-44 sm:w-56'
+    : 'w-36 sm:w-44';
   const shrinkClass = className.includes('w-full') ? 'w-full' : 'flex-shrink-0';
 
   return (
@@ -64,13 +70,13 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           handleClick();
         }
       }}
-      className={`group relative cursor-pointer select-none rounded-[14px] overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 ease-out min-w-0 ${shrinkClass} ${widthClass} ${className}`}
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.07] hover:border-[#E0AD52]/40 shadow-[0_6px_20px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:scale-[1.025] active:scale-[0.98] transition-all duration-300 ease-out min-w-0 ${shrinkClass} ${widthClass} ${className}`}
     >
       {/* 2:3 Aspect Ratio Container */}
       <div className="relative aspect-[2/3] w-full bg-[#0F0F14] overflow-hidden">
-        {/* Shimmer Skeleton Placeholder while loading */}
+        {/* Shimmer Skeleton Placeholder */}
         {!imageLoaded && !imageError && posterUrl && (
-          <div className="absolute inset-0 cinema-skeleton z-0" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#131319] via-white/5 to-[#131319] animate-pulse z-0" />
         )}
 
         {posterUrl && !imageError ? (
@@ -87,10 +93,9 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
             }`}
           />
         ) : (
-          /* Intentional Cinematic Fallback when poster is missing or blocked */
           <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-[#1A1D2C] to-[#0F111A]">
-            <Film size={26} className="text-[#EDC257]/60 mb-2" />
-            <span className="text-xs text-[#F5F2F0] font-serif font-bold line-clamp-2 px-1">
+            <Film size={26} className="text-[#E0AD52]/60 mb-2" />
+            <span className="text-xs text-[#F5F3EB] font-serif font-bold line-clamp-2 px-1">
               {movie.title}
             </span>
             {year && <span className="text-[10px] text-[#9E9DA5] mt-1">{year}</span>}
@@ -100,29 +105,29 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         {/* Ambient Dark Bottom Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
 
-        {/* Non-intrusive Status Badges */}
+        {/* Status Indicators & Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
           {isWatched && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-bold shadow-[0_2px_10px_rgba(224,173,82,0.35)] backdrop-blur-md">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_10px_rgba(224,173,82,0.35)] backdrop-blur-md">
               <CheckCircle2 size={11} strokeWidth={2.8} />
               <span>Watched</span>
             </span>
           )}
           {isWatching && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D19830] text-[#09090B] text-[10px] font-bold shadow-md backdrop-blur-md">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D19830] text-[#09090B] text-[10px] font-black shadow-md backdrop-blur-md">
               <Eye size={11} strokeWidth={2.5} />
               <span>Watching</span>
             </span>
           )}
           {isWatchlist && !isWatched && !isWatching && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#09090B]/80 border border-white/10 text-[#9E9DA5] text-[10px] font-medium backdrop-blur-md">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#09090B]/85 border border-white/10 text-[#9E9DA5] text-[10px] font-medium backdrop-blur-md">
               <Bookmark size={10} />
               <span>Watchlist</span>
             </span>
           )}
         </div>
 
-        {/* Quick Favorite Action (Progressive Disclosure) */}
+        {/* Quick Favorite Action */}
         <button
           onClick={async (e) => {
             e.stopPropagation();
@@ -152,9 +157,9 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         )}
       </div>
 
-      {/* Card Info (Title & Year with Guaranteed Strict Containment) */}
-      <div className="p-2.5 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0">
-        <div className="min-h-[2.25rem] flex items-start w-full min-w-0">
+      {/* Card Info Container with Strict Containment */}
+      <div className="p-2.5 sm:p-3 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0">
+        <div className="min-h-[2.35rem] flex items-start w-full min-w-0">
           <h4
             className="font-semibold text-xs text-[#F5F3EB] line-clamp-2 break-words leading-tight group-hover:text-[#E0AD52] transition-colors w-full"
             title={movie.title}
@@ -164,7 +169,11 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         </div>
         <div className="flex items-center justify-between text-[11px] text-[#9E9DA5] mt-1 pt-0.5 border-t border-white/[0.04]">
           <span>{year || '—'}</span>
-          {movie.runtime ? <span>{movie.runtime}m</span> : movie.voteAverage > 0 ? <span className="text-[#E0AD52] font-semibold">★ {movie.voteAverage.toFixed(1)}</span> : null}
+          {movie.runtime ? (
+            <span>{movie.runtime}m</span>
+          ) : movie.voteAverage > 0 ? (
+            <span className="text-[#E0AD52] font-semibold">★ {movie.voteAverage.toFixed(1)}</span>
+          ) : null}
         </div>
       </div>
     </div>

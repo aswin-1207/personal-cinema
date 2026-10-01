@@ -9,6 +9,7 @@ import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
 import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { Achievement } from '../types/backup';
+import { CinemaHeader } from '../components/ui/CinemaHeader';
 import {
   Trophy,
   Database,
@@ -102,14 +103,11 @@ export const Profile: React.FC = () => {
   return (
     <div className="space-y-6 pb-28 select-none animate-cinema-fade max-w-3xl mx-auto">
       {/* Header matching Figma 2:451 */}
-      <div className="space-y-1">
-        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
-          My Cinema
-        </h1>
-        <p className="text-xs sm:text-sm text-[#9E9DA5]">
-          Your profile, preferences and data.
-        </p>
-      </div>
+      <CinemaHeader
+        badge="VAULT & PREFERENCES"
+        title="My Cinema"
+        subtitle="Your profile, preferences and private data."
+      />
 
       {/* User Profile Card matching Figma 2:451 */}
       <div className="p-4 sm:p-5 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
@@ -210,7 +208,7 @@ export const Profile: React.FC = () => {
           <span
             className={`text-xs px-2.5 py-1 rounded-full font-bold ${
               unlockedCount > 0
-                ? 'bg-[#EDC257]/20 text-[#EDC257] border border-[#EDC257]/40'
+                ? 'bg-[#E0AD52]/20 text-[#E0AD52] border border-[#E0AD52]/40'
                 : 'bg-white/5 text-[#9E9DA5] border border-white/5'
             }`}
           >
@@ -226,14 +224,14 @@ export const Profile: React.FC = () => {
                 key={ach.id}
                 className={`p-3.5 rounded-2xl border transition-all duration-200 flex items-start gap-3 ${
                   isUnlocked
-                    ? 'border-[#EDC257]/30 bg-[#171924] shadow-[0_4px_16px_rgba(237,194,87,0.12)]'
-                    : 'border-white/[0.06] bg-[#12141F]/60 opacity-60'
+                    ? 'border-[#E0AD52]/30 bg-[#131319] shadow-[0_4px_16px_rgba(224,173,82,0.12)]'
+                    : 'border-white/[0.06] bg-[#0E0E14]/60 opacity-60'
                 }`}
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     isUnlocked
-                      ? 'bg-[#EDC257] text-[#09090D] shadow-sm'
+                      ? 'bg-[#E0AD52] text-[#09090B] shadow-sm'
                       : 'bg-white/5 text-[#5C5B64]'
                   }`}
                 >
@@ -242,11 +240,11 @@ export const Profile: React.FC = () => {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1">
-                    <h4 className="font-bold text-xs text-[#F5F2F0] truncate">{ach.title}</h4>
+                    <h4 className="font-bold text-xs text-[#F5F3EB] truncate">{ach.title}</h4>
                     <span
                       className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider ${
                         isUnlocked
-                          ? 'bg-[#EDC257]/20 text-[#EDC257]'
+                          ? 'bg-[#E0AD52]/20 text-[#E0AD52]'
                           : 'bg-white/5 text-[#5C5B64]'
                       }`}
                     >
@@ -257,7 +255,7 @@ export const Profile: React.FC = () => {
                     {ach.description}
                   </p>
                   {isUnlocked && ach.unlockedAt && (
-                    <span className="text-[10px] text-[#EDC257] mt-1 block font-mono">
+                    <span className="text-[10px] text-[#E0AD52] mt-1 block font-mono">
                       ✓ Earned {new Date(ach.unlockedAt).toLocaleDateString()}
                     </span>
                   )}
@@ -301,13 +299,13 @@ export const Profile: React.FC = () => {
       </section>
 
       {/* Advanced TMDB Configuration (Section 27) */}
-      <section className="rounded-2xl bg-[#171924]/40 border border-white/[0.06] overflow-hidden">
+      <section className="rounded-2xl bg-[#131319]/70 border border-white/[0.06] overflow-hidden">
         <button
           onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-          className="w-full p-4 flex items-center justify-between text-left text-xs text-[#9E9DA5] hover:text-[#F5F2F0] hover:bg-white/[0.02] cursor-pointer transition-colors border-none bg-transparent"
+          className="w-full p-4 flex items-center justify-between text-left text-xs text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.02] cursor-pointer transition-colors border-none bg-transparent"
         >
           <div className="flex items-center gap-2 font-semibold">
-            <KeyRound size={15} className="text-[#EDC257]" />
+            <KeyRound size={15} className="text-[#E0AD52]" />
             <span>Advanced Configuration (TMDB Key Override)</span>
           </div>
           {isAdvancedOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -332,7 +330,7 @@ export const Profile: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] hover:text-[#F5F2F0] border-none bg-transparent cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] hover:text-[#F5F3EB] border-none bg-transparent cursor-pointer"
                 >
                   {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -353,7 +351,7 @@ export const Profile: React.FC = () => {
             {/* Live Diagnostics Tool (Section 20) */}
             <div className="pt-3 border-t border-white/[0.06] space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#F5F2F0]">Connection Diagnostics</span>
+                <span className="text-xs font-semibold text-[#F5F3EB]">Connection Diagnostics</span>
                 <CinemaButton
                   variant="secondary"
                   size="sm"
@@ -365,7 +363,7 @@ export const Profile: React.FC = () => {
               </div>
 
               {diagnostics && (
-                <div className="p-3 rounded-xl bg-[#09090D] border border-white/10 text-xs space-y-1.5 font-mono">
+                <div className="p-3 rounded-xl bg-[#09090B] border border-white/10 text-xs space-y-1.5 font-mono">
                   <div className="flex justify-between">
                     <span className="text-[#9E9DA5]">TMDB Configured:</span>
                     <span className={diagnostics.isConfigured ? 'text-emerald-400 font-bold' : 'text-rose-400'}>
@@ -374,7 +372,7 @@ export const Profile: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#9E9DA5]">Auth Mechanism:</span>
-                    <span className="text-[#EDC257]">
+                    <span className="text-[#E0AD52]">
                       {diagnostics.authType === 'bearer_token' ? 'Read Access Token (Bearer)' : 'v3 API Key'}
                     </span>
                   </div>

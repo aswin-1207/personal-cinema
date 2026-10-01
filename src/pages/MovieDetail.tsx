@@ -102,9 +102,9 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
   if (!movie) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#09090D] flex items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-[#09090B] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-[#1E2029] border-t-[#EDC257] animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin" />
           <span className="text-xs text-[#9E9DA5] font-serif">Projecting Feature...</span>
         </div>
       </div>
@@ -244,8 +244,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
               {movie.runtime && <span>• {movie.runtime} min</span>}
               {credits.director && <span>• Dir: {credits.director}</span>}
               {movie.voteAverage > 0 && (
-                <span className="flex items-center gap-1 text-[#EDC257] font-semibold bg-[#EDC257]/10 px-2 py-0.5 rounded-full border border-[#EDC257]/20">
-                  <Star size={11} className="fill-[#EDC257]" />
+                <span className="flex items-center gap-1 text-[#E0AD52] font-semibold bg-[#E0AD52]/10 px-2 py-0.5 rounded-full border border-[#E0AD52]/20">
+                  <Star size={11} className="fill-[#E0AD52]" />
                   <span>{movie.voteAverage.toFixed(1)} TMDB</span>
                 </span>
               )}
@@ -284,7 +284,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                   setUserData(updated);
                 }}
                 className={`cinema-button-secondary px-4 py-3 flex items-center gap-2 text-xs font-semibold ${
-                  userData?.status === 'want_to_watch' ? 'border-[#EDC257] text-[#EDC257]' : ''
+                  userData?.status === 'want_to_watch' ? 'border-[#E0AD52] text-[#E0AD52]' : ''
                 }`}
               >
                 <Bookmark size={15} />
@@ -299,7 +299,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                   setUserData(updated);
                 }}
                 className={`cinema-button-secondary px-4 py-3 flex items-center gap-2 text-xs font-semibold ${
-                  userData?.status === 'watching' ? 'border-[#EDC257] text-[#EDC257]' : ''
+                  userData?.status === 'watching' ? 'border-[#E0AD52] text-[#E0AD52]' : ''
                 }`}
                 title="Mark as Currently Watching"
               >
@@ -318,7 +318,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
             {/* Add to Collection dropdown */}
             {isCollectionPickerOpen && (
-              <div className="p-3 rounded-xl bg-[#171924] border border-[#EDC257]/30 shadow-2xl max-w-sm space-y-2 animate-cinema-scale">
+              <div className="p-3 rounded-xl bg-[#171924] border border-[#E0AD52]/30 shadow-2xl max-w-sm space-y-2 animate-cinema-scale">
                 <span className="text-[11px] uppercase tracking-wider text-[#9E9DA5] block font-bold">
                   Select Collection
                 </span>
@@ -333,7 +333,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                         className="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#222534] text-xs text-[#9E9DA5] hover:text-[#F5F2F0] flex items-center justify-between cursor-pointer border-none bg-transparent"
                       >
                         <span>{col.name}</span>
-                        <Plus size={13} className="text-[#EDC257]" />
+                        <Plus size={13} className="text-[#E0AD52]" />
                       </button>
                     ))}
                   </div>
@@ -346,7 +346,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         {/* Overview & Synopsis */}
         {movie.overview && (
           <div className="space-y-2">
-            <h3 className="text-xs uppercase tracking-widest text-[#EDC257] font-bold">
+            <h3 className="text-xs uppercase tracking-widest text-[#E0AD52] font-bold">
               SYNOPSIS
             </h3>
             <p className="text-sm text-[#F5F2F0]/85 leading-relaxed max-w-3xl">
@@ -428,7 +428,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         {/* Cast Section */}
         {credits.cast && credits.cast.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-xs uppercase tracking-widest text-[#EDC257] font-bold">
+            <h3 className="text-xs uppercase tracking-widest text-[#E0AD52] font-bold">
               PRINCIPAL CAST
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
