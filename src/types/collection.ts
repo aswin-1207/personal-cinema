@@ -14,6 +14,7 @@ export interface Collection {
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   completedAt?: string | null; // ISO string when 100% completed
+  finalMovieId?: number | null; // ID of the movie that completed the collection
 }
 
 export interface CollectionMovie {

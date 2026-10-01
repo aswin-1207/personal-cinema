@@ -40,7 +40,7 @@ export interface PersonalCinemaBackup {
   userMovies: UserMovie[];
   collections: Collection[];
   collectionMovies: CollectionMovie[];
-  movieNights: MovieNight[];
+  movieNights?: MovieNight[];
   preferences: UserPreferences;
   achievements: Achievement[];
 }

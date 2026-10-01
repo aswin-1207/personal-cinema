@@ -11,7 +11,7 @@ import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
 
-export type TabType = 'home' | 'discover' | 'library' | 'collections' | 'calendar' | 'profile';
+export type TabType = 'home' | 'discover' | 'collections' | 'profile';
 
 interface ToastState {
   id: string;
@@ -262,7 +262,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       soundService.playSubtleClick();
       hapticsService.tap();
       showToast(`Added "${movie.title}" to Watchlist`, 'View', () => {
-        setActiveTab('library');
+        setActiveTab('home');
       });
       notifyDataChanged();
       return updated;
@@ -357,7 +357,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await UserMovieRepository.remove(movieId);
       soundService.playSubtleClick();
       hapticsService.tap();
-      showToast('Removed movie from library');
+      showToast('Removed movie from your cinema');
       notifyDataChanged();
     } catch (err: any) {
       console.error('Failed to remove from library:', err);

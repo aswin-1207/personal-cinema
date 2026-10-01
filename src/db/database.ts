@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { Movie, UserMovie, MovieNight } from '../types/movie';
+import { Movie, UserMovie } from '../types/movie';
 import { Collection, CollectionMovie } from '../types/collection';
 import { Achievement } from '../types/backup';
 
@@ -40,11 +40,6 @@ export interface PersonalCinemaDBSchema extends DBSchema {
       'by-collection-position': [string, number];
     };
   };
-  movieNights: {
-    key: string;
-    value: MovieNight;
-    indexes: { 'by-date': string; 'by-status': string };
-  };
   preferences: {
     key: string;
     value: { key: string; value: any };
@@ -61,7 +56,7 @@ export interface PersonalCinemaDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'personal-cinema-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise: Promise<IDBPDatabase<PersonalCinemaDBSchema>> | null = null;
 
@@ -98,11 +93,9 @@ export function getDB(): Promise<IDBPDatabase<PersonalCinemaDBSchema>> {
           colMovieStore.createIndex('by-collection-position', ['collectionId', 'position']);
         }
 
-        // Movie Nights Store
-        if (!db.objectStoreNames.contains('movieNights')) {
-          const nightStore = db.createObjectStore('movieNights', { keyPath: 'id' });
-          nightStore.createIndex('by-date', 'date');
-          nightStore.createIndex('by-status', 'status');
+        // Delete legacy movieNights store if present
+        if (db.objectStoreNames.contains('movieNights' as any)) {
+          db.deleteObjectStore('movieNights' as any);
         }
 
         // Preferences Store
@@ -128,18 +121,12 @@ export function getDB(): Promise<IDBPDatabase<PersonalCinemaDBSchema>> {
 
 export async function clearAllLocalData(): Promise<void> {
   const db = await getDB();
-  const tx = db.transaction(
-    ['movies', 'userMovies', 'collections', 'collectionMovies', 'movieNights', 'achievements'],
-    'readwrite'
-  );
-  await Promise.all([
-    tx.objectStore('movies').clear(),
-    tx.objectStore('userMovies').clear(),
-    tx.objectStore('collections').clear(),
-    tx.objectStore('collectionMovies').clear(),
-    tx.objectStore('movieNights').clear(),
-    tx.objectStore('achievements').clear(),
-  ]);
+  const candidateStores = ['movies', 'userMovies', 'collections', 'collectionMovies', 'achievements'];
+  const storesToClear = candidateStores.filter((name) => db.objectStoreNames.contains(name as any));
+  if (storesToClear.length === 0) return;
+
+  const tx = db.transaction(storesToClear as any, 'readwrite');
+  await Promise.all(storesToClear.map((s) => tx.objectStore(s as any).clear()));
   await tx.done;
 }
 

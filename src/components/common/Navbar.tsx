@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, BookOpen, Layers, Calendar, User, LucideIcon, Sparkles, Film } from 'lucide-react';
+import { Home, Compass, Layers, User, LucideIcon, Sparkles, Film } from 'lucide-react';
 import { useCinema, TabType } from '../../context/CinemaContext';
 
 interface NavItemDef {
@@ -11,18 +11,14 @@ interface NavItemDef {
 const DESKTOP_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
-  { id: 'library', label: 'Library', icon: BookOpen },
   { id: 'collections', label: 'Collections', icon: Layers },
-  { id: 'calendar', label: 'Movie Night', icon: Calendar },
   { id: 'profile', label: 'My Cinema', icon: User },
 ];
 
 const MOBILE_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
-  { id: 'library', label: 'Library', icon: BookOpen },
   { id: 'collections', label: 'Sagas', icon: Layers },
-  { id: 'calendar', label: 'Nights', icon: Calendar },
   { id: 'profile', label: 'Vault', icon: User },
 ];
 

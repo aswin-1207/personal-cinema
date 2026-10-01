@@ -34,6 +34,7 @@ export class CollectionRepository {
       createdAt: now,
       updatedAt: now,
       completedAt: null,
+      finalMovieId: null,
     };
 
     await db.put('collections', collection);
@@ -179,11 +180,20 @@ export class CollectionRepository {
     let watched = 0;
     let watching = 0;
     let unwatched = 0;
+    let latestWatchedTime = -1;
+    let finalMovieId: number | null = null;
 
     for (const mId of movieIds) {
       const userMovie = await UserMovieRepository.getByMovieId(mId);
       if (userMovie?.status === 'watched') {
         watched++;
+        const time = userMovie.watchedAt
+          ? new Date(userMovie.watchedAt).getTime()
+          : (userMovie.addedAt ? new Date(userMovie.addedAt).getTime() : 0);
+        if (time >= latestWatchedTime) {
+          latestWatchedTime = time;
+          finalMovieId = mId;
+        }
       } else if (userMovie?.status === 'watching') {
         watching++;
       } else {
@@ -198,11 +208,24 @@ export class CollectionRepository {
     // Check if completion status needs updating
     const collection = await this.getById(collectionId);
     if (collection) {
-      if (isComplete && !collection.completedAt) {
-        collection.completedAt = new Date().toISOString();
-        await this.update(collection);
-      } else if (!isComplete && collection.completedAt) {
-        collection.completedAt = null;
+      let changed = false;
+      if (isComplete) {
+        if (!collection.completedAt) {
+          collection.completedAt = new Date().toISOString();
+          changed = true;
+        }
+        if (collection.finalMovieId !== finalMovieId) {
+          collection.finalMovieId = finalMovieId;
+          changed = true;
+        }
+      } else {
+        if (collection.completedAt !== null || collection.finalMovieId !== null) {
+          collection.completedAt = null;
+          collection.finalMovieId = null;
+          changed = true;
+        }
+      }
+      if (changed) {
         await this.update(collection);
       }
     }

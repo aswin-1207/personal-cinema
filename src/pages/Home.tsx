@@ -336,8 +336,6 @@ export const Home: React.FC = () => {
       <MoviePosterRail
         title="Currently Watching"
         subtitle="Active screenings in your cinema"
-        actionLabel="View All"
-        onAction={() => setActiveTab('library')}
         items={continueWatching}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
@@ -346,8 +344,6 @@ export const Home: React.FC = () => {
       <MoviePosterRail
         title="On Your Watchlist"
         subtitle="Films queued up for your next screening"
-        actionLabel="View Library"
-        onAction={() => setActiveTab('library')}
         items={watchlist}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
@@ -389,7 +385,7 @@ export const Home: React.FC = () => {
         title="Recently Watched"
         subtitle="Your logged screening history"
         actionLabel="View Vault"
-        onAction={() => setActiveTab('library')}
+        onAction={() => setActiveTab('profile')}
         items={recentlyWatched}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />

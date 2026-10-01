@@ -1,7 +1,6 @@
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
-import { MovieNightRepository } from '../db/repositories/movieNightRepository';
 import { PreferencesRepository } from '../db/repositories/preferencesRepository';
 import { clearAllLocalData } from '../db/database';
 import {
@@ -23,7 +22,6 @@ export class BackupService {
       const items = await CollectionRepository.getCollectionMovies(c.id);
       collectionMovies.push(...items);
     }
-    const movieNights = await MovieNightRepository.getAll();
     const prefs = await PreferencesRepository.getPreferences();
     const achievements = await PreferencesRepository.getAchievements();
 
@@ -48,7 +46,6 @@ export class BackupService {
       userMovies,
       collections,
       collectionMovies,
-      movieNights,
       preferences: sanitizedPrefs,
       achievements,
     };
@@ -232,11 +229,6 @@ export class BackupService {
 
     await CollectionRepository.saveMany(colsToSave, backup.collectionMovies || []);
 
-    // 4. Merge MovieNights
-    if (backup.movieNights) {
-      await MovieNightRepository.saveMany(backup.movieNights);
-    }
-
     return {
       mergedMovies: backup.movies?.length || 0,
       mergedCollections: colsToSave.length,
@@ -252,9 +244,6 @@ export class BackupService {
     await MovieRepository.saveMany(backup.movies || []);
     await UserMovieRepository.saveMany(backup.userMovies || []);
     await CollectionRepository.saveMany(backup.collections || [], backup.collectionMovies || []);
-    if (backup.movieNights) {
-      await MovieNightRepository.saveMany(backup.movieNights);
-    }
     if (backup.achievements) {
       await PreferencesRepository.saveAchievements(backup.achievements);
     }

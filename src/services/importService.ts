@@ -3,6 +3,7 @@ import { TMDBService } from './tmdbService';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
+import { UnifiedSearchService } from './unifiedSearchService';
 import { ExtractedMovieRow, ImportCandidate, MatchConfidence, ImportItemStatus, ImportJobSummary } from '../types/import';
 import { Movie, MovieStatus } from '../types/movie';
 
@@ -202,8 +203,8 @@ export class ImportService {
     const seenTmdbIdsInBatch = new Set<number>();
     const candidates: ImportCandidate[] = [];
 
-    // Controlled batch processing (chunks of 3 to avoid TMDB rate limits)
-    const BATCH_SIZE = 3;
+    // Controlled batch processing (chunks of 4 to optimize throughput and respect rate limits)
+    const BATCH_SIZE = 4;
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const chunk = rows.slice(i, i + BATCH_SIZE);
 
@@ -221,7 +222,24 @@ export class ImportService {
           }
 
           try {
-            const { results } = await TMDBService.search(row.detectedTitle, row.detectedYear || undefined);
+            // Layer 1 shortcut: Check local catalog / IndexedDB first (0ms latency, zero API quota)
+            const localMatches = await UnifiedSearchService.searchLocal(row.detectedTitle, { maxResults: 3 });
+            const normQuery = row.detectedTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const queryYear = row.detectedYear;
+
+            let results: Movie[] = [];
+            const exactLocal = localMatches.find((lm) => {
+              const normLocal = lm.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+              const localYear = lm.releaseDate ? parseInt(lm.releaseDate.substring(0, 4), 10) : null;
+              return normLocal === normQuery && (!queryYear || queryYear === localYear);
+            });
+
+            if (exactLocal) {
+              results = [exactLocal];
+            } else {
+              // Layer 2: On-demand TMDB query with exponential backoff retry
+              results = await this.searchTMDBWithRetry(row.detectedTitle, row.detectedYear || undefined);
+            }
 
             if (results.length === 0) {
               candidates.push({
@@ -235,13 +253,11 @@ export class ImportService {
             }
 
             const top = results[0];
-            const normQuery = row.detectedTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
             const normTop = top.title.toLowerCase().replace(/[^a-z0-9]/g, '');
 
             let confidence: MatchConfidence = 'low';
             let status: ImportItemStatus = 'matched';
 
-            const queryYear = row.detectedYear;
             const topYear = top.releaseDate ? parseInt(top.releaseDate.substring(0, 4), 10) : null;
 
             if (normQuery === normTop && (!queryYear || queryYear === topYear)) {
@@ -296,9 +312,30 @@ export class ImportService {
       if (onProgress) {
         onProgress(Math.min(i + BATCH_SIZE, rows.length), rows.length);
       }
+
+      // Non-blocking UI yield between chunks to prevent UI lockup on large imports
+      await new Promise((resolve) => setTimeout(resolve, 15));
     }
 
     return candidates;
+  }
+
+  private static async searchTMDBWithRetry(
+    title: string,
+    year?: number,
+    retries = 2
+  ): Promise<Movie[]> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const { results } = await TMDBService.search(title, year);
+        return results;
+      } catch (err: any) {
+        if (attempt === retries) throw err;
+        const delay = (attempt + 1) * 350;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+    return [];
   }
 
   static getSummary(candidates: ImportCandidate[]): ImportJobSummary {

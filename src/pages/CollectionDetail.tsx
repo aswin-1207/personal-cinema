@@ -11,7 +11,7 @@ import {
   Share2,
   Plus,
   Trash2,
-  Trophy,
+  Film,
   ArrowUpDown,
   MoveUp,
   MoveDown,
@@ -86,6 +86,10 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
     return true;
   });
 
+  const finalMovieItem = collection.finalMovieId
+    ? movies.find((m) => m.movie.id === collection.finalMovieId)
+    : (movies.length > 0 ? movies[movies.length - 1] : null);
+
   return (
     <div className="space-y-8 pb-24 select-none animate-cinema-fade">
       {/* Top Navigation Bar */}
@@ -132,9 +136,9 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             </div>
 
             {progress.isComplete && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0AD52]/15 border border-[#E0AD52]/40 text-[#E0AD52] text-xs font-black shadow-[0_2px_12px_rgba(224,173,82,0.3)]">
-                <Trophy size={14} />
-                <span>COLLECTION MASTERED ✓</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E0AD52]/10 border border-[#E0AD52]/30 text-[#E0AD52] text-xs font-semibold tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E0AD52] animate-pulse" />
+                <span>SAGA COMPLETE</span>
               </div>
             )}
 
@@ -195,6 +199,45 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           </div>
         </div>
       </div>
+
+      {/* Final Film Memory Card if Saga Completed */}
+      {progress.isComplete && finalMovieItem && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#131319] to-[#0D0D12] border border-[#E0AD52]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 shadow-md bg-[#18181B]">
+              {finalMovieItem.movie.posterPath ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w185${finalMovieItem.movie.posterPath}`}
+                  alt={finalMovieItem.movie.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#E0AD52]">
+                  <Film size={20} />
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#E0AD52]">
+                THE FINAL FILM
+              </div>
+              <div className="font-serif font-bold text-base text-[#F5F3EB] mt-0.5">
+                {finalMovieItem.movie.title}
+              </div>
+              <div className="text-xs text-[#9E9DA5] mt-0.5">
+                This cinematic journey was concluded with this screening{collection.completedAt ? ` on ${new Date(collection.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => openMovieDetail(finalMovieItem.movie.id)}
+            className="cinema-button-secondary text-xs px-3.5 py-1.5 self-end sm:self-center flex items-center gap-1.5 text-[#E0AD52] hover:text-[#D49B35] cursor-pointer"
+          >
+            <span>Screening Memory</span>
+            <span>→</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex border-b border-white/[0.08] pb-3 gap-2">
