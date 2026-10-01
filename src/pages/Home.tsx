@@ -204,7 +204,7 @@ export const Home: React.FC = () => {
           Good {greeting}, {displayName}.
         </h1>
         <p className="text-xs sm:text-sm text-[#9E9DA5]">
-          Your private cinema is ready.
+          What would you like to watch?
         </p>
       </div>
 

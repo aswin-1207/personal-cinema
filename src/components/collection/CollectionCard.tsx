@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Collection, CollectionProgress } from '../../types/collection';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { MovieRepository } from '../../db/repositories/movieRepository';
-import { Trophy, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { tmdbService } from '../../services/tmdbService';
 
 interface CollectionCardProps {
@@ -134,9 +134,8 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
 
         {/* Completion Badge */}
         {isComplete && (
-          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_14px_rgba(224,173,82,0.45)] backdrop-blur-md animate-watched-morph">
-            <Trophy size={12} strokeWidth={2.5} />
-            <span>100% COMPLETE</span>
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_14px_rgba(224,173,82,0.45)] backdrop-blur-md">
+            <span>✓ COMPLETE</span>
           </div>
         )}
       </div>
@@ -157,21 +156,32 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
           )}
         </div>
 
-        {/* Cinematic Universe Progress (Section 18 Format) */}
+        {/* Cinematic Universe Progress */}
         <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
-          <div className="flex items-center justify-between text-[11px] text-[#9E9DA5]">
-            <span className="font-semibold tracking-wider uppercase text-[10px]">
-              {progress.watched} / {progress.total} WATCHED
-            </span>
-            <span className={`font-bold ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
-              {isComplete ? '100% COMPLETE' : `${progress.percent}%`}
+          <div className="flex items-center justify-between text-[11px]">
+            {isComplete ? (
+              <span className="text-[#E0AD52] font-semibold text-[10px] tracking-wider uppercase">
+                ✓ COMPLETE · {progress.total} {progress.total === 1 ? 'FILM' : 'FILMS'}
+                {collection.completedAt ? ` · COMPLETED ${new Date(collection.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}` : ''}
+              </span>
+            ) : (
+              <span className="text-[#9E9DA5] font-semibold tracking-wider uppercase text-[10px]">
+                {progress.watched} / {progress.total} WATCHED · {progress.total - progress.watched} REMAINING
+              </span>
+            )}
+            <span className={`font-bold text-xs ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
+              {progress.percent}%
             </span>
           </div>
 
           {/* Thin Cinematic Progress Bar */}
           <div className="w-full h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#E0AD52] to-[#D19830] transition-all duration-700 ease-out shadow-[0_0_8px_rgba(224,173,82,0.35)]"
+              className={`h-full rounded-full transition-all duration-700 ease-out ${
+                isComplete
+                  ? 'bg-gradient-to-r from-[#D99C33] to-[#E0AD52] shadow-[0_0_10px_rgba(224,173,82,0.45)]'
+                  : 'bg-[#E0AD52]'
+              }`}
               style={{ width: `${progress.percent}%` }}
             />
           </div>

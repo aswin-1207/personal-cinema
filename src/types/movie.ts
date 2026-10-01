@@ -29,6 +29,7 @@ export interface Movie {
   id: number; // TMDB ID
   title: string;
   originalTitle?: string;
+  originalLanguage?: string;
   overview?: string;
   releaseDate?: string;
   runtime?: number | null; // minutes

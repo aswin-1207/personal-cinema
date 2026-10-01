@@ -11,7 +11,7 @@ import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
 
-export type TabType = 'home' | 'discover' | 'collections' | 'profile';
+export type TabType = 'home' | 'discover' | 'watchlist' | 'watched' | 'collections' | 'profile';
 
 interface ToastState {
   id: string;
@@ -262,7 +262,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       soundService.playSubtleClick();
       hapticsService.tap();
       showToast(`Added "${movie.title}" to Watchlist`, 'View', () => {
-        setActiveTab('home');
+        setActiveTab('watchlist');
       });
       notifyDataChanged();
       return updated;

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Movie, UserMovie } from '../../types/movie';
 import { MoviePoster } from './MoviePoster';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface MoviePosterRailProps {
   title: string;
@@ -24,13 +24,22 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
   onMovieClick,
   emptyState,
 }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   if (items.length === 0) {
     if (emptyState) return <>{emptyState}</>;
-    return null; // As mandated by Section 41: "Do not blindly render empty rails. If a rail has no meaningful content, hide it."
+    return null;
   }
 
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -560 : 560;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <section className="space-y-3.5 relative">
+    <section className="space-y-3.5 relative group/rail">
       {/* Section Header */}
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -43,6 +52,9 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
                 {badge}
               </span>
             )}
+            <span className="text-xs text-[#63626B] font-mono">
+              ({items.length})
+            </span>
           </div>
           {subtitle && (
             <p className="text-xs text-[#9E9DA5] mt-0.5">
@@ -62,9 +74,22 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
         )}
       </div>
 
-      {/* Horizontal Scrolling Poster Track with Edge Fade */}
+      {/* Horizontal Scrolling Poster Track with Edge Fade & Desktop Controls */}
       <div className="relative rail-edge-fade">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8 scroll-smooth">
+        {/* Left Arrow (Desktop) */}
+        <button
+          onClick={() => scroll('left')}
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-[#09090B]/90 hover:bg-[#E0AD52] hover:text-[#09090B] text-[#F5F3EB] border border-white/10 items-center justify-center opacity-0 group-hover/rail:opacity-100 transition-all duration-300 shadow-xl cursor-pointer -ml-3"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Poster Track */}
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8 scroll-smooth"
+        >
           {items.map((item) => (
             <MoviePoster
               key={item.movie.id}
@@ -74,6 +99,15 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
             />
           ))}
         </div>
+
+        {/* Right Arrow (Desktop) */}
+        <button
+          onClick={() => scroll('right')}
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-[#09090B]/90 hover:bg-[#E0AD52] hover:text-[#09090B] text-[#F5F3EB] border border-white/10 items-center justify-center opacity-0 group-hover/rail:opacity-100 transition-all duration-300 shadow-xl cursor-pointer -mr-3"
+          aria-label="Scroll right"
+        >
+          <ChevronRight size={20} />
+        </button>
       </div>
     </section>
   );

@@ -49,6 +49,15 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   const isWatchlist = userData?.status === 'want_to_watch';
   const isFavorite = userData?.isFavorite;
 
+  const watchedDateStr = userData?.watchedAt
+    ? new Date(userData.watchedAt)
+        .toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+        })
+        .toUpperCase()
+    : null;
+
   const hasExplicitWidth = className.includes('w-');
   const widthClass = hasExplicitWidth
     ? ''
@@ -70,7 +79,11 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           handleClick();
         }
       }}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.07] hover:border-[#E0AD52]/40 shadow-[0_6px_20px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:scale-[1.025] active:scale-[0.98] transition-all duration-300 ease-out min-w-0 ${shrinkClass} ${widthClass} ${className}`}
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] transition-all duration-300 ease-out min-w-0 ${
+        isWatched
+          ? 'border border-[#E0AD52]/40 shadow-[0_4px_24px_rgba(224,173,82,0.18)] hover:border-[#E0AD52]'
+          : 'border border-white/[0.07] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)]'
+      } hover:scale-[1.025] active:scale-[0.98] ${shrinkClass} ${widthClass} ${className}`}
     >
       {/* 2:3 Aspect Ratio Container */}
       <div className="relative aspect-[2/3] w-full bg-[#0F0F14] overflow-hidden">
@@ -88,9 +101,9 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
             decoding="async"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
-            className={`w-full h-full object-cover transition-all duration-400 group-hover:scale-105 group-hover:brightness-105 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`w-full h-full object-cover transition-all duration-400 group-hover:scale-105 ${
+              isWatched ? 'brightness-95 contrast-105 group-hover:brightness-105' : 'group-hover:brightness-105'
+            } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-[#1A1D2C] to-[#0F111A]">
@@ -103,26 +116,24 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         )}
 
         {/* Ambient Dark Bottom Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-65 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
 
-        {/* Status Indicators & Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
+        {/* Discreet Corner Status Indicator */}
+        <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
           {isWatched && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_10px_rgba(224,173,82,0.35)] backdrop-blur-md">
-              <CheckCircle2 size={11} strokeWidth={2.8} />
-              <span>Watched</span>
+            <span className="w-5 h-5 rounded-full bg-[#E0AD52] text-[#09090B] flex items-center justify-center shadow-[0_2px_10px_rgba(224,173,82,0.4)] backdrop-blur-md">
+              <CheckCircle2 size={12} strokeWidth={3} />
             </span>
           )}
-          {isWatching && (
+          {isWatching && !isWatched && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D19830] text-[#09090B] text-[10px] font-black shadow-md backdrop-blur-md">
               <Eye size={11} strokeWidth={2.5} />
               <span>Watching</span>
             </span>
           )}
           {isWatchlist && !isWatched && !isWatching && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#09090B]/85 border border-white/10 text-[#9E9DA5] text-[10px] font-medium backdrop-blur-md">
-              <Bookmark size={10} />
-              <span>Watchlist</span>
+            <span className="w-5 h-5 rounded-full bg-white/15 text-[#E0AD52] flex items-center justify-center backdrop-blur-md">
+              <Bookmark size={11} className="fill-[#E0AD52]" />
             </span>
           )}
         </div>
@@ -135,8 +146,8 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           }}
           className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all z-10 border-none cursor-pointer ${
             isFavorite
-              ? 'bg-[#B81C28]/90 text-white shadow-md opacity-100'
-              : 'bg-[#09090B]/60 text-[#9E9DA5] opacity-0 group-hover:opacity-100 hover:text-[#B81C28] hover:scale-110'
+              ? 'bg-[#B3262E]/90 text-white shadow-md opacity-100'
+              : 'bg-[#09090B]/60 text-[#9E9DA5] opacity-0 group-hover:opacity-100 hover:text-[#B3262E] hover:scale-110'
           }`}
           title={isFavorite ? 'Remove Favorite' : 'Add to Favorites'}
         >
@@ -157,7 +168,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         )}
       </div>
 
-      {/* Card Info Container with Strict Containment */}
+      {/* Card Info Container */}
       <div className="p-2.5 sm:p-3 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0">
         <div className="min-h-[2.35rem] flex items-start w-full min-w-0">
           <h4
@@ -168,12 +179,17 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           </h4>
         </div>
         <div className="flex items-center justify-between text-[11px] text-[#9E9DA5] mt-1 pt-0.5 border-t border-white/[0.04]">
-          <span>{year || '—'}</span>
-          {movie.runtime ? (
-            <span>{movie.runtime}m</span>
-          ) : movie.voteAverage > 0 ? (
+          {isWatched ? (
+            <span className="text-[#E0AD52] font-semibold flex items-center gap-1 text-[10px] tracking-wide">
+              <span>✓ WATCHED</span>
+              {watchedDateStr ? <span>· {watchedDateStr}</span> : null}
+            </span>
+          ) : (
+            <span>{year || '—'}</span>
+          )}
+          {movie.voteAverage > 0 && !isWatched && (
             <span className="text-[#E0AD52] font-semibold">★ {movie.voteAverage.toFixed(1)}</span>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

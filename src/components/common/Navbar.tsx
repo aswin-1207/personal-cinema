@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, Layers, User, LucideIcon, Sparkles, Film } from 'lucide-react';
+import { Home, Compass, Bookmark, CheckCircle2, Layers, User, LucideIcon, Sparkles, Film } from 'lucide-react';
 import { useCinema, TabType } from '../../context/CinemaContext';
 
 interface NavItemDef {
@@ -11,15 +11,19 @@ interface NavItemDef {
 const DESKTOP_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+  { id: 'watched', label: 'Watched', icon: CheckCircle2 },
   { id: 'collections', label: 'Collections', icon: Layers },
-  { id: 'profile', label: 'My Cinema', icon: User },
+  { id: 'profile', label: 'Profile', icon: User },
 ];
 
 const MOBILE_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
+  { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+  { id: 'watched', label: 'Watched', icon: CheckCircle2 },
   { id: 'collections', label: 'Sagas', icon: Layers },
-  { id: 'profile', label: 'Vault', icon: User },
+  { id: 'profile', label: 'Profile', icon: User },
 ];
 
 export const CinemaDesktopNav: React.FC = () => {
@@ -52,11 +56,8 @@ export const CinemaDesktopNav: React.FC = () => {
             <Film size={18} strokeWidth={2.5} />
           </div>
           <div>
-            <div className="font-serif font-black text-[17px] tracking-[0.16em] text-[#F5F3EB] leading-none">
+            <div className="font-serif font-black text-[18px] tracking-[0.2em] text-[#F5F3EB] leading-none">
               MYCINEMA
-            </div>
-            <div className="text-[9px] tracking-[0.24em] text-[#E0AD52] font-bold mt-1">
-              PRIVATE CINEMA
             </div>
           </div>
         </div>
@@ -96,7 +97,7 @@ export const CinemaDesktopNav: React.FC = () => {
       {/* Footer System Status */}
       <div className="px-3 py-3 border-t border-white/[0.06] text-[11px] text-[#63626B] flex items-center justify-between">
         <div>
-          <div className="text-[#9E9DA5] font-semibold">Private Cinema</div>
+          <div className="text-[#9E9DA5] font-semibold">Offline Ready</div>
           <div>Local-First Vault</div>
         </div>
         <Sparkles size={14} className="text-[#E0AD52]/60" />

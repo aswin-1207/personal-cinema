@@ -58,7 +58,7 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <div
           className="fixed top-0 left-0 right-0 h-[70vh] pointer-events-none z-0 transition-all duration-1000 ease-out opacity-80 blur-[100px]"
           style={{
-            background: `radial-gradient(circle at 50% 12%, ${ambientColor}, transparent 72%), radial-gradient(circle at 85% 35%, rgba(140, 122, 208, 0.07), transparent 65%)`,
+            background: `radial-gradient(circle at 50% 12%, ${ambientColor}, transparent 72%), radial-gradient(circle at 85% 35%, rgba(140, 122, 208, 0.08), transparent 65%), radial-gradient(circle at 15% 65%, rgba(179, 38, 46, 0.05), transparent 60%)`,
           }}
         />
 

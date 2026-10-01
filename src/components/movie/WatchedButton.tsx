@@ -69,9 +69,9 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
           isProcessing
             ? 'bg-[#E0AD52]/20 text-[#E0AD52] border-[#E0AD52] animate-pulse'
             : isWatched
-            ? 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/50 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
+            ? 'bg-[#E0AD52]/20 text-[#E0AD52] border-[#E0AD52]/60 shadow-[0_0_14px_rgba(224,173,82,0.35)]'
             : 'bg-[#131319]/90 text-[#F5F3EB] border-white/10 hover:border-[#E0AD52] hover:scale-105'
-        } ${isPressing ? 'scale-90' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
+        } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
       >
         <svg
           width="16"
@@ -98,13 +98,13 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
         disabled={isProcessing}
         title={isWatched ? `Watched on ${watchedDate || 'archive'} — Click to undo` : 'Mark as Watched'}
         aria-pressed={isWatched}
-        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold cursor-pointer transition-all duration-300 ease-out border backdrop-blur-md ${
+        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all duration-300 ease-out border backdrop-blur-md ${
           isProcessing
             ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52] animate-pulse'
             : isWatched
-            ? 'bg-[#10B981]/15 text-[#34D399] border-[#10B981]/40 shadow-[0_0_16px_rgba(16,185,129,0.25)]'
+            ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/50 shadow-[0_0_16px_rgba(224,173,82,0.25)]'
             : 'bg-white/[0.06] text-[#9E9DA5] border-white/10 hover:text-[#F5F3EB] hover:border-[#E0AD52]/40 hover:bg-white/[0.1]'
-        } ${isPressing ? 'scale-95' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
+        } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
       >
         <svg
           width="14"
@@ -115,7 +115,7 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
           strokeWidth={2.8}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={isMorphing ? 'animate-check-draw text-[#34D399]' : isWatched ? 'text-[#34D399]' : 'text-[#9E9DA5]'}
+          className={isMorphing ? 'animate-check-draw text-[#E0AD52]' : isWatched ? 'text-[#E0AD52]' : 'text-[#9E9DA5]'}
         >
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -132,7 +132,7 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
     );
   }
 
-  // 3. Prominent CTA (Movie Detail & Hero primary action matching Figma 11:2)
+  // 3. Prominent CTA (Movie Detail & Hero primary action)
   return (
     <button
       onClick={handleToggle}
@@ -143,9 +143,9 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
         isProcessing
           ? 'bg-[#131319] text-[#E0AD52] border-[#E0AD52] shadow-[0_0_20px_rgba(224,173,82,0.35)] animate-pulse'
           : isWatched
-          ? 'bg-[#10B981]/15 text-[#34D399] border-[#10B981]/50 shadow-[0_0_24px_rgba(16,185,129,0.3)] hover:bg-[#10B981]/25'
-          : 'bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] border-transparent shadow-[0_4px_24px_rgba(224,173,82,0.35)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.5)] active:scale-95'
-      } ${isPressing ? 'scale-95' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
+          ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/60 shadow-[0_0_24px_rgba(224,173,82,0.35)] hover:bg-[#E0AD52]/25'
+          : 'bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] border-transparent shadow-[0_4px_24px_rgba(224,173,82,0.35)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.5)] active:scale-[0.97]'
+      } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
     >
       <svg
         width="18"
@@ -156,7 +156,7 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
         strokeWidth={3}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={isMorphing ? 'animate-check-draw' : ''}
+        className={isMorphing ? 'animate-check-draw text-[#E0AD52]' : ''}
       >
         <polyline points="20 6 9 17 4 12" />
       </svg>
@@ -165,7 +165,7 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
           ? 'RECORDING...'
           : isWatched
           ? watchedDate
-            ? `✓ WATCHED (${watchedDate})`
+            ? `✓ WATCHED · ${watchedDate}`
             : '✓ WATCHED'
           : 'MARK AS WATCHED'}
       </span>

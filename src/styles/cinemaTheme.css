@@ -17,7 +17,9 @@
   --cinema-amber: #D19830;
   --cinema-purple: #8C7AD0;
   --cinema-purple-glow: rgba(140, 122, 208, 0.32);
-  --cinema-crimson: #B81C28;
+  --cinema-red: #B3262E;
+  --cinema-red-glow: rgba(179, 38, 46, 0.28);
+  --cinema-crimson: #B3262E;
   --cinema-crimson-soft: #D94048;
 
   /* Cinema Typography */

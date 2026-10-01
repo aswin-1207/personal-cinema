@@ -24,9 +24,9 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
           <div className="w-12 h-12 mx-auto rounded-2xl bg-[#E0AD52]/10 border border-[#E0AD52]/20 flex items-center justify-center text-[#E0AD52]">
             <Sparkles size={24} />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-[#F5F3EB]">Your Private Cinema Awaits</h2>
+          <h2 className="font-serif text-2xl font-bold text-[#F5F3EB]">Featured Screening</h2>
           <p className="text-xs text-[#9E9DA5] leading-relaxed">
-            Discover films and build your personal screening vault to activate the cinematic hero stage.
+            Discover extraordinary films and build your personal collection to activate the hero stage.
           </p>
         </div>
       </div>

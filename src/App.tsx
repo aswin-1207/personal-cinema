@@ -6,6 +6,8 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 // Pages
 import { Home } from './pages/Home';
 import { Discover } from './pages/Discover';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { WatchedPage } from './pages/WatchedPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { CollectionDetail } from './pages/CollectionDetail';
 import { MovieDetail } from './pages/MovieDetail';
@@ -33,6 +35,8 @@ const AppContent: React.FC = () => {
     >
       {activeTab === 'home' && <Home />}
       {activeTab === 'discover' && <Discover />}
+      {activeTab === 'watchlist' && <WatchlistPage />}
+      {activeTab === 'watched' && <WatchedPage />}
       {activeTab === 'collections' && <CollectionsPage />}
       {activeTab === 'profile' && <Profile />}
     </CinemaShell>
