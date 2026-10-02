@@ -51,55 +51,19 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
     loadData();
   }, [collectionId, dataVersion]);
 
-  if (!collectionData) {
-    return (
-      <div className="py-20 text-center text-[#5C5B64]">
-        <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin mx-auto mb-3" />
-        <p className="text-xs font-serif text-[#9E9DA5]">Loading Collection...</p>
-      </div>
-    );
-  }
-
-  const { collection, movies, progress } = collectionData;
-
-  const handleDeleteCollection = async () => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${collection.name}"? This removes the collection grouping, but your movies, watchlist, and watched history will remain.`
-      )
-    ) {
-      await CollectionRepository.delete(collection.id);
-      showToast(`Collection "${collection.name}" deleted.`);
-      notifyDataChanged();
-      onBack();
-    }
-  };
-
-  const handleRemoveMovie = async (movieId: number) => {
-    await CollectionRepository.removeMovieFromCollection(collection.id, movieId);
-    showToast('Movie removed from collection.');
-    loadData();
-    notifyDataChanged();
-  };
-
-  const handleMoveMovie = async (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= movies.length) return;
-    const currentOrder = movies.map((m) => m.movie.id);
-    const [moved] = currentOrder.splice(fromIndex, 1);
-    currentOrder.splice(toIndex, 0, moved);
-
-    await CollectionRepository.updateMovieOrder(collection.id, currentOrder);
-    loadData();
-  };
+  const movies = collectionData?.movies || [];
+  const progress = collectionData?.progress;
+  const collection = collectionData?.collection;
 
   // Find next unwatched movie according to collection order (Section 57)
   const nextUnwatchedMovie = useMemo(() => {
-    if (progress.isComplete || progress.unwatched === 0) return null;
+    if (!progress || progress.isComplete || progress.unwatched === 0) return null;
     return movies.find((item) => item.userData?.status !== 'watched') || null;
   }, [movies, progress]);
 
   // Sorting and Filtering
   const displayedMovies = useMemo(() => {
+    if (!collection) return [];
     // 1. Filter
     let list = movies.filter((item) => {
       if (filter === 'watched') return item.userData?.status === 'watched';
@@ -144,7 +108,46 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           return a.position - b.position;
       }
     });
-  }, [movies, filter, activeSort, collection.customOrder]);
+  }, [movies, filter, activeSort, collection]);
+
+  if (!collectionData || !collection || !progress) {
+    return (
+      <div className="py-20 text-center text-[#5C5B64]">
+        <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin mx-auto mb-3" />
+        <p className="text-xs font-serif text-[#9E9DA5]">Loading Collection...</p>
+      </div>
+    );
+  }
+
+  const handleDeleteCollection = async () => {
+    if (
+      confirm(
+        `Are you sure you want to delete "${collection.name}"? This removes the collection grouping, but your movies, watchlist, and watched history will remain.`
+      )
+    ) {
+      await CollectionRepository.delete(collection.id);
+      showToast(`Collection "${collection.name}" deleted.`);
+      notifyDataChanged();
+      onBack();
+    }
+  };
+
+  const handleRemoveMovie = async (movieId: number) => {
+    await CollectionRepository.removeMovieFromCollection(collection.id, movieId);
+    showToast('Movie removed from collection.');
+    loadData();
+    notifyDataChanged();
+  };
+
+  const handleMoveMovie = async (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= movies.length) return;
+    const currentOrder = movies.map((m) => m.movie.id);
+    const [moved] = currentOrder.splice(fromIndex, 1);
+    currentOrder.splice(toIndex, 0, moved);
+
+    await CollectionRepository.updateMovieOrder(collection.id, currentOrder);
+    loadData();
+  };
 
   const finalMovieItem = collection.finalMovieId
     ? movies.find((m) => m.movie.id === collection.finalMovieId)
