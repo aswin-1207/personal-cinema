@@ -13,6 +13,7 @@ import { WatchedButton } from '../components/movie/WatchedButton';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import { CinemaButton } from '../components/common/CinemaButton';
 import { CURATED_LANDMARKS } from '../services/curatedLandmarks';
+import { atmosphereService } from '../services/atmosphereService';
 import {
   Sparkles,
   Film,
@@ -132,8 +133,8 @@ export const Home: React.FC = () => {
           setActiveJourney(foundJourney);
           setRecommendations(CURATED_LANDMARKS.slice(1, 9));
 
-          if (initialHero?.movie.backdropPath) {
-            setAmbientColor('rgba(237, 194, 87, 0.12)');
+          if (initialHero?.movie) {
+            setAmbientColor(atmosphereService.getArtworkAtmosphere(initialHero.movie.backdropPath || initialHero.movie.posterPath));
           }
         }
 
@@ -146,9 +147,7 @@ export const Home: React.FC = () => {
             // If library was empty and using fallback landmark, upgrade to live weekly trending hero
             if (!chosenHero) {
               setHeroMovie({ movie: trendingList[0] });
-              if (trendingList[0].backdropPath) {
-                setAmbientColor('rgba(237, 194, 87, 0.12)');
-              }
+              setAmbientColor(atmosphereService.getArtworkAtmosphere(trendingList[0].backdropPath || trendingList[0].posterPath));
             }
           }
         }).catch((err) => {

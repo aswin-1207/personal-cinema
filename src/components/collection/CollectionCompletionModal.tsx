@@ -6,6 +6,7 @@ import { MovieRepository } from '../../db/repositories/movieRepository';
 import { tmdbService } from '../../services/tmdbService';
 import { Check, Share2, X, Film } from 'lucide-react';
 import { soundService } from '../../services/soundService';
+import { hapticsService } from '../../services/hapticsService';
 
 interface CollectionCompletionModalProps {
   collection: Collection;
@@ -24,6 +25,7 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
 
   useEffect(() => {
     soundService.playCollectionTriumph();
+    hapticsService.success();
 
     async function loadData() {
       const colMovies = await CollectionRepository.getCollectionMovies(collection.id);
@@ -62,9 +64,23 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
         year: 'numeric',
       });
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cinema-black/85 backdrop-blur-md animate-cinema-fade">
-      <div className="relative w-full max-w-lg bg-[#131319] border border-[#E0AD52]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden p-6 sm:p-7 text-center animate-cinema-scale">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cinema-black/85 backdrop-blur-md animate-cinema-fade"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg bg-[#131319] border border-[#E0AD52]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden p-6 sm:p-7 text-center animate-cinema-scale"
+      >
         {/* Subtle Ambient Gold Radial Glow */}
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#E0AD52]/15 rounded-full blur-3xl pointer-events-none" />
 

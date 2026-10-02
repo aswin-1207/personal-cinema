@@ -62,6 +62,8 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
       }
     } catch (err) {
       console.error('Failed to toggle watched state:', err);
+      soundService.playErrorTone();
+      hapticsService.error();
       setHasError(true);
     } finally {
       setIsProcessing(false);

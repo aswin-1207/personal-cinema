@@ -3,6 +3,8 @@ import { Movie, UserMovie } from '../../types/movie';
 import { tmdbService } from '../../services/tmdbService';
 import { useCinema } from '../../context/CinemaContext';
 import { WatchedButton } from './WatchedButton';
+import { soundService } from '../../services/soundService';
+import { hapticsService } from '../../services/hapticsService';
 import { Star, Heart, CheckCircle2, Eye, Bookmark, Film } from 'lucide-react';
 
 export interface MoviePosterProps {
@@ -153,17 +155,17 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
       onBlur={() => setIsHovered(false)}
       onTouchStart={() => setIsHovered(true)}
       onTouchEnd={() => setTimeout(() => setIsHovered(false), 2500)}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] transition-all duration-300 ease-out min-w-0 ${
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] cinema-card-tactile min-w-0 ${
         isWatched
           ? 'border border-[#E0AD52]/40 shadow-[0_4px_24px_rgba(224,173,82,0.18)] hover:border-[#E0AD52]'
           : 'border border-white/[0.07] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)]'
-      } hover:scale-[1.025] active:scale-[0.98] ${shrinkClass} ${widthClass} ${className}`}
+      } ${shrinkClass} ${widthClass} ${className}`}
     >
       {/* 2:3 Aspect Ratio Container */}
       <div className="relative aspect-[2/3] w-full bg-[#0F0F14] overflow-hidden">
         {/* Shimmer Skeleton Placeholder */}
         {!imageLoaded && !imageError && posterUrl && (
-          <div className="absolute inset-0 bg-gradient-to-r from-[#131319] via-white/5 to-[#131319] animate-pulse z-0" />
+          <div className="absolute inset-0 cinema-skeleton z-0" />
         )}
 
         {posterUrl && !imageError ? (
@@ -216,6 +218,8 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         <button
           onClick={async (e) => {
             e.stopPropagation();
+            soundService.playFavoritePop();
+            hapticsService.confirm();
             await toggleFavorite(movie);
           }}
           className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all z-10 border-none cursor-pointer ${

@@ -85,6 +85,9 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
           }}
         />
 
+        {/* LAYER 1B: Subtle Cinematic Film Grain (Section 10 & 11) */}
+        <div className="cinema-film-grain" aria-hidden="true" />
+
         {/* System Offline Status */}
         <OfflineIndicator />
 

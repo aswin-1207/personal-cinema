@@ -73,7 +73,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
   return (
     <div
       onClick={onClick}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col ${className}`}
+      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] cinema-card-tactile flex flex-col ${className}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

@@ -36,6 +36,13 @@ class HapticsService {
       navigator.vibrate([20, 40, 30]);
     } catch {}
   }
+
+  error() {
+    if (!this.hapticsEnabled || typeof navigator === 'undefined' || !navigator.vibrate) return;
+    try {
+      navigator.vibrate([40, 60, 40]);
+    } catch {}
+  }
 }
 
 export const hapticsService = new HapticsService();

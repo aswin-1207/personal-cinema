@@ -11,6 +11,9 @@ import { RatingControl } from '../components/movie/RatingControl';
 import { ShareModal } from '../components/share/ShareModal';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
+import { atmosphereService } from '../services/atmosphereService';
+import { soundService } from '../services/soundService';
+import { hapticsService } from '../services/hapticsService';
 import {
   ArrowLeft,
   Share2,
@@ -136,6 +139,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
   const backdropUrl = tmdbService.getBackdropUrl(movie.backdropPath, 'w1280');
   const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
+  const ambientGlow = atmosphereService.getArtworkAtmosphere(movie.backdropPath || movie.posterPath);
 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
 
@@ -144,6 +148,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     try {
       const updated = await setReviewAndNotes(movieId, { review, notes });
       setUserData(updated);
+      soundService.playSubtleClick();
+      hapticsService.confirm();
       showToast('Screening record saved to vault');
     } finally {
       setIsSavingReview(false);
@@ -153,6 +159,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const handleAddToCollection = async (collectionId: string) => {
     await CollectionRepository.addMovieToCollection(collectionId, movie.id);
     setIsCollectionPickerOpen(false);
+    soundService.playSubtleClick();
+    hapticsService.confirm();
     showToast('Movie added to collection');
     // Refresh member collections
     const colIds = await CollectionRepository.getCollectionsForMovie(movie.id);
@@ -162,6 +170,15 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] select-none animate-cinema-fade">
+      {/* Dynamic Artwork Atmosphere Ambient Halo (Section 9) */}
+      <div
+        className="fixed top-0 left-0 right-0 h-[65vh] pointer-events-none z-0 opacity-70 blur-[90px] transition-all duration-700"
+        style={{
+          background: `radial-gradient(circle at 50% 25%, ${ambientGlow}, transparent 75%)`,
+        }}
+        aria-hidden="true"
+      />
+
       {/* Top Floating Cinema Navigation Header */}
       <div className="sticky top-0 z-40 px-5 sm:px-6 pt-4 sm:pt-5 pb-3 flex items-center justify-between bg-gradient-to-b from-[#09090B]/95 via-[#09090B]/60 to-transparent backdrop-blur-md">
         <button
@@ -176,6 +193,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           {/* Quick Favorite */}
           <button
             onClick={async () => {
+              soundService.playFavoritePop();
+              hapticsService.confirm();
               const updated = await toggleFavorite(movie);
               setUserData(updated);
             }}
@@ -216,8 +235,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         </div>
       </div>
 
-      {/* Hero Backdrop Banner */}
-      <div className="relative h-[32vh] sm:h-[40vh] md:h-[44vh] min-h-[200px] sm:min-h-[280px] max-h-[420px] bg-[#09090D] overflow-hidden">
+      {/* Hero Backdrop Banner (Motion Level 2: Stagger 1) */}
+      <div className="relative h-[32vh] sm:h-[40vh] md:h-[44vh] min-h-[200px] sm:min-h-[280px] max-h-[420px] bg-[#09090D] overflow-hidden motion-stagger-1">
         {backdropUrl && (
           <img
             src={backdropUrl}
@@ -233,8 +252,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
       {/* Main Details Body */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-8 -mt-16 xs:-mt-20 sm:-mt-28 md:-mt-36 pb-28 sm:pb-32 space-y-6 sm:space-y-8">
         
-        {/* Top Info Grid (Poster + Core Metadata) */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 items-start">
+        {/* Top Info Grid (Poster + Core Metadata) (Motion Level 2: Stagger 2) */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 items-start motion-stagger-2">
           {/* Overlapping Poster Artwork with Ambient Halo */}
           <div className="w-28 xs:w-36 sm:w-48 md:w-56 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden bg-[#171924] shadow-[0_16px_40px_rgba(0,0,0,0.9)] border border-white/10 flex-shrink-0">
             {posterUrl ? (
