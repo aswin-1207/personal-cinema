@@ -22,8 +22,21 @@ function assert(cond, name, msg) {
 async function testHttpEndpoints() {
   console.log('\n--- PHASE 1: HTTP ASSET & ROUTE VERIFICATION ---');
 
+  // 1. Fetch live index.html to dynamically discover asset hashes
+  let liveHtml = '';
+  try {
+    const htmlRes = await fetch(`${BASE_URL}/`, { headers: { 'Cache-Control': 'no-cache' } });
+    assert(htmlRes.status === 200, 'HTTP 200: Main SPA HTML', `${BASE_URL}/ returned ${htmlRes.status}`);
+    liveHtml = await htmlRes.text();
+  } catch (err) {
+    assert(false, 'HTTP 200: Main SPA HTML', `Fetch failed: ${err.message}`);
+  }
+
+  // Extract linked CSS and JS from live HTML
+  const cssMatch = liveHtml.match(/\/assets\/index-[^"']+\.css/);
+  const jsMatch = liveHtml.match(/\/assets\/index-[^"']+\.js/);
+
   const endpoints = [
-    { url: `${BASE_URL}/`, type: 'text/html', desc: 'Main SPA HTML' },
     { url: `${BASE_URL}/manifest.webmanifest`, type: 'application/manifest+json', desc: 'PWA Web Manifest' },
     { url: `${BASE_URL}/sw.js`, type: 'text/javascript', desc: 'Service Worker Script' },
     { url: `${BASE_URL}/icon.svg`, type: 'image/svg+xml', desc: 'Scalable App Icon' },
@@ -31,10 +44,14 @@ async function testHttpEndpoints() {
     { url: `${BASE_URL}/icon-512.png`, type: 'image/png', desc: '512x512 PWA Icon' },
     { url: `${BASE_URL}/apple-touch-icon.png`, type: 'image/png', desc: 'Apple Touch Icon' },
     { url: `${BASE_URL}/favicon.png`, type: 'image/png', desc: 'Favicon PNG' },
-    { url: `${BASE_URL}/assets/index-DjSISa2-.css`, type: 'text/css', desc: 'Main CSS Bundle' },
-    { url: `${BASE_URL}/assets/index-DoL8Pll8.js`, type: 'text/javascript', desc: 'Main JS Bundle' },
-    { url: `${BASE_URL}/assets/ReviewsPage-moS3Lyx8.js`, type: 'text/javascript', desc: 'Module 11 Reviews Chunk' },
   ];
+
+  if (cssMatch) {
+    endpoints.push({ url: `${BASE_URL}${cssMatch[0]}`, type: 'text/css', desc: 'Live CSS Bundle' });
+  }
+  if (jsMatch) {
+    endpoints.push({ url: `${BASE_URL}${jsMatch[0]}`, type: 'text/javascript', desc: 'Live JS Main Bundle' });
+  }
 
   for (const ep of endpoints) {
     try {
