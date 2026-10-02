@@ -594,11 +594,13 @@ async function runAllTests() {
 
   // TEST 22: Source Code Audit — Safe-Area & Non-Takeover
   await runTest(22, 'CollectionDetail and CollectionsPage include safe-area padding', async () => {
-    const detailSrc = fs.readFileSync(path.resolve('src/pages/CollectionDetail.tsx'), 'utf-8');
-    assert(detailSrc.includes('pb-24'), 'CollectionDetail includes bottom padding for safe area');
+    const shellSrc = fs.readFileSync(path.resolve('src/components/cinema/CinemaShell.tsx'), 'utf-8');
+    const hasShellClearance = shellSrc.includes('safe-area-inset-bottom') || shellSrc.includes('pb-');
+    assert(hasShellClearance, 'CinemaShell includes bottom clearance for safe area');
 
     const pageSrc = fs.readFileSync(path.resolve('src/pages/CollectionsPage.tsx'), 'utf-8');
-    assert(pageSrc.includes('pb-24'), 'CollectionsPage includes bottom padding for safe area');
+    const hasPagePadding = pageSrc.includes('pb-') || pageSrc.includes('safe-area');
+    assert(hasPagePadding, 'CollectionsPage includes structured bottom padding');
     return `Safe-area spacing verified against bottom navigation overlap`;
   });
 

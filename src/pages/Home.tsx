@@ -194,13 +194,13 @@ export const Home: React.FC = () => {
   const displayName = preferences.displayName?.trim() || 'Aswin';
 
   return (
-    <div className="pb-24 space-y-10 select-none">
-      {/* Figma 2:2 Brand & Personalized Header */}
-      <div className="pt-2 pb-1 space-y-1.5 animate-cinema-fade">
-        <div className="text-[11px] font-black uppercase tracking-[0.24em] text-[#E0AD52]">
+    <div className="pb-4 space-y-6 sm:space-y-8 select-none">
+      {/* Brand & Personalized Header */}
+      <div className="pt-1 pb-0.5 space-y-1 animate-cinema-fade">
+        <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.24em] text-[#E0AD52]">
           MYCINEMA
         </div>
-        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+        <h1 className="font-serif font-black text-xl sm:text-2xl md:text-3xl text-[#F5F3EB] tracking-tight">
           Good {greeting}, {displayName}.
         </h1>
         <p className="text-xs sm:text-sm text-[#9E9DA5]">
@@ -218,29 +218,29 @@ export const Home: React.FC = () => {
 
       {/* Continue Your Journey: Active Collection Feature (Section 86 & 87) */}
       {activeJourney && (
-        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <div className="flex items-center gap-2 text-[#E0AD52] text-[11px] font-bold tracking-[0.16em] uppercase">
-                <TrendingUp size={14} />
+              <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] sm:text-[11px] font-bold tracking-[0.16em] uppercase">
+                <TrendingUp size={13} />
                 <span>CONTINUE YOUR JOURNEY</span>
               </div>
-              <h2 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F3EB] mt-1 break-words">
+              <h2 className="font-serif font-bold text-lg sm:text-xl text-[#F5F3EB] mt-0.5 break-words">
                 {activeJourney.collection.name}
               </h2>
             </div>
 
             <button
               onClick={() => openCollectionDetail(activeJourney.collection.id)}
-              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-bold tracking-wide"
+              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-bold tracking-wide min-h-[44px] cursor-pointer bg-transparent border-none"
             >
-              <span>View Full Saga</span>
+              <span>View Collection</span>
               <ChevronRight size={14} />
             </button>
           </div>
 
           {/* Thin Cinematic Progress Bar */}
-          <div className="space-y-1.5 mb-6">
+          <div className="space-y-1 mb-4 sm:mb-5">
             <div className="flex justify-between text-xs text-[#9E9DA5]">
               <span>
                 {activeJourney.progress.watched} of {activeJourney.progress.total} watched
@@ -255,9 +255,9 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Next Up in Saga Movie Card with Strict Boundary Containment */}
-          <div className="flex items-center gap-4 bg-[#09090B]/70 border border-white/[0.08] rounded-2xl p-3.5 sm:p-5">
-            <div className="w-16 sm:w-20 aspect-[2/3] rounded-xl overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
+          {/* Next Up in Collection Movie Card with Strict Boundary Containment */}
+          <div className="flex items-center gap-3 sm:gap-4 bg-[#09090B]/70 border border-white/[0.08] rounded-xl sm:rounded-2xl p-3 sm:p-4">
+            <div className="w-14 sm:w-16 aspect-[2/3] rounded-lg sm:rounded-xl overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
               {activeJourney.nextMovie.movie.posterPath ? (
                 <img
                   src={tmdbService.getImageUrl(activeJourney.nextMovie.movie.posterPath, 'w185')}
@@ -272,11 +272,11 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="flex-grow min-w-0 pr-2">
-              <div className="text-[10px] text-[#E0AD52] font-black uppercase tracking-widest">
-                NEXT UP IN SAGA
+              <div className="text-[9px] sm:text-[10px] text-[#E0AD52] font-black uppercase tracking-widest">
+                NEXT IN COLLECTION
               </div>
               <h3
-                className="font-serif font-bold text-base sm:text-lg text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
+                className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
                 title={activeJourney.nextMovie.movie.title}
               >
                 {activeJourney.nextMovie.movie.title}
@@ -287,10 +287,10 @@ export const Home: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => openMovieDetail(activeJourney.nextMovie.movie.id)}
-                className="cinema-button-primary px-4 py-2.5 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(224,173,82,0.3)]"
+                className="cinema-button-primary px-3.5 py-2 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(224,173,82,0.3)] min-h-[44px]"
               >
                 <Play size={13} className="fill-[#09090B]" />
                 <span>Screen Now</span>
@@ -348,7 +348,7 @@ export const Home: React.FC = () => {
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
 
-      {/* Curated Sagas / Collections Rail */}
+      {/* Curated Collections Rail */}
       {collections.length > 0 && (
         <section className="space-y-3.5">
           <div className="flex items-end justify-between gap-4">
@@ -367,9 +367,9 @@ export const Home: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-4 px-4 sm:-mx-8 sm:px-8">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8">
             {collections.map((col) => (
-              <div key={col.id} className="w-64 sm:w-72 flex-shrink-0">
+              <div key={col.id} className="w-56 sm:w-64 md:w-72 flex-shrink-0">
                 <CollectionCard
                   collection={col}
                   onClick={() => openCollectionDetail(col.id)}

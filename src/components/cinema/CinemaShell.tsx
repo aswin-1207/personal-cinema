@@ -92,13 +92,15 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <CinemaDesktopNav />
         <CinemaMobileNav />
 
-        {/* Main Cinema Content Area */}
-        <main className="flex-1 min-w-0 md:ml-[240px] px-4 sm:px-8 pt-4 sm:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+84px)] md:pt-6 md:pb-8 max-w-7xl mx-auto w-full relative z-10">
-          {selectedCollectionId ? (
-            renderCollectionDetail(selectedCollectionId)
-          ) : (
-            children
-          )}
+        {/* Main Cinema Content Area (Single Primary Vertical Scroll Container) */}
+        <main className="flex-1 min-w-0 md:pl-[240px] w-full relative z-10 pb-[calc(env(safe-area-inset-bottom,0px)+72px)] md:pb-12">
+          <div className="max-w-[1380px] mx-auto px-3.5 sm:px-6 md:px-8 pt-3 sm:pt-5 md:pt-6 w-full">
+            {selectedCollectionId ? (
+              renderCollectionDetail(selectedCollectionId)
+            ) : (
+              children
+            )}
+          </div>
         </main>
 
         {/* LAYER 8: Fullscreen Movie Detail Modal */}

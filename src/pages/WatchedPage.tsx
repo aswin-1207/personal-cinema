@@ -73,15 +73,15 @@ export const WatchedPage: React.FC = () => {
   }, [movies, onlyFavorites, searchQuery, sortBy]);
 
   return (
-    <div className="space-y-8 pb-24 select-none animate-cinema-fade">
+    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#E0AD52] text-[11px] font-bold tracking-[0.2em] uppercase">
-            <CheckCircle2 size={13} />
+          <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase">
+            <CheckCircle2 size={12} />
             <span>ARCHIVE</span>
           </div>
-          <h1 className="font-hero-title text-2xl sm:text-3xl text-[#F5F3EB]">
+          <h1 className="font-hero-title text-xl sm:text-2xl md:text-3xl text-[#F5F3EB]">
             Watched Movies
           </h1>
           <p className="text-xs text-[#9E9DA5]">
@@ -91,9 +91,9 @@ export const WatchedPage: React.FC = () => {
 
         {/* Filter and Sort Controls */}
         {movies.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex-1 xs:flex-initial">
               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] pointer-events-none"
@@ -103,14 +103,14 @@ export const WatchedPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search watched..."
-                className="bg-[#131319] border border-white/[0.08] focus:border-[#E0AD52]/50 text-xs text-[#F5F3EB] placeholder-[#63626B] rounded-xl pl-8 pr-3 py-2 w-36 sm:w-48 transition-all outline-none"
+                className="bg-[#131319] border border-white/[0.08] focus:border-[#E0AD52]/50 text-xs text-[#F5F3EB] placeholder-[#63626B] rounded-xl pl-8 pr-3 py-2 w-full xs:w-44 sm:w-48 transition-all outline-none min-h-[38px]"
               />
             </div>
 
             {/* Favorite Filter Toggle */}
             <button
               onClick={() => setOnlyFavorites(!onlyFavorites)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer border transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer border transition-all min-h-[38px] ${
                 onlyFavorites
                   ? 'bg-[#B3262E]/20 border-[#B3262E]/60 text-white shadow-[0_0_12px_rgba(179,38,46,0.3)]'
                   : 'bg-[#131319] border-white/[0.08] text-[#9E9DA5] hover:text-[#F5F3EB]'
@@ -159,13 +159,13 @@ export const WatchedPage: React.FC = () => {
 
       {/* Poster Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="aspect-[2/3] rounded-2xl bg-[#131319] animate-pulse" />
           ))}
         </div>
       ) : filteredAndSortedMovies.length === 0 ? (
-        <div className="py-16 text-center">
+        <div className="py-12 text-center">
           {searchQuery || onlyFavorites ? (
             <div className="space-y-3">
               <p className="text-sm text-[#9E9DA5]">
@@ -192,7 +192,7 @@ export const WatchedPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
           {filteredAndSortedMovies.map((item) => (
             <MoviePoster
               key={item.movie.id}

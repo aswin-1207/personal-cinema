@@ -30,7 +30,7 @@ export const CollectionsPage: React.FC = () => {
   }, [dataVersion]);
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-5 pb-4">
       {/* Header matching Figma Collections */}
       <CinemaHeader
         badge="COLLECTIONS"
@@ -48,11 +48,11 @@ export const CollectionsPage: React.FC = () => {
       />
 
       <div className="pt-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] mb-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] mb-3">
           YOUR COLLECTIONS ({collections.length})
         </h2>
 
-      {/* Grid of collections */}
+      {/* Responsive Grid of collections */}
       {isLoading ? (
         <div className="py-20 flex flex-col items-center">
           <div className="w-10 h-10 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mb-3" />
@@ -65,7 +65,7 @@ export const CollectionsPage: React.FC = () => {
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           {collections.map((col) => (
             <CollectionCard
               key={col.id}

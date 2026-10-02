@@ -154,7 +154,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Share Movie" maxWidth="max-w-2xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[80vh] overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         {/* Left Column: Live Card Preview */}
         <div className="flex flex-col items-center">
           <div className="flex items-center justify-between w-full mb-2">

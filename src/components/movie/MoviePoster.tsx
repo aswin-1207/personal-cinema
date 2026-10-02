@@ -124,10 +124,10 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   const widthClass = hasExplicitWidth
     ? ''
     : size === 'sm'
-    ? 'w-32 sm:w-36'
+    ? 'w-[115px] sm:w-[135px]'
     : size === 'lg'
-    ? 'w-44 sm:w-56'
-    : 'w-36 sm:w-44';
+    ? 'w-[165px] sm:w-[200px]'
+    : 'w-[130px] xs:w-[145px] sm:w-[165px] md:w-[180px]';
   const shrinkClass = className.includes('w-full') ? 'w-full' : 'flex-shrink-0';
 
   const isReducedMotion = Boolean(

@@ -90,7 +90,7 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-28 select-none animate-cinema-fade max-w-3xl mx-auto">
+    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade max-w-3xl mx-auto">
       {/* Header matching Figma 2:451 */}
       <CinemaHeader
         badge="VAULT & PREFERENCES"

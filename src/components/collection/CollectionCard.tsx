@@ -141,41 +141,40 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
       </div>
 
       {/* Collection Metadata & Integrated Thin Progress Bar */}
-      <div className="p-4 bg-[#131319] flex-grow flex flex-col justify-between space-y-3 w-full min-w-0">
+      <div className="p-3 sm:p-4 bg-[#131319] flex-grow flex flex-col justify-between space-y-2 sm:space-y-3 w-full min-w-0">
         <div className="min-w-0">
           <h4
-            className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] line-clamp-2 break-words group-hover:text-[#E0AD52] transition-all duration-200"
+            className="font-serif font-bold text-xs sm:text-sm md:text-base text-[#F5F3EB] line-clamp-1 sm:line-clamp-2 break-words group-hover:text-[#E0AD52] transition-all duration-200"
             title={collection.name}
           >
             {collection.name}
           </h4>
           {collection.description && (
-            <p className="text-xs text-[#9E9DA5] line-clamp-1 mt-0.5 break-words">
+            <p className="text-[11px] sm:text-xs text-[#9E9DA5] line-clamp-1 mt-0.5 break-words">
               {collection.description}
             </p>
           )}
         </div>
 
         {/* Cinematic Universe Progress */}
-        <div className="space-y-1.5 pt-1 border-t border-white/[0.06]">
-          <div className="flex items-center justify-between text-[11px]">
+        <div className="space-y-1 sm:space-y-1.5 pt-1 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px]">
             {isComplete ? (
-              <span className="text-[#E0AD52] font-semibold text-[10px] tracking-wider uppercase">
+              <span className="text-[#E0AD52] font-semibold tracking-wider uppercase truncate">
                 ✓ COMPLETE · {progress.total} {progress.total === 1 ? 'FILM' : 'FILMS'}
-                {collection.completedAt ? ` · COMPLETED ${new Date(collection.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}` : ''}
               </span>
             ) : (
-              <span className="text-[#9E9DA5] font-semibold tracking-wider uppercase text-[10px]">
-                {progress.watched} / {progress.total} WATCHED · {progress.total - progress.watched} REMAINING
+              <span className="text-[#9E9DA5] font-semibold tracking-wider uppercase truncate">
+                {progress.watched}/{progress.total} WATCHED
               </span>
             )}
-            <span className={`font-bold text-xs ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
+            <span className={`font-bold text-[11px] sm:text-xs ml-1 flex-shrink-0 ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
               {progress.percent}%
             </span>
           </div>
 
           {/* Thin Cinematic Progress Bar */}
-          <div className="w-full h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
+          <div className="w-full h-1 sm:h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
             <div
               className={`h-full rounded-full transition-all duration-700 ease-out ${
                 isComplete

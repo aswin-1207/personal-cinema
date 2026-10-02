@@ -319,7 +319,7 @@ export const Discover: React.FC = () => {
   }, []);
 
   return (
-    <div className="pb-32 space-y-9 select-none animate-cinema-fade">
+    <div className="pb-4 space-y-6 sm:space-y-8 select-none animate-cinema-fade">
       {/* Streaming Discovery Header */}
       <CinemaHeader
         badge="STREAMING & DISCOVERY"
@@ -559,7 +559,7 @@ export const Discover: React.FC = () => {
           {/* 4. MARVEL CINEMATIC & LEGACY */}
           <MoviePosterRail
             title="MARVEL CINEMATIC & LEGACY"
-            subtitle="MCU phases, mutant sagas, and multiversal epics"
+            subtitle="MCU phases, mutant milestones, and multiversal epics"
             badge="MARVEL"
             items={marvelMovies.map((m) => ({
               movie: m,

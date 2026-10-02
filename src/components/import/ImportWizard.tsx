@@ -425,7 +425,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                 type="text"
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
-                placeholder="New collection name (e.g. Nolan Sagas)"
+                placeholder="New collection name (e.g. Nolan Films)"
                 className="cinema-input w-full mt-2"
                 autoFocus
               />
@@ -669,7 +669,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           </div>
 
           {/* Candidate List */}
-          <div className="h-[360px] overflow-y-auto space-y-2 pr-1">
+          <div className="h-[300px] sm:h-[360px] max-h-[48dvh] overflow-y-auto overscroll-contain space-y-2 pr-1">
             {filteredCandidates.map((candidate) => {
               const originalIdx = candidates.indexOf(candidate);
               const movie = candidate.userOverrideMovie || candidate.matchedMovie;

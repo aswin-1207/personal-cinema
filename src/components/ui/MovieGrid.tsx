@@ -20,7 +20,7 @@ export const MovieGrid: React.FC<MovieGridProps> = ({
 
   return (
     <div
-      className={`grid ${colClass} gap-3.5 sm:gap-5 w-full min-w-0 ${className}`}
+      className={`grid ${colClass} gap-3 sm:gap-4 md:gap-5 w-full min-w-0 ${className}`}
     >
       {children}
     </div>

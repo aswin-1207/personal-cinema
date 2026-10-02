@@ -217,7 +217,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
       </div>
 
       {/* Hero Backdrop Banner */}
-      <div className="relative h-[50vh] min-h-[360px] max-h-[540px] bg-[#09090D] overflow-hidden">
+      <div className="relative h-[32vh] sm:h-[40vh] md:h-[44vh] min-h-[200px] sm:min-h-[280px] max-h-[420px] bg-[#09090D] overflow-hidden">
         {backdropUrl && (
           <img
             src={backdropUrl}
@@ -231,12 +231,12 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
       </div>
 
       {/* Main Details Body */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 -mt-36 sm:-mt-48 pb-32 space-y-10">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 md:px-8 -mt-16 xs:-mt-20 sm:-mt-28 md:-mt-36 pb-28 sm:pb-32 space-y-6 sm:space-y-8">
         
         {/* Top Info Grid (Poster + Core Metadata) */}
-        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-8 items-start">
           {/* Overlapping Poster Artwork with Ambient Halo */}
-          <div className="w-44 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden bg-[#171924] shadow-[0_20px_50px_rgba(0,0,0,0.9)] border border-white/10 flex-shrink-0">
+          <div className="w-28 xs:w-36 sm:w-48 md:w-56 aspect-[2/3] rounded-xl sm:rounded-2xl overflow-hidden bg-[#171924] shadow-[0_16px_40px_rgba(0,0,0,0.9)] border border-white/10 flex-shrink-0">
             {posterUrl ? (
               <img
                 src={posterUrl}
@@ -536,7 +536,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             <h3 className="font-section-title text-[#F5F2F0]">
               Films You Might Also Like
             </h3>
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 pt-1 -mx-6 px-6 scroll-smooth">
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 scroll-smooth">
               {similarMovies.map((sim) => (
                 <MoviePoster
                   key={sim.id}

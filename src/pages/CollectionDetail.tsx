@@ -153,12 +153,12 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
     : null;
 
   return (
-    <div className="space-y-8 pb-24 select-none animate-cinema-fade">
+    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors cursor-pointer border-none"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors cursor-pointer border-none min-h-[44px]"
         >
           <ArrowLeft size={16} />
           <span>Back to Collections</span>
@@ -167,7 +167,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditOpen(true)}
-            className="cinema-button-secondary px-3 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer"
+            className="cinema-button-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer min-h-[44px]"
             title="Edit Collection Name & Cover"
           >
             <Edit3 size={13} />
@@ -176,7 +176,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
 
           <button
             onClick={() => setIsShareOpen(true)}
-            className="cinema-button-secondary px-3 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer"
+            className="cinema-button-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer min-h-[44px]"
           >
             <Share2 size={13} />
             <span>Share Collection</span>
@@ -184,7 +184,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
 
           <button
             onClick={handleDeleteCollection}
-            className="p-2 rounded-xl text-[#9E9DA5] hover:text-[#EF4444] hover:bg-red-950/30 transition-colors cursor-pointer border-none bg-transparent"
+            className="p-2.5 rounded-xl text-[#9E9DA5] hover:text-[#EF4444] hover:bg-red-950/30 transition-colors cursor-pointer border-none bg-transparent min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Delete Collection"
           >
             <Trash2 size={15} />
@@ -193,7 +193,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
       </div>
 
       {/* Universe Hero Stage */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#131319] to-[#0E0E14] border border-[#E0AD52]/30 relative overflow-hidden shadow-2xl">
+      <div className="p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#131319] to-[#0E0E14] border border-[#E0AD52]/30 relative overflow-hidden shadow-2xl">
         {/* Subtle Ambient Gold Glow if complete */}
         {progress.isComplete && (
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#E0AD52]/20 rounded-full blur-3xl pointer-events-none" />
@@ -479,7 +479,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         </div>
       ) : (
         /* Visual Poster Wall with 2:3 Aspect Ratio */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {displayedMovies.map((item) => (
             <MoviePoster
               key={item.movie.id}

@@ -72,6 +72,20 @@
   --cinema-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --cinema-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* Responsive Layout & Shell Tokens (Module 7) */
+  --cinema-nav-height-mobile: 60px;
+  --cinema-sidebar-width: 240px;
+  --cinema-max-content-width: 1380px;
+
+  /* Layering Hierarchy (Z-Index System) */
+  --z-base: 0;
+  --z-content: 10;
+  --z-sticky: 20;
+  --z-nav: 40;
+  --z-sheet: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+
   /* Backward Compatibility Aliases */
   --cinema-deep-navy: var(--cinema-bg-elevated);
   --cinema-charcoal: var(--cinema-surface);
@@ -105,7 +119,7 @@ html, body {
   font-size: 15px;
   line-height: 1.5;
   overflow-x: hidden;
-  min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -135,11 +149,20 @@ html, body {
   scrollbar-width: none;
 }
 
-/* Typography Responsive Clamps */
+/* Responsive Fluid Typography Clamps (Module 7) */
 .font-hero-title {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4.5vw, 4.25rem);
-  line-height: 1.08;
+  font-size: clamp(1.45rem, 3.6vw, 2.75rem);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--cinema-text);
+}
+
+.font-page-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.8vw, 2.2rem);
+  line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--cinema-text);
@@ -147,14 +170,14 @@ html, body {
 
 .font-section-title {
   font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--cinema-text);
 }
 
 .font-caps-label {
-  font-size: 11px;
+  font-size: clamp(9px, 1.1vw, 11px);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
