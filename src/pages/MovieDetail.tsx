@@ -33,6 +33,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const {
     addToWatchlist,
     setWatching,
+    removeFromWatchlist,
     toggleFavorite,
     setRating,
     setReviewAndNotes,
@@ -143,7 +144,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const handleAddToCollection = async (collectionId: string) => {
     await CollectionRepository.addMovieToCollection(collectionId, movie.id);
     setIsCollectionPickerOpen(false);
-    showToast('Movie added to curated saga');
+    showToast('Movie added to collection');
   };
 
   return (
@@ -293,12 +294,18 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
               <button
                 onClick={async () => {
-                  const updated = await addToWatchlist(movie);
-                  setUserData(updated);
+                  if (userData?.status === 'want_to_watch') {
+                    await removeFromWatchlist(movie.id);
+                    setUserData(null);
+                  } else {
+                    const updated = await addToWatchlist(movie);
+                    setUserData(updated);
+                  }
                 }}
                 className={`cinema-button-secondary px-4 py-3 flex items-center gap-2 text-xs font-semibold ${
                   userData?.status === 'want_to_watch' ? 'border-[#E0AD52] text-[#E0AD52]' : ''
                 }`}
+                title={userData?.status === 'want_to_watch' ? 'Remove from Watchlist' : 'Add to Watchlist'}
               >
                 <Bookmark size={15} />
                 <span>
@@ -325,7 +332,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                 className="cinema-button-secondary px-4 py-3 flex items-center gap-2 text-xs font-semibold"
               >
                 <FolderPlus size={15} />
-                <span>Add to Saga</span>
+                <span>Add to Collection</span>
               </button>
             </div>
 

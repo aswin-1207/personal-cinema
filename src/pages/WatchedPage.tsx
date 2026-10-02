@@ -82,7 +82,7 @@ export const WatchedPage: React.FC = () => {
             <span>ARCHIVE</span>
           </div>
           <h1 className="font-hero-title text-2xl sm:text-3xl text-[#F5F3EB]">
-            Watched & Completed
+            Watched Movies
           </h1>
           <p className="text-xs text-[#9E9DA5]">
             {movies.length} {movies.length === 1 ? 'film' : 'films'} screened in your cinema history

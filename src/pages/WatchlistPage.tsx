@@ -4,13 +4,14 @@ import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { MovieWithUserData } from '../types/movie';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { EmptyState } from '../components/common/EmptyState';
-import { Bookmark, Search } from 'lucide-react';
+import { Bookmark, Search, PlayCircle } from 'lucide-react';
 
 export const WatchlistPage: React.FC = () => {
   const { openMovieDetail, setActiveTab, dataVersion } = useCinema();
   const [movies, setMovies] = useState<MovieWithUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'want_to_watch' | 'watching'>('all');
   const [sortBy, setSortBy] = useState<'added' | 'year' | 'rating' | 'title'>('added');
   const [sortDesc, setSortDesc] = useState(true);
 
@@ -18,7 +19,9 @@ export const WatchlistPage: React.FC = () => {
     let isMounted = true;
     UserMovieRepository.getAllWithMovies().then((items) => {
       if (!isMounted) return;
-      const watchlistItems = items.filter((m) => m.userData?.status === 'want_to_watch');
+      const watchlistItems = items.filter(
+        (m) => m.userData?.status === 'want_to_watch' || m.userData?.status === 'watching'
+      );
       setMovies(watchlistItems);
       setLoading(false);
     });
@@ -27,23 +30,37 @@ export const WatchlistPage: React.FC = () => {
     };
   }, [dataVersion]);
 
+  const counts = useMemo(() => {
+    const wantToWatch = movies.filter((m) => m.userData?.status === 'want_to_watch').length;
+    const watching = movies.filter((m) => m.userData?.status === 'watching').length;
+    return { all: movies.length, wantToWatch, watching };
+  }, [movies]);
+
   const filteredAndSortedMovies = useMemo(() => {
     let list = movies;
 
+    if (statusFilter !== 'all') {
+      list = list.filter((item) => item.userData?.status === statusFilter);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter((item) =>
-        item.movie.title.toLowerCase().includes(q) ||
-        (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q))
+      list = list.filter(
+        (item) =>
+          item.movie.title.toLowerCase().includes(q) ||
+          (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q))
       );
     }
 
     return [...list].sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
-        case 'added':
-          comparison = (a.userData?.addedAt || '').localeCompare(b.userData?.addedAt || '');
+        case 'added': {
+          const dateA = a.userData?.watchingAt || a.userData?.addedAt || '';
+          const dateB = b.userData?.watchingAt || b.userData?.addedAt || '';
+          comparison = dateA.localeCompare(dateB);
           break;
+        }
         case 'year':
           comparison = (a.movie.releaseDate || '').localeCompare(b.movie.releaseDate || '');
           break;
@@ -56,7 +73,7 @@ export const WatchlistPage: React.FC = () => {
       }
       return sortDesc ? -comparison : comparison;
     });
-  }, [movies, searchQuery, sortBy, sortDesc]);
+  }, [movies, statusFilter, searchQuery, sortBy, sortDesc]);
 
   return (
     <div className="space-y-8 pb-24 select-none animate-cinema-fade">
@@ -71,13 +88,14 @@ export const WatchlistPage: React.FC = () => {
             Your Watchlist
           </h1>
           <p className="text-xs text-[#9E9DA5]">
-            {movies.length} {movies.length === 1 ? 'film' : 'films'} queued for your next screening
+            {counts.all} {counts.all === 1 ? 'film' : 'films'} in your watch stream
+            {counts.watching > 0 ? ` (${counts.watching} currently in progress)` : ''}
           </p>
         </div>
 
         {/* Search & Sort Controls */}
         {movies.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Search Bar */}
             <div className="relative">
               <Search
@@ -148,6 +166,42 @@ export const WatchlistPage: React.FC = () => {
         )}
       </div>
 
+      {/* Filter Tabs / Pills */}
+      {movies.length > 0 && (
+        <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              statusFilter === 'all'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            All ({counts.all})
+          </button>
+          <button
+            onClick={() => setStatusFilter('want_to_watch')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              statusFilter === 'want_to_watch'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            Want to Watch ({counts.wantToWatch})
+          </button>
+          <button
+            onClick={() => setStatusFilter('watching')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              statusFilter === 'watching'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            Watching ({counts.watching})
+          </button>
+        </div>
+      )}
+
       {/* Poster Grid */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
@@ -160,7 +214,7 @@ export const WatchlistPage: React.FC = () => {
           {searchQuery ? (
             <div className="space-y-3">
               <p className="text-sm text-[#9E9DA5]">
-                No queued films match "{searchQuery}".
+                No films match "{searchQuery}".
               </p>
               <button
                 onClick={() => setSearchQuery('')}
@@ -169,11 +223,19 @@ export const WatchlistPage: React.FC = () => {
                 Clear Search
               </button>
             </div>
+          ) : statusFilter === 'watching' ? (
+            <EmptyState
+              icon={PlayCircle}
+              title="NO FILMS CURRENTLY IN PROGRESS"
+              description="Mark a movie as 'Watching' to track what you are actively viewing."
+              actionLabel="View Want to Watch"
+              onAction={() => setStatusFilter('want_to_watch')}
+            />
           ) : (
             <EmptyState
               icon={Bookmark}
               title="YOUR WATCHLIST IS WAITING"
-              description="Discover extraordinary films and queue them for your upcoming movie nights."
+              description="Discover extraordinary films and queue them for your upcoming screenings."
               actionLabel="Explore Discover"
               onAction={() => setActiveTab('discover')}
             />

@@ -60,6 +60,7 @@ export interface UserMovie {
   isFavorite: boolean;
   addedAt: string; // ISO string
   watchedAt?: string | null; // ISO string
+  watchingAt?: string | null; // ISO string
   scheduledAt?: string | null; // ISO string
   rewatchCount: number;
 }

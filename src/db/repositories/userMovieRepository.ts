@@ -61,6 +61,7 @@ export class UserMovieRepository {
       isFavorite: options?.isFavorite !== undefined ? options.isFavorite : existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
       watchedAt: existing?.watchedAt || now, // preserve original watchedAt if already recorded
+      watchingAt: null,
       scheduledAt: null,
       rewatchCount: existing ? (existing.status === 'watched' ? existing.rewatchCount + 1 : existing.rewatchCount) : 0,
     };
@@ -83,13 +84,14 @@ export class UserMovieRepository {
     const updated: UserMovie = {
       movieId,
       status: 'want_to_watch',
-      personalRating: existing?.personalRating,
+      personalRating: existing?.personalRating ?? null,
       notes: existing?.notes,
       review: existing?.review,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
       watchedAt: null,
-      scheduledAt: existing?.scheduledAt,
+      watchingAt: null,
+      scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };
 
@@ -117,6 +119,7 @@ export class UserMovieRepository {
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
       watchedAt: existing?.watchedAt ?? null,
+      watchingAt: null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };
@@ -130,7 +133,10 @@ export class UserMovieRepository {
    * Set Status to Watching
    */
   static async setWatching(movieId: number): Promise<UserMovie> {
-    const existing = await this.getByMovieId(movieId);
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readwrite');
+    const store = tx.objectStore('userMovies');
+    const existing = await store.get(movieId);
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
@@ -142,12 +148,28 @@ export class UserMovieRepository {
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
       watchedAt: existing?.watchedAt ?? null,
+      watchingAt: now,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };
 
-    await this.save(updated);
+    await store.put(updated);
+    await tx.done;
     return updated;
+  }
+
+  /**
+   * Remove from Watchlist without affecting canonical Movie or Collections
+   */
+  static async removeFromWatchlist(movieId: number): Promise<void> {
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readwrite');
+    const store = tx.objectStore('userMovies');
+    const existing = await store.get(movieId);
+    if (existing && (existing.status === 'want_to_watch' || existing.status === 'watching')) {
+      await store.delete(movieId);
+    }
+    await tx.done;
   }
 
   /**
@@ -166,6 +188,7 @@ export class UserMovieRepository {
       isFavorite: existing ? !existing.isFavorite : true,
       addedAt: existing?.addedAt || now,
       watchedAt: existing?.watchedAt ?? null,
+      watchingAt: existing?.watchingAt ?? null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };
@@ -183,13 +206,14 @@ export class UserMovieRepository {
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'watched', // rating implies watched if not already in library
+      status: existing?.status || 'watched', // rating implies watched only if not already tracked
       personalRating: rating,
       notes: existing?.notes,
       review: existing?.review,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
-      watchedAt: existing?.watchedAt || (existing?.status !== 'watched' ? now : null),
+      watchedAt: existing?.watchedAt || (existing?.status === 'watched' || !existing ? now : null),
+      watchingAt: existing?.watchingAt ?? null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };
@@ -217,6 +241,7 @@ export class UserMovieRepository {
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
       watchedAt: existing?.watchedAt ?? null,
+      watchingAt: existing?.watchingAt ?? null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
     };

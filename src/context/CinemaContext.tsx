@@ -41,6 +41,7 @@ interface CinemaContextType {
   toggleFavorite: (movie: Movie) => Promise<UserMovie>;
   setRating: (movieId: number, rating: number | null) => Promise<UserMovie>;
   setReviewAndNotes: (movieId: number, data: { review?: string; notes?: string }) => Promise<UserMovie>;
+  removeFromWatchlist: (movieId: number) => Promise<void>;
   removeFromLibrary: (movieId: number) => Promise<void>;
 
   // Celebrations
@@ -190,10 +191,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       soundService.playWatchedChime();
       hapticsService.confirm();
 
-      // 4. Trigger celebratory moment
-      setCelebrationMovie(movie);
-
-      // 5. Check if any collections containing this movie are now 100% complete!
+      // 4. Check if any collections containing this movie are now 100% complete!
       const collections = await CollectionRepository.getAll();
       for (const c of collections) {
         const colMovies = await CollectionRepository.getCollectionMovies(c.id);
@@ -208,7 +206,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
 
-      // 6. Show Undo Toast
+      // 5. Show Undo Toast
       showToast(`✓ Marked "${movie.title}" as Watched`, 'Undo', async () => {
         try {
           await unmarkWatched(movie.id);
@@ -236,6 +234,16 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       await UserMovieRepository.unmarkWatched(movieId);
+
+      // Recalculate progress for any collections containing this movie
+      const collections = await CollectionRepository.getAll();
+      for (const c of collections) {
+        const colMovies = await CollectionRepository.getCollectionMovies(c.id);
+        if (colMovies.some((cm) => cm.movieId === movieId)) {
+          await CollectionRepository.calculateProgress(c.id);
+        }
+      }
+
       soundService.playSubtleClick();
       hapticsService.tap();
       notifyDataChanged();
@@ -352,6 +360,26 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const removeFromWatchlist = async (movieId: number) => {
+    const opKey = `rm_watchlist_${movieId}`;
+    if (inFlightOps.current.has(opKey)) return;
+    inFlightOps.current.add(opKey);
+
+    try {
+      await UserMovieRepository.removeFromWatchlist(movieId);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast('Removed from Watchlist');
+      notifyDataChanged();
+    } catch (err: any) {
+      console.error('Failed to remove from watchlist:', err);
+      showToast('Storage error: could not update watchlist');
+      throw err;
+    } finally {
+      inFlightOps.current.delete(opKey);
+    }
+  };
+
   const removeFromLibrary = async (movieId: number) => {
     try {
       await UserMovieRepository.remove(movieId);
@@ -384,6 +412,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toggleFavorite,
         setRating,
         setReviewAndNotes,
+        removeFromWatchlist,
         removeFromLibrary,
         celebrationMovie,
         dismissCelebrationMovie: () => setCelebrationMovie(null),
