@@ -10,16 +10,12 @@ import { CinemaHero } from '../components/cinema/CinemaHero';
 import { MoviePosterRail } from '../components/movie/MoviePosterRail';
 import { CollectionCard } from '../components/collection/CollectionCard';
 import { WatchedButton } from '../components/movie/WatchedButton';
-import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
-import { CinemaButton } from '../components/common/CinemaButton';
 import { SEED_MOVIES } from '../data/seedCatalog';
 import { atmosphereService } from '../services/atmosphereService';
 import {
-  Sparkles,
   Film,
   ChevronRight,
   TrendingUp,
-  Play,
 } from 'lucide-react';
 
 export const Home: React.FC = () => {
@@ -28,7 +24,6 @@ export const Home: React.FC = () => {
     openCollectionDetail,
     setActiveTab,
     dataVersion,
-    preferences,
   } = useCinema();
 
   const { setAmbientColor } = useCinemaShell();
@@ -43,16 +38,21 @@ export const Home: React.FC = () => {
     progress: CollectionProgress;
     nextMovie: MovieWithUserData;
   } | null>(null);
-  const [recommendations, setRecommendations] = useState<Movie[]>([]);
-
-
-  // Cinema Mode Modal state
-  const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
-
-  // Surprise Me Random Movie Modal state
-  const [surpriseMovie, setSurpriseMovie] = useState<Movie | null>(null);
-  const [isSurpriseOpen, setIsSurpriseOpen] = useState(false);
-  const [isRolling, setIsRolling] = useState(false);
+  const [trendingMovies, setTrendingMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.seedCategory === 'trending').slice(0, 15)
+  );
+  const [popularMovies, setPopularMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').slice(0, 15)
+  );
+  const [tamilMovies, setTamilMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.originalLanguage === 'ta').slice(0, 15)
+  );
+  const [hollywoodMovies, setHollywoodMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.originalLanguage === 'en').slice(0, 15)
+  );
+  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>(() =>
+    [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 15)
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -108,8 +108,6 @@ export const Home: React.FC = () => {
           }
         }
 
-
-
         // Choose Hero: first watching movie, or first watchlist item, or first library item
         let chosenHero: MovieWithUserData | null = null;
         if (watchingList.length > 0) {
@@ -123,7 +121,7 @@ export const Home: React.FC = () => {
         // Fallback hero if user library is empty: use first seed movie immediately
         const initialHero = chosenHero || (SEED_MOVIES.length > 0 ? { movie: SEED_MOVIES[0] } : null);
 
-        // Render local state immediately (Section 21: TMDB must NOT block local sections)
+        // Render local state immediately
         if (isMounted) {
           setHeroMovie(initialHero);
           setContinueWatching(watchingList);
@@ -131,27 +129,40 @@ export const Home: React.FC = () => {
           setRecentlyWatched(watchedListItems);
           setCollections(allCollections);
           setActiveJourney(foundJourney);
-          setRecommendations(SEED_MOVIES.slice(1, 9));
 
           if (initialHero?.movie) {
             setAmbientColor(atmosphereService.getArtworkAtmosphere(initialHero.movie.backdropPath || initialHero.movie.posterPath));
           }
         }
 
-        // Load TMDB-dependent recommendations independently in background (Non-blocking)
-        tmdbService.getTrending('week').then((trendingList) => {
+        // Fetch rich discovery feeds in background
+        Promise.allSettled([
+          tmdbService.getTrending('week'),
+          tmdbService.getPopular(1),
+          tmdbService.discover({ withOriginalLanguage: 'ta', sortBy: 'popularity.desc' }),
+          tmdbService.discover({ withOriginCountry: 'US', sortBy: 'popularity.desc' }),
+          tmdbService.discover({ sortBy: 'vote_average.desc', voteCountGte: 1000 }),
+        ]).then(([trendingRes, popularRes, tamilRes, hollywoodRes, topRatedRes]) => {
           if (!isMounted) return;
-          if (trendingList.length > 0) {
-            setRecommendations(trendingList.slice(0, 10));
-
-            // If library was empty and using fallback landmark, upgrade to live weekly trending hero
+          if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
+            setTrendingMovies(trendingRes.value);
             if (!chosenHero) {
-              setHeroMovie({ movie: trendingList[0] });
-              setAmbientColor(atmosphereService.getArtworkAtmosphere(trendingList[0].backdropPath || trendingList[0].posterPath));
+              setHeroMovie({ movie: trendingRes.value[0] });
+              setAmbientColor(atmosphereService.getArtworkAtmosphere(trendingRes.value[0].backdropPath || trendingRes.value[0].posterPath));
             }
           }
-        }).catch((err) => {
-          console.warn('Home recommendations background fetch error:', err);
+          if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
+            setPopularMovies(popularRes.value);
+          }
+          if (tamilRes.status === 'fulfilled' && tamilRes.value.length > 0) {
+            setTamilMovies(tamilRes.value);
+          }
+          if (hollywoodRes.status === 'fulfilled' && hollywoodRes.value.length > 0) {
+            setHollywoodMovies(hollywoodRes.value);
+          }
+          if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
+            setTopRatedMovies(topRatedRes.value);
+          }
         });
       } catch (err) {
         console.error('Failed to load home data:', err);
@@ -164,67 +175,68 @@ export const Home: React.FC = () => {
     };
   }, [dataVersion, setAmbientColor]);
 
-  const handleSurpriseMe = async () => {
-    setIsSurpriseOpen(true);
-    setIsRolling(true);
-
-    const unwatchedLibrary = (await UserMovieRepository.getAllWithMovies()).filter(
-      (m) => m.userData?.status !== 'watched'
-    );
-    const candidates = watchlist.length > 0 ? watchlist : unwatchedLibrary;
-    if (candidates.length > 0) {
-      const randomIdx = Math.floor(Math.random() * candidates.length);
-      setTimeout(() => {
-        setSurpriseMovie(candidates[randomIdx].movie);
-        setIsRolling(false);
-      }, 650);
-    } else {
-      const trending = await tmdbService.getTrending('week');
-      const randomIdx = Math.floor(Math.random() * trending.length);
-      setTimeout(() => {
-        setSurpriseMovie(trending[randomIdx]);
-        setIsRolling(false);
-      }, 650);
-    }
-  };
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  const displayName = preferences.displayName?.trim();
-
   return (
-    <div className="pb-4 space-y-6 sm:space-y-8 select-none">
-      {/* Brand & Personalized Header */}
-      <div className="pt-1 pb-0.5 space-y-1 animate-cinema-fade">
-        <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.24em] text-[#E0AD52]">
-          MYCINEMA
+    <div className="pb-6 space-y-4 sm:space-y-6 select-none">
+      {/* Compact Top Bar */}
+      <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#E0AD52] to-[#D19830] flex items-center justify-center text-[#09090B] font-black text-xs shadow-[0_2px_10px_rgba(224,173,82,0.35)]">
+            <Film size={13} strokeWidth={2.5} />
+          </div>
+          <span className="font-serif font-black text-sm tracking-[0.22em] text-[#F5F3EB]">
+            MYCINEMA
+          </span>
         </div>
-        <h1 className="font-serif font-black text-xl sm:text-2xl md:text-3xl text-[#F5F3EB] tracking-tight">
-          Good {greeting}{displayName ? `, ${displayName}` : ''}.
-        </h1>
-        <p className="text-xs sm:text-sm text-[#9E9DA5]">
-          What would you like to watch?
-        </p>
+
+        <button
+          onClick={() => setActiveTab('discover')}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer"
+          title="Search Movies"
+        >
+          <span>Search & Discover</span>
+          <ChevronRight size={13} />
+        </button>
       </div>
 
-      {/* Featured Screening Stage */}
+      {/* Compact Cinema Hero */}
       <CinemaHero
         movieWithData={heroMovie}
-        onWatchNow={() => setIsCinemaModeOpen(true)}
         onOpenDetails={(id) => openMovieDetail(id)}
-        onSurpriseMe={handleSurpriseMe}
       />
 
-      {/* Continue Your Journey: Active Collection Feature (Section 86 & 87) */}
+      {/* Compact New User Hint (Non-intrusive, no giant box) */}
+      {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (
+        <div className="px-4 py-2.5 rounded-xl bg-[#131319] border border-white/[0.08] text-xs text-[#9E9DA5] flex items-center justify-between gap-3">
+          <span>Tap any film below to track in your personal cinema vault.</span>
+          <button
+            onClick={() => setActiveTab('discover')}
+            className="text-[#E0AD52] font-semibold hover:underline flex-shrink-0 cursor-pointer bg-transparent border-none p-0 text-xs"
+          >
+            Explore ›
+          </button>
+        </div>
+      )}
+
+      {/* Rail: Currently Watching (Only when items exist) */}
+      {continueWatching.length > 0 && (
+        <MoviePosterRail
+          title="Currently Watching"
+          subtitle="Films in active screening"
+          items={continueWatching}
+          onMovieClick={(m) => openMovieDetail(m.id)}
+        />
+      )}
+
+      {/* Continue Your Journey: Active Collection Feature */}
       {activeJourney && (
-        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4 mb-3 sm:mb-4">
+        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-2.5 sm:mb-3">
             <div>
               <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] sm:text-[11px] font-bold tracking-[0.16em] uppercase">
                 <TrendingUp size={13} />
                 <span>CONTINUE YOUR JOURNEY</span>
               </div>
-              <h2 className="font-serif font-bold text-lg sm:text-xl text-[#F5F3EB] mt-0.5 break-words">
+              <h2 className="font-serif font-bold text-base sm:text-lg text-[#F5F3EB] mt-0.5 break-words">
                 {activeJourney.collection.name}
               </h2>
             </div>
@@ -238,8 +250,7 @@ export const Home: React.FC = () => {
             </button>
           </div>
 
-          {/* Thin Cinematic Progress Bar */}
-          <div className="space-y-1 mb-4 sm:mb-5">
+          <div className="space-y-1 mb-3">
             <div className="flex justify-between text-xs text-[#9E9DA5]">
               <span>
                 {activeJourney.progress.watched} of {activeJourney.progress.total} watched
@@ -254,9 +265,8 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Next Up in Collection Movie Card with Strict Boundary Containment */}
-          <div className="flex items-center gap-3 sm:gap-4 bg-[#09090B]/70 border border-white/[0.08] rounded-xl sm:rounded-2xl p-3 sm:p-4">
-            <div className="w-14 sm:w-16 aspect-[2/3] rounded-lg sm:rounded-xl overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
+          <div className="flex items-center gap-3 bg-[#09090B]/70 border border-white/[0.08] rounded-xl p-2.5 sm:p-3">
+            <div className="w-12 sm:w-14 aspect-[2/3] rounded-lg overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
               {activeJourney.nextMovie.movie.posterPath ? (
                 <img
                   src={tmdbService.getImageUrl(activeJourney.nextMovie.movie.posterPath, 'w185')}
@@ -265,35 +275,28 @@ export const Home: React.FC = () => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[10px] text-[#63626B]">
-                  No Poster
+                  No Art
                 </div>
               )}
             </div>
 
             <div className="flex-grow min-w-0 pr-2">
-              <div className="text-[9px] sm:text-[10px] text-[#E0AD52] font-black uppercase tracking-widest">
+              <div className="text-[9px] text-[#E0AD52] font-black uppercase tracking-widest">
                 NEXT IN COLLECTION
               </div>
               <h3
-                className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
+                className="font-serif font-bold text-xs sm:text-sm text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
                 title={activeJourney.nextMovie.movie.title}
               >
                 {activeJourney.nextMovie.movie.title}
               </h3>
-              <p className="text-xs text-[#9E9DA5] mt-0.5">
+              <p className="text-[11px] text-[#9E9DA5] mt-0.5">
                 {activeJourney.nextMovie.movie.releaseDate?.substring(0, 4)}{' '}
                 {activeJourney.nextMovie.movie.runtime ? `· ${activeJourney.nextMovie.movie.runtime}m` : ''}
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => openMovieDetail(activeJourney.nextMovie.movie.id)}
-                className="cinema-button-primary px-3.5 py-2 text-xs font-bold hidden sm:flex items-center gap-1.5 shadow-[0_4px_16px_rgba(224,173,82,0.3)] min-h-[44px]"
-              >
-                <Play size={13} className="fill-[#09090B]" />
-                <span>Screen Now</span>
-              </button>
               <WatchedButton
                 movie={activeJourney.nextMovie.movie}
                 userData={activeJourney.nextMovie.userData}
@@ -304,57 +307,74 @@ export const Home: React.FC = () => {
         </section>
       )}
 
-
-
-      {/* Intentional Cinema Onboarding Card */}
-      {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#131319] border border-white/[0.08] text-center space-y-4 shadow-[0_8px_30px_rgba(0,0,0,0.6)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#E0AD52]/15 text-[#E0AD52] mx-auto flex items-center justify-center border border-[#E0AD52]/20">
-            <Film size={24} />
-          </div>
-          <div className="max-w-md mx-auto">
-            <h3 className="font-serif font-black text-lg sm:text-xl text-[#F5F3EB]">
-              Your Cinema Is Waiting
-            </h3>
-            <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1.5 leading-relaxed">
-              Start building your personal movie catalog. Discover landmark world cinema or import your existing movie lists.
-            </p>
-          </div>
-          <div className="flex gap-3 justify-center flex-wrap pt-2">
-            <CinemaButton variant="primary" size="md" onClick={() => setActiveTab('discover')}>
-              Discover Movies
-            </CinemaButton>
-            <CinemaButton variant="secondary" size="md" onClick={() => setActiveTab('profile')}>
-              Import Movie List
-            </CinemaButton>
-          </div>
-        </div>
+      {/* Rail: On Your Watchlist (if present) */}
+      {watchlist.length > 0 && (
+        <MoviePosterRail
+          title="On Your Watchlist"
+          subtitle="Films queued up for your next screening"
+          actionLabel="View All"
+          onAction={() => setActiveTab('watchlist')}
+          items={watchlist}
+          onMovieClick={(m) => openMovieDetail(m.id)}
+        />
       )}
 
-      {/* Rail: Currently Watching (Status = watching) */}
+      {/* Rail: Trending Now */}
       <MoviePosterRail
-        title="Currently Watching"
-        subtitle="Active screenings in your cinema"
-        items={continueWatching}
+        title="Trending Now"
+        subtitle="Most popular films worldwide right now"
+        actionLabel="Explore"
+        onAction={() => setActiveTab('discover')}
+        items={trendingMovies.map((m) => ({ movie: m }))}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
 
-      {/* Rail: On Your Watchlist */}
+      {/* Rail: Popular Films */}
       <MoviePosterRail
-        title="On Your Watchlist"
-        subtitle="Films queued up for your next screening"
-        items={watchlist}
+        title="Popular Films"
+        subtitle="Audience favorites with strong engagement"
+        items={popularMovies.map((m) => ({ movie: m }))}
+        onMovieClick={(m) => openMovieDetail(m.id)}
+      />
+
+      {/* Rail: Tamil Cinema Spotlight */}
+      {tamilMovies.length > 0 && (
+        <MoviePosterRail
+          title="Tamil Cinema"
+          subtitle="Kollywood blockbusters, classics & thrillers"
+          badge="Kollywood"
+          items={tamilMovies.map((m) => ({ movie: m }))}
+          onMovieClick={(m) => openMovieDetail(m.id)}
+        />
+      )}
+
+      {/* Rail: Hollywood Hits */}
+      {hollywoodMovies.length > 0 && (
+        <MoviePosterRail
+          title="Hollywood Hits"
+          subtitle="Top American cinematic releases"
+          badge="Hollywood"
+          items={hollywoodMovies.map((m) => ({ movie: m }))}
+          onMovieClick={(m) => openMovieDetail(m.id)}
+        />
+      )}
+
+      {/* Rail: Critically Acclaimed */}
+      <MoviePosterRail
+        title="Critically Acclaimed"
+        subtitle="Highest-rated masterpieces"
+        items={topRatedMovies.map((m) => ({ movie: m }))}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
 
       {/* Curated Collections Rail */}
       {collections.length > 0 && (
-        <section className="space-y-3.5">
+        <section className="space-y-3">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h3 className="font-section-title text-[#F5F3EB]">Curated Collections</h3>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
-                Thematic universes and cinematic marathons
+                Thematic universes and marathons
               </p>
             </div>
             <button
@@ -380,103 +400,15 @@ export const Home: React.FC = () => {
       )}
 
       {/* Rail: Recently Watched */}
-      <MoviePosterRail
-        title="Recently Watched"
-        subtitle="Your logged screening history"
-        actionLabel="View Vault"
-        onAction={() => setActiveTab('profile')}
-        items={recentlyWatched}
-        onMovieClick={(m) => openMovieDetail(m.id)}
-      />
-
-      {/* Rail: Recommended For You */}
-      <MoviePosterRail
-        title="Recommended For You"
-        subtitle="Trending films worldwide to expand your vault"
-        actionLabel="Discover More"
-        onAction={() => setActiveTab('discover')}
-        items={recommendations.map((m) => ({ movie: m }))}
-        onMovieClick={(m) => openMovieDetail(m.id)}
-      />
-
-      {/* Hero Cinema Mode Atmospheric Screening Modal */}
-      {isCinemaModeOpen && heroMovie && (
-        <CinemaModeModal
-          movie={heroMovie.movie}
-          userData={heroMovie.userData}
-          onClose={() => setIsCinemaModeOpen(false)}
+      {recentlyWatched.length > 0 && (
+        <MoviePosterRail
+          title="Recently Watched"
+          subtitle="Your logged screening history"
+          actionLabel="View Archive"
+          onAction={() => setActiveTab('watched')}
+          items={recentlyWatched}
+          onMovieClick={(m) => openMovieDetail(m.id)}
         />
-      )}
-
-      {/* Surprise Me Modal */}
-      {isSurpriseOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090B]/85 backdrop-blur-xl animate-cinema-fade">
-          <div className="relative w-full max-w-sm bg-[#131319] border border-[#E0AD52]/40 rounded-3xl shadow-2xl p-6 text-center animate-cinema-scale">
-            <div className="inline-flex p-3 rounded-2xl bg-[#E0AD52]/15 text-[#E0AD52] mb-3 shadow-[0_2px_12px_rgba(224,173,82,0.3)] border border-[#E0AD52]/20">
-              <Sparkles size={28} className={isRolling ? 'animate-spin' : ''} />
-            </div>
-
-            <h3 className="font-serif font-black text-xl text-[#F5F3EB] mb-1">
-              Tonight's Mystery Selection
-            </h3>
-            <p className="text-xs text-[#9E9DA5] mb-4">
-              Hand-picked by MyCinema from your screening vault.
-            </p>
-
-            {isRolling || !surpriseMovie ? (
-              <div className="py-12 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full border-2 border-white/10 border-t-[#E0AD52] animate-spin mb-3" />
-                <span className="text-xs text-[#E0AD52] font-mono uppercase tracking-wider">
-                  Scanning Vault...
-                </span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="aspect-[2/3] w-36 mx-auto rounded-2xl overflow-hidden shadow-2xl border border-[#E0AD52]/30">
-                  {surpriseMovie.posterPath ? (
-                    <img
-                      src={tmdbService.getImageUrl(surpriseMovie.posterPath, 'w342')}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : null}
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-[#F5F3EB] text-base">{surpriseMovie.title}</h4>
-                  <p className="text-xs text-[#9E9DA5]">
-                    {surpriseMovie.releaseDate?.substring(0, 4)} {surpriseMovie.runtime ? `· ${surpriseMovie.runtime}m` : ''}
-                  </p>
-                </div>
-
-                <div className="flex gap-2 justify-center pt-2">
-                  <button
-                    onClick={handleSurpriseMe}
-                    className="cinema-button-secondary px-4 py-2 text-xs"
-                  >
-                    Roll Again
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsSurpriseOpen(false);
-                      openMovieDetail(surpriseMovie.id);
-                    }}
-                    className="cinema-button-primary px-5 py-2 text-xs font-semibold"
-                  >
-                    Watch This
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsSurpriseOpen(false)}
-              className="mt-4 text-xs text-[#9E9DA5] hover:text-[#F5F3EB] underline block mx-auto cursor-pointer bg-transparent border-none"
-            >
-              Close
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );

@@ -151,8 +151,44 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
       onClose={onClose}
       title={existingHasReview ? 'Edit Film Journal' : 'Write Film Journal'}
       maxWidth={580}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          {existingHasReview ? (
+            <button
+              type="button"
+              onClick={handleDeleteReview}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 size={13} />
+              <span>Delete</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/5 transition-colors cursor-pointer border border-transparent"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="cinema-button-primary px-4 py-1.5 text-xs font-bold flex items-center gap-2 shadow-lg"
+            >
+              <Save size={13} />
+              <span>{isSaving ? 'Saving...' : 'Save'}</span>
+            </button>
+          </div>
+        </div>
+      }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Movie Header Bar */}
         <div className="flex items-center gap-3.5 p-3 rounded-xl bg-[#09090B]/60 border border-white/[0.06]">
           <div className="w-12 aspect-[2/3] rounded-lg overflow-hidden bg-[#181822] flex-shrink-0">
@@ -182,7 +218,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         </div>
 
         {/* Rating Row (Optional) */}
-        <div className="p-3.5 rounded-xl bg-[#0E0E14] border border-white/[0.05] flex items-center justify-between gap-3">
+        <div className="p-3 rounded-xl bg-[#0E0E14] border border-white/[0.05] flex items-center justify-between gap-3">
           <div>
             <span className="text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold block">
               Personal Rating
@@ -239,44 +275,9 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             value={reviewText}
             onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Record what struck you about the filmmaking, performances, themes, or how this film made you feel..."
-            rows={6}
-            className="w-full p-3.5 rounded-xl bg-[#0E0E14] border border-white/10 text-xs sm:text-sm text-[#F5F3EB] placeholder-[#63626B] leading-relaxed focus:border-[#E0AD52] focus:outline-none transition-colors resize-y min-h-[140px]"
+            rows={5}
+            className="w-full p-3.5 rounded-xl bg-[#0E0E14] border border-white/10 text-xs sm:text-sm text-[#F5F3EB] placeholder-[#63626B] leading-relaxed focus:border-[#E0AD52] focus:outline-none transition-colors resize-y min-h-[120px]"
           />
-        </div>
-
-
-
-        {/* Action Controls */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
-          {existingHasReview ? (
-            <button
-              onClick={handleDeleteReview}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <Trash2 size={13} />
-              <span>Delete Review</span>
-            </button>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/5 transition-colors cursor-pointer border border-transparent"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="cinema-button-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2 shadow-lg"
-            >
-              <Save size={14} />
-              <span>{isSaving ? 'Saving...' : 'Save to Journal'}</span>
-            </button>
-          </div>
         </div>
       </div>
     </Modal>

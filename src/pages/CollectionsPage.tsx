@@ -31,26 +31,23 @@ export const CollectionsPage: React.FC = () => {
 
   return (
     <div className="space-y-5 pb-4">
-      {/* Header matching Figma Collections */}
+      {/* Header matching compact cinema layout */}
       <CinemaHeader
-        badge="COLLECTIONS"
+        badge="VAULT"
         title="Collections"
-        subtitle="Group filmographies, director retrospectives, and themed universes."
+        subtitle={`${collections.length} ${collections.length === 1 ? 'curated list' : 'curated lists'}`}
         action={
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="w-full sm:w-auto h-11 px-5 rounded-xl bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(224,173,82,0.3)] active:scale-95 cursor-pointer"
+            className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-md"
           >
-            <FolderPlus size={15} />
-            <span>+ CREATE COLLECTION</span>
+            <FolderPlus size={13} />
+            <span>+ New Collection</span>
           </button>
         }
       />
 
       <div className="pt-1">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] mb-3">
-          YOUR COLLECTIONS ({collections.length})
-        </h2>
 
       {/* Responsive Grid of collections */}
       {isLoading ? (

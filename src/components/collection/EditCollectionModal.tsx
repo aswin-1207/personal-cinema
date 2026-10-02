@@ -65,16 +65,41 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Collection" maxWidth="max-w-md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Collection"
+      maxWidth="max-w-md"
+      onSubmit={handleSubmit}
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="cinema-button-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || !name.trim()}
+            className="cinema-button-primary px-5 py-2 text-xs font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            <Save size={15} />
+            <span>Save Changes</span>
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-3.5">
         {error && (
-          <div className="p-3 text-xs text-red-400 bg-red-950/40 border border-red-500/20 rounded-lg">
+          <div className="p-2.5 text-xs text-cinema-crimson bg-cinema-crimson/10 border border-cinema-crimson/20 rounded-xl">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
+          <label className="block text-[11px] uppercase tracking-wider text-[#9E9DA5] mb-1 font-semibold">
             Collection Name
           </label>
           <input
@@ -82,72 +107,68 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Christopher Nolan, Marvel Universe"
-            className="cinema-input w-full"
+            className="cinema-input w-full text-sm"
             autoFocus
             maxLength={100}
           />
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
+          <label className="block text-[11px] uppercase tracking-wider text-[#9E9DA5] mb-1 font-semibold">
             Description (Optional)
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="A short note about the theme or purpose of this collection..."
-            className="cinema-input w-full h-20 resize-none"
+            className="cinema-input w-full h-16 resize-none text-xs"
             maxLength={500}
           />
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
+          <label className="block text-[11px] uppercase tracking-wider text-[#9E9DA5] mb-1 font-semibold">
             Cover Style
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => setCoverType('collage')}
-              className={`p-3 rounded-xl border flex flex-col items-center gap-2 text-xs text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 text-xs text-left transition-all cursor-pointer ${
                 coverType === 'collage'
                   ? 'border-cinema-gold bg-cinema-gold/10 text-cinema-gold shadow-gold'
                   : 'border-white/10 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
               }`}
             >
-              <Layers size={20} />
-              <div className="text-center font-medium">Poster Collage</div>
-              <div className="text-[10px] text-cinema-subtle text-center">
-                Dynamic 2x2 grid of top movies
-              </div>
+              <Layers size={18} />
+              <div className="font-semibold text-center">Poster Collage</div>
+              <div className="text-[10px] text-[#9E9DA5] text-center">2x2 grid of top movies</div>
             </button>
 
             <button
               type="button"
               onClick={() => setCoverType('hero')}
-              className={`p-3 rounded-xl border flex flex-col items-center gap-2 text-xs text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 text-xs text-left transition-all cursor-pointer ${
                 coverType === 'hero'
                   ? 'border-cinema-gold bg-cinema-gold/10 text-cinema-gold shadow-gold'
                   : 'border-white/10 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
               }`}
             >
-              <ImageIcon size={20} />
-              <div className="text-center font-medium">Hero Backdrop</div>
-              <div className="text-[10px] text-cinema-subtle text-center">
-                Cinematic banner of lead movie
-              </div>
+              <ImageIcon size={18} />
+              <div className="font-semibold text-center">Hero Backdrop</div>
+              <div className="text-[10px] text-[#9E9DA5] text-center">Lead movie banner</div>
             </button>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
+          <label className="block text-[11px] uppercase tracking-wider text-[#9E9DA5] mb-1 font-semibold">
             Default Movie Order
           </label>
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as CollectionSortMode)}
-            className="cinema-input w-full"
+            className="cinema-input w-full text-xs"
           >
             <option value="custom">Custom (Drag & Reorder Sequence)</option>
             <option value="releaseDate">Release Date</option>
@@ -156,25 +177,7 @@ export const EditCollectionModal: React.FC<EditCollectionModalProps> = ({
             <option value="watchedStatus">Watch Status</option>
           </select>
         </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cinema-button-secondary px-4 py-2 text-sm cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || !name.trim()}
-            className="cinema-button-primary px-5 py-2 text-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-          >
-            <Save size={16} />
-            <span>Save Changes</span>
-          </button>
-        </div>
-      </form>
+      </div>
     </Modal>
   );
 };

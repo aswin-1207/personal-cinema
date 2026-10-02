@@ -101,113 +101,162 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade max-w-3xl mx-auto">
-      {/* Header matching Figma 2:451 */}
+      {/* Header */}
       <CinemaHeader
-        badge="VAULT & PREFERENCES"
-        title="My Cinema"
-        subtitle="Your profile, preferences and private data."
+        badge="MYCINEMA"
+        title="Profile"
       />
 
-      {/* User Profile Card matching Figma 2:451 */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-        <div className="w-14 h-14 rounded-2xl bg-[#1B1B22] border border-[#E0AD52]/30 flex items-center justify-center font-bold text-lg text-[#E0AD52] shadow-[0_0_16px_rgba(224,173,82,0.15)] flex-shrink-0">
-          {displayName ? displayName.substring(0, 2).toUpperCase() : 'FC'}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-bold text-base sm:text-lg text-[#F5F3EB] tracking-wide uppercase truncate">
-            {displayName || 'Film Collector'}
+      {/* Account / User Identity Area */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-[#1B1B22] border border-[#E0AD52]/30 flex items-center justify-center font-bold text-sm text-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.15)] flex-shrink-0">
+            {displayName ? displayName.substring(0, 2).toUpperCase() : 'MC'}
           </div>
-          <div className="text-xs text-[#9E9DA5] mt-0.5">
-            MyCinema member
+          <div className="min-w-0">
+            <div className="font-bold text-sm sm:text-base text-[#F5F3EB] tracking-wide uppercase truncate">
+              {displayName || 'Film Collector'}
+            </div>
+            <div className="text-[11px] text-[#9E9DA5]">
+              Local Cinema Vault
+            </div>
           </div>
         </div>
+
+        <form onSubmit={handleSaveDisplayName} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Display name"
+            className="cinema-input text-xs py-1.5 px-2.5 max-w-[130px] sm:max-w-[160px] bg-[#1B1B22]"
+          />
+          <CinemaButton
+            type="submit"
+            variant="secondary"
+            size="sm"
+            isLoading={isSavingName}
+          >
+            Save
+          </CinemaButton>
+        </form>
       </div>
 
-      {/* FILM JOURNAL & REVIEWS DESTINATION */}
-      <section className="space-y-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Film Journal
+      {/* FILM JOURNEY */}
+      <section className="space-y-1.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Film Journey
         </h2>
-        <div className="rounded-2xl bg-[#131319] border border-[#E0AD52]/20 hover:border-[#E0AD52]/40 transition-colors overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+        <div className="rounded-2xl bg-[#131319] border border-[#E0AD52]/20 hover:border-[#E0AD52]/40 transition-colors overflow-hidden">
           <button
             onClick={() => {
               setActiveTab('reviews');
               window.location.hash = '#reviews';
             }}
-            className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/20 transition-colors">
-                <BookOpen size={20} className="text-[#E0AD52]" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/20 transition-colors">
+                <BookOpen size={17} className="text-[#E0AD52]" />
               </div>
               <div>
-                <div className="text-sm sm:text-base font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors flex items-center gap-2">
-                  <span>Film Journal & Reviews</span>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors flex items-center gap-2">
+                  <span>Film Journal & Reflections</span>
                   {journalCount > 0 && (
                     <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30">
-                      {journalCount} {journalCount === 1 ? 'Entry' : 'Entries'}
+                      {journalCount} {journalCount === 1 ? 'Film' : 'Films'}
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-[#9E9DA5] mt-0.5">
-                  Your private archive of written reflections, personal ratings, and film notes.
+                <div className="text-[11px] text-[#9E9DA5]">
+                  Personal notes, ratings, and thoughts
                 </div>
               </div>
             </div>
-            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-xl font-mono transition-transform group-hover:translate-x-1">
+            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
               ›
             </span>
           </button>
         </div>
       </section>
 
-      {/* PREFERENCES matching Figma 2:451 */}
-      <section className="space-y-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+      {/* COLLECTIONS SHORTCUT */}
+      <section className="space-y-1.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Collections
+        </h2>
+        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] hover:border-white/20 transition-colors overflow-hidden">
+          <button
+            onClick={() => setActiveTab('collections')}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-white/10 transition-colors">
+                <Database size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  <span>Curated Universes & Lists</span>
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  Organize filmographies and marathons
+                </div>
+              </div>
+            </div>
+            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
+              ›
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* PREFERENCES */}
+      <section className="space-y-1.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
           Preferences
         </h2>
-        <div className="p-2 sm:p-3 rounded-2xl bg-[#131319] border border-white/[0.08] space-y-1 divide-y divide-white/[0.04]">
+        <div className="p-2 sm:p-2.5 rounded-2xl bg-[#131319] border border-white/[0.08] space-y-1 divide-y divide-white/[0.04]">
           <CinemaToggle
-            icon={<Volume2 size={18} className="text-[#E0AD52]" />}
-            label="Sound"
-            description="Synthesized harmonic chimes and audio interactions."
+            icon={<Volume2 size={16} className="text-[#E0AD52]" />}
+            label="Sound Effects"
+            description="Harmonic chimes and audio cues"
             checked={preferences.soundEnabled}
             onChange={(checked) => updatePreference('soundEnabled', checked)}
           />
 
           <CinemaToggle
-            icon={<Vibrate size={18} className="text-[#E0AD52]" />}
-            label="Haptics"
-            description="Tactile vibration pulses on supported mobile devices."
+            icon={<Vibrate size={16} className="text-[#E0AD52]" />}
+            label="Haptic Feedback"
+            description="Tactile vibration pulses on mobile"
             checked={preferences.hapticsEnabled}
             onChange={(checked) => updatePreference('hapticsEnabled', checked)}
           />
 
           <CinemaToggle
-            icon={<Sliders size={18} className="text-[#E0AD52]" />}
+            icon={<Sliders size={16} className="text-[#E0AD52]" />}
             label="Reduced Motion"
-            description="Minimize complex cinematic zooms and animations."
+            description="Minimize complex cinematic animations"
             checked={preferences.motionReduced}
             onChange={(checked) => updatePreference('motionReduced', checked)}
           />
         </div>
       </section>
 
-      {/* DATA & BACKUP matching Figma 2:451 */}
-      <section className="space-y-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+      {/* DATA & BACKUP */}
+      <section className="space-y-1.5">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
           Data & Backup
         </h2>
         <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
           <button
             onClick={() => setIsBackupOpen(true)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
           >
             <div className="flex items-center gap-3">
-              <Database size={18} className="text-[#E0AD52]" />
+              <Database size={16} className="text-[#E0AD52]" />
               <div>
-                <div className="text-sm font-semibold text-[#F5F3EB]">Backup Center</div>
-                <div className="text-xs text-[#9E9DA5]">Protect your catalog with encrypted snapshots and restore.</div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Backup Center</div>
+                <div className="text-[11px] text-[#9E9DA5]">Encrypted snapshots and restore points</div>
               </div>
             </div>
             <span className="text-[#9E9DA5] text-lg font-mono">›</span>
@@ -215,13 +264,13 @@ export const Profile: React.FC = () => {
 
           <button
             onClick={() => setIsImportOpen(true)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
           >
             <div className="flex items-center gap-3">
-              <Upload size={18} className="text-[#E0AD52]" />
+              <Upload size={16} className="text-[#E0AD52]" />
               <div>
-                <div className="text-sm font-semibold text-[#F5F3EB]">Import / Export</div>
-                <div className="text-xs text-[#9E9DA5]">Ingest external lists or export structured JSON / CSV.</div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Import / Export</div>
+                <div className="text-[11px] text-[#9E9DA5]">Export structured JSON/CSV or import lists</div>
               </div>
             </div>
             <span className="text-[#9E9DA5] text-lg font-mono">›</span>

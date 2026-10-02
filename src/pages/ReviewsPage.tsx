@@ -120,37 +120,34 @@ export const ReviewsPage: React.FC = () => {
   return (
     <div className="space-y-6 sm:space-y-8 animate-cinema-fade pb-16">
       {/* Page Header with Return to Profile Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-5">
-        <div>
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setActiveTab('profile')}
-            className="flex items-center gap-1.5 text-xs text-[#9E9DA5] hover:text-[#E0AD52] transition-colors mb-2 bg-transparent border-none p-0 cursor-pointer"
+            className="p-1.5 -ml-1.5 rounded-lg text-[#9E9DA5] hover:text-[#E0AD52] hover:bg-white/5 transition-colors bg-transparent border-none cursor-pointer"
+            aria-label="Back to Profile"
           >
-            <ChevronLeft size={14} />
-            <span>Profile & Settings</span>
+            <ChevronLeft size={18} />
           </button>
 
-          <div className="flex items-center gap-3">
-            <h1 className="font-serif font-extrabold text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight">
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F3EB] tracking-tight">
               Film Journal
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 font-mono">
-              {counts.all} {counts.all === 1 ? 'film' : 'films'}
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 font-mono">
+              {counts.all}
             </span>
           </div>
-
-          <p className="text-xs sm:text-sm text-[#9E9DA5] mt-1">
-            Your private repository of written reflections and scores.
-          </p>
         </div>
 
         {/* Quick Navigate to Watched */}
         <button
           onClick={() => setActiveTab('watched')}
-          className="cinema-button-secondary px-4 py-2.5 text-xs font-semibold flex items-center gap-2 self-start sm:self-auto"
+          className="cinema-button-secondary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5"
         >
-          <PenTool size={13} className="text-[#E0AD52]" />
-          <span>Write from Watched Films</span>
+          <PenTool size={12} className="text-[#E0AD52]" />
+          <span className="hidden xs:inline">Write Review</span>
+          <span className="xs:hidden">Write</span>
         </button>
       </div>
 

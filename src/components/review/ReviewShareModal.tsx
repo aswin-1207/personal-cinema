@@ -56,8 +56,36 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Share Film Reflection" maxWidth={520}>
-      <div className="space-y-5">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Share Film Reflection"
+      maxWidth={520}
+      footer={
+        <div className="flex items-center justify-end gap-2.5 w-full">
+          <button
+            type="button"
+            onClick={handleCopyText}
+            className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-[#F5F3EB] border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            {copiedText ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+            <span>{copiedText ? 'Copied' : 'Copy Text'}</span>
+          </button>
+
+          {ShareService.canNativeShare() && (
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              className="cinema-button-primary px-4 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-lg"
+            >
+              <Share2 size={13} />
+              <span>Share via OS</span>
+            </button>
+          )}
+        </div>
+      }
+    >
+      <div className="space-y-4">
         <p className="text-xs text-[#9E9DA5]">
           You are explicitly sharing your personal written reflection and score:
         </p>
@@ -104,27 +132,6 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
             <span>MYCINEMA • PRIVATE FILM VAULT</span>
             <span>PERSONAL JOURNAL</span>
           </div>
-        </div>
-
-        {/* Share Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-2">
-          <button
-            onClick={handleCopyText}
-            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-[#F5F3EB] border border-white/10 flex items-center gap-2 cursor-pointer transition-colors"
-          >
-            {copiedText ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-            <span>{copiedText ? 'Copied' : 'Copy Text'}</span>
-          </button>
-
-          {ShareService.canNativeShare() && (
-            <button
-              onClick={handleNativeShare}
-              className="cinema-button-primary px-5 py-2.5 text-xs font-bold flex items-center gap-2 shadow-lg"
-            >
-              <Share2 size={14} />
-              <span>Share via OS</span>
-            </button>
-          )}
         </div>
       </div>
     </Modal>

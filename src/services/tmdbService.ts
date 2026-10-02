@@ -537,9 +537,21 @@ export class TMDBService {
   }
 
   /**
-   * Discover movies by genre IDs or mood
+   * Discover movies by genre IDs, languages, countries, or custom filters
    */
-  static async discover(params: { genreIds?: number[]; sortBy?: string; page?: number }): Promise<Movie[]> {
+  static async discover(params: {
+    genreIds?: number[];
+    withOriginalLanguage?: string;
+    withOriginCountry?: string;
+    withKeywords?: string;
+    withCast?: string;
+    withCrew?: string;
+    sortBy?: string;
+    page?: number;
+    voteAverageGte?: number;
+    voteCountGte?: number;
+    primaryReleaseYear?: number;
+  }): Promise<Movie[]> {
     const queryParams: Record<string, string> = {
       page: (params.page || 1).toString(),
       sort_by: params.sortBy || 'popularity.desc',
@@ -548,11 +560,40 @@ export class TMDBService {
     if (params.genreIds && params.genreIds.length > 0) {
       queryParams.with_genres = params.genreIds.join(',');
     }
+    if (params.withOriginalLanguage) {
+      queryParams.with_original_language = params.withOriginalLanguage;
+    }
+    if (params.withOriginCountry) {
+      queryParams.with_origin_country = params.withOriginCountry;
+    }
+    if (params.withKeywords) {
+      queryParams.with_keywords = params.withKeywords;
+    }
+    if (params.withCast) {
+      queryParams.with_cast = params.withCast;
+    }
+    if (params.withCrew) {
+      queryParams.with_crew = params.withCrew;
+    }
+    if (params.voteAverageGte) {
+      queryParams['vote_average.gte'] = params.voteAverageGte.toString();
+    }
+    if (params.voteCountGte) {
+      queryParams['vote_count.gte'] = params.voteCountGte.toString();
+    }
+    if (params.primaryReleaseYear) {
+      queryParams.primary_release_year = params.primaryReleaseYear.toString();
+    }
 
     try {
       const data = await this.fetchWithCache<any>('/discover/movie', queryParams);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch {
+      // Offline fallback from seed catalog
+      if (params.withOriginalLanguage === 'ta') {
+        const tamil = SEED_MOVIES.filter((m) => m.originalLanguage === 'ta');
+        if (tamil.length > 0) return tamil;
+      }
       if (params.genreIds && params.genreIds.length > 0) {
         const targetIds = new Set(params.genreIds);
         const matches = SEED_MOVIES.filter((m) =>
@@ -706,6 +747,7 @@ export const tmdbService = {
   getSimilar: (id: number) => TMDBService.getSimilar(id),
   getCredits: (id: number) => TMDBService.getCredits(id),
   getGenres: () => TMDBService.getGenres(),
+  discover: (params: Parameters<typeof TMDBService.discover>[0]) => TMDBService.discover(params),
   discoverMovies: (params: { with_genres?: string; sort_by?: string }) =>
     TMDBService.discover({
       genreIds: params.with_genres ? params.with_genres.split(',').map((g) => parseInt(g, 10)) : undefined,

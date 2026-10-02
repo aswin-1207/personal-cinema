@@ -17,26 +17,27 @@ export const CinemaHeader: React.FC<CinemaHeaderProps> = ({
 }) => {
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1 pb-3 border-b border-white/[0.06] ${className}`}
+      className={`flex items-center justify-between gap-3 pt-0.5 pb-2 border-b border-white/[0.06] ${className}`}
     >
-      <div className="space-y-1.5 min-w-0 flex-1">
-        {badge && (
-          <div className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.24em] text-[#E0AD52] flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E0AD52]" />
-            <span>{badge}</span>
-          </div>
-        )}
-        <h1 className="font-serif font-black text-2xl sm:text-3xl text-[#F5F3EB] tracking-tight leading-tight break-words">
-          {title}
-        </h1>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {badge && (
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E0AD52] flex-shrink-0">
+              • {badge}
+            </span>
+          )}
+          <h1 className="font-serif font-bold text-lg sm:text-xl md:text-2xl text-[#F5F3EB] tracking-tight truncate">
+            {title}
+          </h1>
+        </div>
         {subtitle && (
-          <p className="text-xs sm:text-sm text-[#9E9DA5] leading-relaxed max-w-2xl">
+          <p className="text-[11px] sm:text-xs text-[#9E9DA5] truncate mt-0.5 max-w-xl">
             {subtitle}
           </p>
         )}
       </div>
 
-      {action && <div className="flex-shrink-0 flex items-center gap-2.5">{action}</div>}
+      {action && <div className="flex-shrink-0 flex items-center gap-2">{action}</div>}
     </div>
   );
 };
