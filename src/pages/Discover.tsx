@@ -31,9 +31,9 @@ export const Discover: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-      return saved ? JSON.parse(saved) : ['Interstellar', 'The Dark Knight', 'Oppenheimer', 'Dune'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['Interstellar', 'The Dark Knight', 'Oppenheimer', 'Dune'];
+      return [];
     }
   });
 

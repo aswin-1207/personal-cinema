@@ -68,14 +68,3 @@ export interface MovieWithUserData {
   movie: Movie;
   userData?: UserMovie;
 }
-
-export interface MovieNight {
-  id: string; // UUID
-  movieId: number;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
-  reminderMinutes: number; // e.g. 30
-  notes?: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  createdAt: string;
-}

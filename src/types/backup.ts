@@ -1,4 +1,4 @@
-import { Movie, UserMovie, MovieNight } from './movie';
+import { Movie, UserMovie } from './movie';
 import { Collection, CollectionMovie } from './collection';
 
 export interface UserPreferences {
@@ -40,9 +40,8 @@ export interface PersonalCinemaBackup {
   userMovies: UserMovie[];
   collections: Collection[];
   collectionMovies: CollectionMovie[];
-  movieNights?: MovieNight[];
   preferences: UserPreferences;
-  achievements: Achievement[];
+  achievements?: Achievement[];
 }
 
 export interface BackupValidationResult {

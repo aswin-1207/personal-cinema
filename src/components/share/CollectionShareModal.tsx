@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { CollectionWithMovies } from '../../types/collection';
 import { ShareService } from '../../services/shareService';
-import { Share2, Copy, Check, Trophy } from 'lucide-react';
+import { Share2, Copy, Check, CheckCircle2 } from 'lucide-react';
 
 interface CollectionShareModalProps {
   isOpen: boolean;
@@ -58,7 +58,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
         <div className="w-full max-w-sm rounded-2xl bg-cinema-surface border border-cinema-gold/30 p-5 shadow-2xl relative overflow-hidden mb-6 text-left">
           {collectionData.progress.isComplete && (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cinema-gold/20 border border-cinema-gold/40 text-cinema-gold text-xs font-semibold w-fit mb-3">
-              <Trophy size={14} />
+              <CheckCircle2 size={14} />
               <span>100% Completed</span>
             </div>
           )}

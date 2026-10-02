@@ -3,7 +3,7 @@ import { Collection } from '../../types/collection';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { MovieRepository } from '../../db/repositories/movieRepository';
 import { tmdbService } from '../../services/tmdbService';
-import { Trophy, CheckCircle, Share2, X } from 'lucide-react';
+import { CheckCircle2, CheckCircle, Share2, X } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 
 interface CollectionCompletionModalProps {
@@ -64,7 +64,7 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
 
         {/* Icon & Title */}
         <div className="inline-flex p-3 rounded-2xl bg-cinema-gold/15 border border-cinema-gold/30 text-cinema-gold mb-3 shadow-gold">
-          <Trophy size={36} className="text-cinema-gold" />
+          <CheckCircle2 size={36} className="text-cinema-gold" />
         </div>
 
         <div className="flex items-center justify-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-cinema-gold mb-1">

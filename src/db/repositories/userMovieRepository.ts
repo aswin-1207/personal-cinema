@@ -40,13 +40,16 @@ export class UserMovieRepository {
   }
 
   /**
-   * Centralized, Idempotent "✓ MARK AS WATCHED"
+   * Centralized, Idempotent, Atomic "✓ MARK AS WATCHED"
    */
   static async markWatched(
     movieId: number,
     options?: { rating?: number | null; notes?: string; review?: string; isFavorite?: boolean }
   ): Promise<UserMovie> {
-    const existing = await this.getByMovieId(movieId);
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readwrite');
+    const store = tx.objectStore('userMovies');
+    const existing = await store.get(movieId);
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
@@ -62,7 +65,8 @@ export class UserMovieRepository {
       rewatchCount: existing ? (existing.status === 'watched' ? existing.rewatchCount + 1 : existing.rewatchCount) : 0,
     };
 
-    await this.save(updated);
+    await store.put(updated);
+    await tx.done;
     return updated;
   }
 
@@ -70,7 +74,10 @@ export class UserMovieRepository {
    * Undo / Unmark Watched
    */
   static async unmarkWatched(movieId: number): Promise<UserMovie> {
-    const existing = await this.getByMovieId(movieId);
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readwrite');
+    const store = tx.objectStore('userMovies');
+    const existing = await store.get(movieId);
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
@@ -86,7 +93,8 @@ export class UserMovieRepository {
       rewatchCount: existing?.rewatchCount ?? 0,
     };
 
-    await this.save(updated);
+    await store.put(updated);
+    await tx.done;
     return updated;
   }
 
@@ -94,7 +102,10 @@ export class UserMovieRepository {
    * Add to Watchlist (want_to_watch)
    */
   static async addToWatchlist(movieId: number): Promise<UserMovie> {
-    const existing = await this.getByMovieId(movieId);
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readwrite');
+    const store = tx.objectStore('userMovies');
+    const existing = await store.get(movieId);
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
@@ -110,7 +121,8 @@ export class UserMovieRepository {
       rewatchCount: existing?.rewatchCount ?? 0,
     };
 
-    await this.save(updated);
+    await store.put(updated);
+    await tx.done;
     return updated;
   }
 

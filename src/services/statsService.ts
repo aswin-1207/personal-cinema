@@ -1,6 +1,5 @@
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
-import { Achievement } from '../types/backup';
 
 export interface CinemaOverviewStats {
   totalWatched: number;
@@ -96,94 +95,5 @@ export class StatsService {
       watchedThisMonth,
       watchedThisYear,
     };
-  }
-
-  /**
-   * Derive real achievements from actual user library milestones
-   */
-  static async getAchievements(): Promise<Achievement[]> {
-    const stats = await this.getOverview();
-    const all = await UserMovieRepository.getAll();
-    const reviewsCount = all.filter((um) => !!um.review && um.review.trim().length > 0).length;
-
-    const definitions: Array<{
-      id: string;
-      title: string;
-      description: string;
-      icon: string;
-      max: number;
-      current: number;
-    }> = [
-      {
-        id: 'first_screening',
-        title: 'First Screening',
-        description: 'Mark your very first film as watched in Personal Cinema.',
-        icon: 'film',
-        max: 1,
-        current: stats.totalWatched,
-      },
-      {
-        id: 'cinephile_10',
-        title: 'Silver Screen',
-        description: 'Watch 10 films in your personal catalog.',
-        icon: 'sparkles',
-        max: 10,
-        current: stats.totalWatched,
-      },
-      {
-        id: 'cinephile_50',
-        title: 'Golden Archive',
-        description: 'Complete 50 film screenings.',
-        icon: 'award',
-        max: 50,
-        current: stats.totalWatched,
-      },
-      {
-        id: 'century_100',
-        title: 'Century Club',
-        description: 'Reach 100 films logged in your cinema.',
-        icon: 'trophy',
-        max: 100,
-        current: stats.totalWatched,
-      },
-      {
-        id: 'genre_explorer',
-        title: 'Genre Explorer',
-        description: 'Watch films across at least 5 different genres.',
-        icon: 'compass',
-        max: 5,
-        current: stats.topGenres.length,
-      },
-      {
-        id: 'collection_finisher',
-        title: 'Franchise Master',
-        description: '100% complete an entire custom collection.',
-        icon: 'check-circle',
-        max: 1,
-        current: stats.completedCollections,
-      },
-      {
-        id: 'film_critic',
-        title: 'Film Critic',
-        description: 'Write personal reflections or reviews for 5 films.',
-        icon: 'feather',
-        max: 5,
-        current: reviewsCount,
-      },
-    ];
-
-    return definitions.map((def) => ({
-      id: def.id,
-      title: def.title,
-      description: def.description,
-      icon: def.icon,
-      progress: Math.min(def.current, def.max),
-      maxProgress: def.max,
-      unlockedAt: def.current >= def.max ? 'Unlocked' : null,
-    }));
-  }
-
-  static async evaluateAchievements(): Promise<Achievement[]> {
-    return this.getAchievements();
   }
 }

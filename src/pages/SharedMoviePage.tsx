@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShareService } from '../services/shareService';
 import { MovieSharePayload, CollectionSharePayload } from '../types/share';
-import { Star, Trophy, ArrowRight, Film } from 'lucide-react';
+import { Star, ArrowRight, Film } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { tmdbService } from '../services/tmdbService';
 
@@ -139,7 +139,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
       {collectionPayload && (
         <div className="w-full max-w-md bg-cinema-surface border border-cinema-gold/40 rounded-3xl shadow-2xl overflow-hidden p-6 text-center animate-scale-in">
           <div className="inline-flex p-2.5 rounded-xl bg-cinema-gold/15 text-cinema-gold mb-2 shadow-gold">
-            <Trophy size={24} />
+            <Film size={24} />
           </div>
 
           <div className="text-xs uppercase tracking-widest text-cinema-gold font-semibold mb-1">

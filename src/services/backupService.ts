@@ -23,7 +23,6 @@ export class BackupService {
       collectionMovies.push(...items);
     }
     const prefs = await PreferencesRepository.getPreferences();
-    const achievements = await PreferencesRepository.getAchievements();
 
     // Sanitize preferences (do NOT include raw private API keys or tokens in public backup)
     const sanitizedPrefs = { ...prefs, tmdbApiKey: '' };
@@ -47,7 +46,6 @@ export class BackupService {
       collections,
       collectionMovies,
       preferences: sanitizedPrefs,
-      achievements,
     };
 
     // Update last backup timestamp in local preferences
