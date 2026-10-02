@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
-import { ExtractedMovieRow, ImportCandidate, ImportJobSummary } from '../../types/import';
+import {
+  ExtractedMovieRow,
+  ImportCandidate,
+  ImportJobSummary,
+  WorkbookSheetInfo,
+  ColumnMapping,
+  CanonicalField,
+} from '../../types/import';
 import { Collection } from '../../types/collection';
 import { ImportService } from '../../services/importService';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
@@ -17,6 +24,8 @@ import {
   ArrowRight,
   Search,
   X,
+  Layers,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface ImportWizardProps {
@@ -26,7 +35,7 @@ interface ImportWizardProps {
   initialCollectionId?: string;
 }
 
-type Step = 'source' | 'matching' | 'review' | 'success';
+type Step = 'source' | 'sheets' | 'mapping' | 'matching' | 'review' | 'success';
 
 export const ImportWizard: React.FC<ImportWizardProps> = ({
   isOpen,
@@ -38,6 +47,12 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
   const [sourceType, setSourceType] = useState<'file' | 'clipboard'>('file');
   const [clipboardText, setClipboardText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Workbook sheets & column mapping state
+  const [availableSheets, setAvailableSheets] = useState<WorkbookSheetInfo[]>([]);
+  const [selectedSheetName, setSelectedSheetName] = useState<string>('');
+  const [spreadsheetGrid, setSpreadsheetGrid] = useState<string[][]>([]);
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
 
   // Collections selection
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -84,22 +99,103 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       setSourceType('file');
       setClipboardText('');
       setSelectedFile(null);
+      setAvailableSheets([]);
+      setSelectedSheetName('');
+      setSpreadsheetGrid([]);
+      setColumnMappings([]);
       setCandidates([]);
       CollectionRepository.getAll().then(setCollections);
     }
   }, [isOpen]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext === 'xlsx' || ext === 'xls') {
+        try {
+          const sheets = await ImportService.getWorkbookSheets(file);
+          setAvailableSheets(sheets);
+          if (sheets.length > 0) {
+            setSelectedSheetName(sheets[0].name);
+          }
+        } catch (err) {
+          console.error('Failed to inspect workbook sheets:', err);
+        }
+      } else {
+        setAvailableSheets([]);
+      }
     }
   };
 
-  const handleStartMatching = async () => {
+  const handleProceedFromSource = async () => {
+    if (sourceType === 'file' && selectedFile) {
+      const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+      if ((ext === 'xlsx' || ext === 'xls') && availableSheets.length > 1) {
+        setStep('sheets');
+        return;
+      }
+
+      // Check if we can extract grid for column mapping
+      if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+        let grid: string[][] = [];
+        if (ext === 'csv') {
+          const text = await selectedFile.text();
+          grid = ImportService.parseCSV(text);
+        } else {
+          grid = await ImportService.parseWorkbookSheet(selectedFile, selectedSheetName);
+        }
+
+        if (grid.length > 0) {
+          setSpreadsheetGrid(grid);
+          const header = grid[0];
+          const mappings = ImportService.detectColumnMappings(header, grid.slice(1, 4));
+          setColumnMappings(mappings);
+
+          // If title not found with high confidence or headers are ambiguous, prompt mapping step
+          const hasConfidentTitle = mappings.some(
+            (m) => m.mappedField === 'title' && /title|movie|film|name/i.test(m.headerName)
+          );
+          if (!hasConfidentTitle) {
+            setStep('mapping');
+            return;
+          }
+        }
+      }
+    }
+
+    // Direct match
+    await executeMatching();
+  };
+
+  const handleSelectSheetAndProceed = async (sheetName: string) => {
+    setSelectedSheetName(sheetName);
+    if (!selectedFile) return;
+
+    const grid = await ImportService.parseWorkbookSheet(selectedFile, sheetName);
+    setSpreadsheetGrid(grid);
+
+    if (grid.length > 0) {
+      const header = grid[0];
+      const mappings = ImportService.detectColumnMappings(header, grid.slice(1, 4));
+      setColumnMappings(mappings);
+      setStep('mapping');
+    } else {
+      await executeMatching();
+    }
+  };
+
+  const executeMatching = async () => {
     let rows: ExtractedMovieRow[] = [];
 
     if (sourceType === 'file' && selectedFile) {
-      rows = await ImportService.parseFile(selectedFile);
+      if (spreadsheetGrid.length > 0 && columnMappings.length > 0) {
+        rows = ImportService.parseRowsWithMapping(spreadsheetGrid, columnMappings, 1);
+      } else {
+        rows = await ImportService.parseFile(selectedFile, selectedSheetName);
+      }
     } else if (sourceType === 'clipboard' && clipboardText.trim()) {
       rows = await ImportService.parseClipboardText(clipboardText);
     }
@@ -128,6 +224,22 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
     setStep('review');
   };
 
+  const handleUpdateMappingField = (index: number, newField: CanonicalField) => {
+    setColumnMappings((prev) => {
+      const next = [...prev];
+      // If setting to title, clear any other column mapped to title
+      if (newField === 'title') {
+        next.forEach((m, i) => {
+          if (i !== index && m.mappedField === 'title') {
+            m.mappedField = 'ignore';
+          }
+        });
+      }
+      next[index] = { ...next[index], mappedField: newField };
+      return next;
+    });
+  };
+
   const handleSelectAmbiguousMatch = (index: number, movie: Movie) => {
     setCandidates((prev) => {
       const next = [...prev];
@@ -147,7 +259,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       const isSkipped = next[index].userSelectedOption === 'skip';
       next[index] = {
         ...next[index],
-        userSelectedOption: isSkipped ? undefined : 'skip',
+        userSelectedOption: isSkipped ? 'import' : 'skip',
       };
       return next;
     });
@@ -194,6 +306,8 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
 
       setCommitResult(res);
       setStep('success');
+    } catch (err: any) {
+      alert(`Import commit failed: ${err.message}`);
     } finally {
       setIsCommitting(false);
     }
@@ -218,7 +332,6 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       {/* Step 1: Source & Configuration */}
       {step === 'source' && (
         <div className="space-y-6">
-          {/* Method tabs */}
           <div className="flex border-b border-white/10 pb-2 gap-4">
             <button
               type="button"
@@ -230,7 +343,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
               }`}
             >
               <FileSpreadsheet size={16} />
-              <span>Spreadsheet or File (CSV, XLSX, TXT, JSON)</span>
+              <span>Movie File (CSV, XLSX, TXT)</span>
             </button>
             <button
               type="button"
@@ -242,11 +355,10 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
               }`}
             >
               <Clipboard size={16} />
-              <span>Paste Movie List</span>
+              <span>Paste Text List</span>
             </button>
           </div>
 
-          {/* File Upload Box */}
           {sourceType === 'file' ? (
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -263,11 +375,11 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                 <Upload size={28} />
               </div>
               <h4 className="text-cinema-white font-medium text-base mb-1">
-                {selectedFile ? selectedFile.name : 'Select or drag your file here'}
+                {selectedFile ? selectedFile.name : 'Select or drag your movie file here'}
               </h4>
               <p className="text-xs text-cinema-subtle max-w-sm">
-                Supports CSV, Excel (.xlsx/.xls), JSON, and plain text notes. We automatically detect titles,
-                years, watched status, ratings, and reviews.
+                Supports CSV spreadsheets, Excel workbooks (.xlsx), and plain text lists (.txt).
+                Automatically detects titles, release years, watch states, and ratings.
               </p>
               {selectedFile && (
                 <div className="mt-3 px-3 py-1 rounded bg-cinema-gold/20 text-cinema-gold text-xs font-semibold">
@@ -278,12 +390,12 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           ) : (
             <div>
               <label className="block text-xs uppercase tracking-wider text-cinema-subtle mb-1.5 font-medium">
-                Paste movie list (one per line, e.g. "Inception (2010) - Watched")
+                Paste movie titles (one per line, e.g. "Inception (2010) - Watched [9/10]")
               </label>
               <textarea
                 value={clipboardText}
                 onChange={(e) => setClipboardText(e.target.value)}
-                placeholder={`1. The Dark Knight (2008) - Watched [9/10]\n2. Oppenheimer (2023)\n3. Interstellar (2014) - Loved the soundtrack\n4. Blade Runner 2049`}
+                placeholder={`1. The Dark Knight (2008) - Watched [9/10]\n2. Oppenheimer (2023)\n3. Interstellar (2014) - Loved the soundtrack\n4. Blade Runner 2049 [2017]`}
                 className="cinema-input w-full h-44 font-mono text-xs leading-relaxed"
               />
             </div>
@@ -313,25 +425,152 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                 type="text"
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
-                placeholder="New collection name (e.g. Top 100 Sci-Fi)"
+                placeholder="New collection name (e.g. Nolan Sagas)"
                 className="cinema-input w-full mt-2"
                 autoFocus
               />
             )}
           </div>
 
-          {/* Action */}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="cinema-button-secondary px-5 py-2.5 text-sm">
               Cancel
             </button>
             <button
-              onClick={handleStartMatching}
+              onClick={handleProceedFromSource}
               disabled={sourceType === 'file' ? !selectedFile : !clipboardText.trim()}
               className="cinema-button-primary px-6 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50"
             >
-              <span>Scan & Match Movies</span>
+              <span>Scan & Process</span>
               <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1B: Sheet Selection for Multi-Sheet XLSX */}
+      {step === 'sheets' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Layers size={24} className="text-cinema-gold" />
+            <div>
+              <h3 className="font-semibold text-cinema-white text-base">Select Sheet to Import</h3>
+              <p className="text-xs text-cinema-subtle">
+                This workbook contains multiple sheets. Choose which sheet to scan.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto">
+            {availableSheets.map((sh) => (
+              <div
+                key={sh.name}
+                onClick={() => handleSelectSheetAndProceed(sh.name)}
+                className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
+                  selectedSheetName === sh.name
+                    ? 'border-cinema-gold bg-cinema-gold/15'
+                    : 'border-white/10 bg-cinema-surface hover:bg-cinema-surfaceElevated'
+                }`}
+              >
+                <div className="font-bold text-cinema-white text-sm">{sh.name}</div>
+                <div className="text-xs text-cinema-subtle mt-1">Approx. {sh.rowCount} rows</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            <button
+              type="button"
+              onClick={() => setStep('source')}
+              className="cinema-button-secondary px-4 py-2 text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectSheetAndProceed(selectedSheetName || availableSheets[0]?.name)}
+              className="cinema-button-primary px-5 py-2 text-xs flex items-center gap-1.5"
+            >
+              <span>Continue with Selected Sheet</span>
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1C: Column Mapping UI */}
+      {step === 'mapping' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={20} className="text-cinema-gold" />
+              <div>
+                <h3 className="font-semibold text-cinema-white text-base">Configure Column Mapping</h3>
+                <p className="text-xs text-cinema-subtle">
+                  Verify or assign spreadsheet columns to MyCinema fields. Exactly one column must map to Movie Title.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-h-80 overflow-y-auto space-y-2.5 pr-1">
+            {columnMappings.map((mapping, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded-xl border border-white/10 bg-cinema-surface/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div>
+                  <div className="font-semibold text-cinema-white text-xs flex items-center gap-2">
+                    <span>{mapping.headerName}</span>
+                    {mapping.mappedField === 'title' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cinema-gold/20 text-cinema-gold">
+                        Title [Required]
+                      </span>
+                    )}
+                  </div>
+                  {mapping.sampleValues.length > 0 && (
+                    <div className="text-[11px] text-cinema-subtle mt-0.5">
+                      Sample: {mapping.sampleValues.join(', ')}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <select
+                    value={mapping.mappedField}
+                    onChange={(e) => handleUpdateMappingField(idx, e.target.value as CanonicalField)}
+                    className="cinema-input text-xs py-1 px-2.5 min-w-[140px]"
+                  >
+                    <option value="title">Movie Title</option>
+                    <option value="year">Release Year</option>
+                    <option value="status">Watch Status</option>
+                    <option value="rating">Personal Rating</option>
+                    <option value="notes">Notes / Review</option>
+                    <option value="watchedDate">Watched Date</option>
+                    <option value="favorite">Favorite</option>
+                    <option value="ignore">Ignore Column</option>
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            <button
+              type="button"
+              onClick={() => setStep('source')}
+              className="cinema-button-secondary px-4 py-2 text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={executeMatching}
+              disabled={!columnMappings.some((m) => m.mappedField === 'title')}
+              className="cinema-button-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <span>Scan & Match with TMDB</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -359,7 +598,6 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       {/* Step 3: Staged Non-Destructive Review */}
       {step === 'review' && (
         <div className="space-y-4">
-          {/* Summary Metric Pills */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <button
               onClick={() => setActiveFilter('all')}
@@ -466,7 +704,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-[9px] text-cinema-subtle">
-                            No match
+                            No poster
                           </div>
                         )}
                       </div>
@@ -487,13 +725,28 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                               Duplicate
                             </span>
                           )}
+                          {candidate.isDuplicateInLibrary && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex-shrink-0">
+                              In Library
+                            </span>
+                          )}
+                          {candidate.isDuplicateInCollection && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-500/30 text-amber-300 flex-shrink-0">
+                              In Collection
+                            </span>
+                          )}
                         </div>
 
                         <div className="text-xs text-cinema-subtle flex items-center gap-2 mt-0.5 min-w-0">
-                          <span className="truncate">Raw: "{candidate.row.rawText}"</span>
+                          <span className="truncate">Source: "{candidate.row.rawText}"</span>
                           {candidate.row.detectedStatus && (
                             <span className="text-cinema-gold flex-shrink-0">
-                              · Status: {candidate.row.detectedStatus}
+                              · {candidate.row.detectedStatus}
+                            </span>
+                          )}
+                          {candidate.row.detectedRating && (
+                            <span className="text-cinema-silver flex-shrink-0">
+                              · ★ {candidate.row.detectedRating}
                             </span>
                           )}
                         </div>
