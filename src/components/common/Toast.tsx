@@ -72,6 +72,7 @@ export const Toast: React.FC = () => {
 
           <button
             onClick={dismissToast}
+            aria-label="Dismiss notification"
             style={{
               background: 'none',
               border: 'none',

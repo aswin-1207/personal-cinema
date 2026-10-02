@@ -228,6 +228,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
               : 'bg-[#09090B]/60 text-[#9E9DA5] opacity-0 group-hover:opacity-100 hover:text-[#B3262E] hover:scale-110'
           }`}
           title={isFavorite ? 'Remove Favorite' : 'Add to Favorites'}
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           <Heart size={13} className={isFavorite ? 'fill-white' : ''} />
         </button>

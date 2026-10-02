@@ -62,6 +62,7 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
             }
             className="p-2 rounded-full bg-cinema-surface/80 hover:bg-cinema-surface text-cinema-silver hover:text-cinema-white transition-colors"
             title="Toggle Sound"
+            aria-label="Toggle sound"
           >
             {preferences.soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
@@ -70,6 +71,7 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
             onClick={onClose}
             className="p-2 rounded-full bg-cinema-surface/80 hover:bg-cinema-surface text-cinema-silver hover:text-cinema-white transition-colors"
             title="Exit Cinema Mode"
+            aria-label="Exit Cinema Mode"
           >
             <X size={18} />
           </button>

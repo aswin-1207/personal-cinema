@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1A1829" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#09090B" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2D279"/>
+      <stop offset="50%" stop-color="#E0AD52"/>
+      <stop offset="100%" stop-color="#C28B2B"/>
+    </linearGradient>
+    <linearGradient id="lensReflect" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8C7AD0" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#E0AD52" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <!-- Squircle Base -->
+  <rect width="512" height="512" rx="112" fill="#09090B"/>
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)"/>
+  <rect width="508" height="508" x="2" y="2" rx="110" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- Outer Lens Bezel -->
+  <circle cx="256" cy="256" r="184" stroke="url(#goldGradient)" stroke-width="14" stroke-opacity="0.95"/>
+  <circle cx="256" cy="256" r="168" stroke="#09090B" stroke-width="6"/>
+
+  <!-- Lens Glass Chamber -->
+  <circle cx="256" cy="256" r="162" fill="#0E1019"/>
+  <circle cx="256" cy="256" r="162" fill="url(#lensReflect)"/>
+
+  <!-- Inner Aperture Ring -->
+  <circle cx="256" cy="256" r="118" stroke="url(#goldGradient)" stroke-width="4" stroke-opacity="0.8" stroke-dasharray="14 8"/>
+
+  <!-- Lens Iris Center Element -->
+  <polygon points="216,186 332,256 216,326" fill="url(#goldGradient)"/>
+</svg>
