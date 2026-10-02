@@ -28,6 +28,13 @@ export const Discover: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [localMatchCount, setLocalMatchCount] = useState(0);
   const [isSearchOffline, setIsSearchOffline] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchErrorCode, setSearchErrorCode] = useState<string | null>(null);
+  const [searchPage, setSearchPage] = useState<number>(1);
+  const [searchTotalPages, setSearchTotalPages] = useState<number>(1);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const latestSequenceRef = React.useRef<number>(0);
+
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
@@ -132,34 +139,48 @@ export const Discover: React.FC = () => {
     } catch {}
   };
 
-  // Perform search (Local Catalog + TMDB fallback)
+  // Perform search (Local Catalog + TMDB fallback with race protection)
   useEffect(() => {
     const controller = new AbortController();
     let isCancelled = false;
 
     if (debouncedQuery) {
       recordRecentSearch(debouncedQuery);
+      setIsSearching(true);
+      setSearchError(null);
+      setSearchErrorCode(null);
+      setSearchPage(1);
 
-      // 1. Instant local search (Layer 1)
+      // 1. Instant local search preview
       UnifiedSearchService.searchLocal(debouncedQuery).then((localMatches) => {
-        if (!isCancelled) {
+        if (!isCancelled && !controller.signal.aborted) {
           setSearchResults(localMatches);
           setLocalMatchCount(localMatches.length);
         }
       });
 
       // 2. Full unified search (Layer 1 + Layer 2)
-      setIsSearching(true);
       UnifiedSearchService.searchUnified(debouncedQuery, { signal: controller.signal })
         .then((res) => {
-          if (!isCancelled && !controller.signal.aborted) {
-            setSearchResults(res.merged);
-            setLocalMatchCount(res.localResults.length);
-            setIsSearchOffline(res.isOffline);
+          if (isCancelled || controller.signal.aborted) return;
+          // Discard response if a newer query was issued
+          if (res.sequenceId < latestSequenceRef.current) return;
+          latestSequenceRef.current = res.sequenceId;
+
+          setSearchResults(res.merged);
+          setLocalMatchCount(res.localResults.length);
+          setIsSearchOffline(res.isOffline);
+          setSearchTotalPages(res.totalPages);
+          if (res.tmdbError) {
+            setSearchError(res.tmdbError);
+            setSearchErrorCode(res.errorCode);
           }
         })
-        .catch(() => {
-          // Local results already displayed
+        .catch((err: any) => {
+          if (!isCancelled && !controller.signal.aborted) {
+            setSearchError(err?.message || 'Search request failed');
+            setSearchErrorCode('NETWORK_ERROR');
+          }
         })
         .finally(() => {
           if (!isCancelled && !controller.signal.aborted) {
@@ -171,6 +192,10 @@ export const Discover: React.FC = () => {
       setLocalMatchCount(0);
       setIsSearching(false);
       setIsSearchOffline(false);
+      setSearchError(null);
+      setSearchErrorCode(null);
+      setSearchPage(1);
+      setSearchTotalPages(1);
     }
 
     return () => {
@@ -178,6 +203,33 @@ export const Discover: React.FC = () => {
       controller.abort();
     };
   }, [debouncedQuery]);
+
+  // Pagination: Load next page of TMDB results
+  const handleLoadMore = async () => {
+    if (isLoadingMore || searchPage >= searchTotalPages || !debouncedQuery) return;
+    setIsLoadingMore(true);
+
+    try {
+      const nextPage = searchPage + 1;
+      const res = await UnifiedSearchService.searchTMDB(debouncedQuery, { page: nextPage });
+      if (res.results.length > 0) {
+        setSearchResults((prev) => {
+          const map = new Map<number, Movie>();
+          prev.forEach((m) => map.set(m.id, m));
+          res.results.forEach((m) => {
+            if (!map.has(m.id)) map.set(m.id, m);
+          });
+          return Array.from(map.values());
+        });
+        setSearchPage(nextPage);
+        setSearchTotalPages(res.totalPages);
+      }
+    } catch (err: any) {
+      console.warn('Load more search failed:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const handleMovieClick = async (movie: Movie) => {
     await UnifiedSearchService.ensureCanonicalMovie(movie);
@@ -372,6 +424,24 @@ export const Discover: React.FC = () => {
             </div>
           )}
 
+          {searchError && (
+            <div className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between gap-2 text-xs text-red-300">
+              <span className="truncate">
+                {searchErrorCode === 'RATE_LIMITED'
+                  ? 'TMDB rate limit reached. Showing local catalog.'
+                  : searchErrorCode === 'AUTH_ERROR'
+                  ? 'TMDB authentication failed. Check credentials.'
+                  : 'Unable to sync with TMDB global archive. Showing local vault.'}
+              </span>
+              <button
+                onClick={() => setDebouncedQuery(query.trim())}
+                className="text-[11px] font-semibold text-[#E0AD52] hover:underline cursor-pointer bg-transparent border-none p-0 flex-shrink-0"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {isSearching && searchResults.length === 0 ? (
             <LoadingState count={8} layout="grid" />
           ) : searchResults.length === 0 ? (
@@ -384,17 +454,32 @@ export const Discover: React.FC = () => {
               onAction={() => setQuery('')}
             />
           ) : (
-            <MovieGrid>
-              {searchResults.map((movie) => (
-                <MoviePoster
-                  key={movie.id}
-                  movie={movie}
-                  userData={userMovieMap.get(movie.id)}
-                  className="w-full"
-                  onClick={() => handleMovieClick(movie)}
-                />
-              ))}
-            </MovieGrid>
+            <>
+              <MovieGrid>
+                {searchResults.map((movie) => (
+                  <MoviePoster
+                    key={movie.id}
+                    movie={movie}
+                    userData={userMovieMap.get(movie.id)}
+                    className="w-full"
+                    onClick={() => handleMovieClick(movie)}
+                  />
+                ))}
+              </MovieGrid>
+
+              {searchPage < searchTotalPages && (
+                <div className="flex justify-center pt-4">
+                  <CinemaButton
+                    variant="secondary"
+                    size="md"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? 'Loading More Films...' : 'Load More Films'}
+                  </CinemaButton>
+                </div>
+              )}
+            </>
           )}
         </section>
       ) : (

@@ -62,15 +62,28 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     let isMounted = true;
 
     async function loadMovie() {
-      // Check local DB first
+      // 1. Check local DB first and render immediately if present
       let m = await MovieRepository.getById(movieId);
-      if (!m) {
-        m = await tmdbService.getMovieDetails(movieId);
-        if (m) await MovieRepository.save(m);
+      if (m && isMounted) {
+        setMovie(m);
+      }
+
+      // 2. If missing or partial metadata (no runtime or credits), fetch full TMDB details
+      const isPartial = !m || !m.overview || !m.runtime || !m.credits;
+      if (isPartial) {
+        try {
+          const fresh = await tmdbService.getMovieDetails(movieId);
+          if (fresh) {
+            m = await MovieRepository.save(fresh);
+            if (isMounted) setMovie(m);
+          }
+        } catch {
+          // Fall back to local or curated landmark if offline/network error
+        }
       }
 
       if (!isMounted) return;
-      setMovie(m || null);
+      if (m) setMovie(m);
 
       // Load user data
       const u = await UserMovieRepository.getByMovieId(movieId);

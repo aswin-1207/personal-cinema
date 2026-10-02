@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '../common/Modal';
 import { MovieRepository } from '../../db/repositories/movieRepository';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { Movie } from '../../types/movie';
 import { tmdbService } from '../../services/tmdbService';
-import { UnifiedSearchService } from '../../services/unifiedSearchService';
-import { Search, Check, Plus, Film, Loader2, WifiOff } from 'lucide-react';
+import { UnifiedSearchService, SearchErrorCode } from '../../services/unifiedSearchService';
+import { Search, Check, Plus, Film, Loader2, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface AddMoviesToCollectionModalProps {
   isOpen: boolean;
@@ -27,92 +27,137 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
   const [selectedMoviesMap, setSelectedMoviesMap] = useState<Map<number, Movie>>(new Map());
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [displayedMovies, setDisplayedMovies] = useState<Movie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<SearchErrorCode>(null);
+  const [allMatchesAlreadyInCollection, setAllMatchesAlreadyInCollection] = useState(false);
 
   // Keep a cache of all available local movies not in this collection
   const localAvailableRef = useRef<Movie[]>([]);
+  const latestSequenceRef = useRef<number>(0);
+
+  // Load existing collection members and available local movies
+  const loadInitialData = useCallback(async () => {
+    const colMovies = await CollectionRepository.getCollectionMovies(collectionId);
+    const existing = new Set(colMovies.map((cm) => cm.movieId));
+
+    const allLocal = await MovieRepository.getAll();
+    const availableLocal = allLocal.filter((m) => !existing.has(m.id));
+
+    localAvailableRef.current = availableLocal;
+    setExistingMovieIds(existing);
+    setSelectedMovieIds(new Set());
+    setSelectedMoviesMap(new Map());
+    setSearchQuery('');
+    setDebouncedQuery('');
+    setDisplayedMovies(availableLocal.slice(0, 50));
+    setIsOffline(typeof navigator !== 'undefined' && !navigator.onLine);
+    setSearchError(null);
+    setErrorCode(null);
+    setAllMatchesAlreadyInCollection(false);
+  }, [collectionId]);
 
   useEffect(() => {
     if (!isOpen) return;
+    loadInitialData();
+  }, [isOpen, loadInitialData]);
 
-    let isMounted = true;
-    async function load() {
-      const colMovies = await CollectionRepository.getCollectionMovies(collectionId);
-      const existing = new Set(colMovies.map((cm) => cm.movieId));
-
-      const allLocal = await MovieRepository.getAll();
-      const availableLocal = allLocal.filter((m) => !existing.has(m.id));
-
-      if (isMounted) {
-        localAvailableRef.current = availableLocal;
-        setExistingMovieIds(existing);
-        setSelectedMovieIds(new Set());
-        setSelectedMoviesMap(new Map());
-        setSearchQuery('');
-        setDisplayedMovies(availableLocal.slice(0, 50));
-        setIsOffline(typeof navigator !== 'undefined' && !navigator.onLine);
-      }
-    }
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, collectionId]);
-
-  // Two-layer search: Local catalog immediate + TMDB on-demand
+  // Debounce search query (280ms) to avoid flooding TMDB and prevent race conditions
   useEffect(() => {
-    const rawQuery = searchQuery.trim();
-    if (!rawQuery) {
-      setDisplayedMovies(localAvailableRef.current.slice(0, 50));
-      setIsSearching(false);
-      return;
-    }
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-    const controller = new AbortController();
-    let isCancelled = false;
-
-    // 1. Instantly show local results
-    UnifiedSearchService.searchLocal(rawQuery, {
-      excludeMovieIds: existingMovieIds,
-      maxResults: 40,
-    }).then((localMatches) => {
-      if (!isCancelled) {
-        setDisplayedMovies(localMatches);
+  // Execute two-layer search with race protection & latest-request-wins
+  const executeSearch = useCallback(
+    (query: string) => {
+      if (!query) {
+        setDisplayedMovies(localAvailableRef.current.slice(0, 50));
+        setIsSearching(false);
+        setSearchError(null);
+        setErrorCode(null);
+        setAllMatchesAlreadyInCollection(false);
+        return () => {};
       }
-    });
 
-    // 2. Query TMDB concurrently and merge
-    setIsSearching(true);
-    UnifiedSearchService.searchUnified(rawQuery, {
-      signal: controller.signal,
-      excludeMovieIds: existingMovieIds,
-      maxResults: 60,
-    })
-      .then((res) => {
-        if (!isCancelled) {
-          setDisplayedMovies(res.merged);
-          setIsOffline(res.isOffline);
-        }
-      })
-      .catch(() => {
-        // Fallback already displayed
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsSearching(false);
+      const controller = new AbortController();
+      let isCancelled = false;
+      setIsSearching(true);
+      setSearchError(null);
+      setErrorCode(null);
+      setAllMatchesAlreadyInCollection(false);
+
+      // 1. Instant local search preview
+      UnifiedSearchService.searchLocal(query, {
+        excludeMovieIds: existingMovieIds,
+        maxResults: 40,
+      }).then((localMatches) => {
+        if (!isCancelled && !controller.signal.aborted) {
+          setDisplayedMovies(localMatches);
         }
       });
 
-    return () => {
-      isCancelled = true;
-      controller.abort();
-    };
-  }, [searchQuery, existingMovieIds]);
+      // 2. Full unified search (TMDB + Local merged & filtered strictly by current collection)
+      UnifiedSearchService.searchUnified(query, {
+        signal: controller.signal,
+        excludeMovieIds: existingMovieIds,
+        maxResults: 60,
+      })
+        .then(async (res) => {
+          if (isCancelled || controller.signal.aborted) return;
+          if (res.sequenceId < latestSequenceRef.current) return;
+          latestSequenceRef.current = res.sequenceId;
+
+          setDisplayedMovies(res.merged);
+          setIsOffline(res.isOffline);
+
+          if (res.tmdbError) {
+            setSearchError(res.tmdbError);
+            setErrorCode(res.errorCode);
+          }
+
+          // Distinguish between true zero results vs. all matching movies already in collection
+          if (res.merged.length === 0) {
+            // Check without collection exclusion to see if matching movies exist
+            const unfilteredLocal = await UnifiedSearchService.searchLocal(query, { maxResults: 10 });
+            if (unfilteredLocal.length > 0 && unfilteredLocal.every((m) => existingMovieIds.has(m.id))) {
+              setAllMatchesAlreadyInCollection(true);
+            } else {
+              setAllMatchesAlreadyInCollection(false);
+            }
+          } else {
+            setAllMatchesAlreadyInCollection(false);
+          }
+        })
+        .catch((err: any) => {
+          if (!isCancelled && !controller.signal.aborted) {
+            setSearchError(err?.message || 'Search request failed');
+            setErrorCode('NETWORK_ERROR');
+          }
+        })
+        .finally(() => {
+          if (!isCancelled && !controller.signal.aborted) {
+            setIsSearching(false);
+          }
+        });
+
+      return () => {
+        isCancelled = true;
+        controller.abort();
+      };
+    },
+    [existingMovieIds]
+  );
+
+  useEffect(() => {
+    return executeSearch(debouncedQuery);
+  }, [debouncedQuery, executeSearch]);
 
   const toggleSelect = (movie: Movie) => {
     setSelectedMovieIds((prev) => {
@@ -154,6 +199,10 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
     }
   };
 
+  const handleRetry = () => {
+    executeSearch(debouncedQuery);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -188,17 +237,48 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
           </div>
         )}
 
+        {/* Rate limited / Server error banner */}
+        {searchError && (
+          <div className="mb-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-between gap-2 text-xs text-red-300">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertCircle size={14} className="flex-shrink-0 text-red-400" />
+              <span className="truncate">
+                {errorCode === 'RATE_LIMITED'
+                  ? 'TMDB rate limit reached. Please wait a moment.'
+                  : errorCode === 'AUTH_ERROR'
+                  ? 'TMDB authentication failed. Check API key.'
+                  : 'Unable to reach TMDB. Showing local vault.'}
+              </span>
+            </div>
+            <button
+              onClick={handleRetry}
+              className="flex items-center gap-1 text-[11px] font-semibold text-cinema-gold hover:underline cursor-pointer bg-transparent border-none p-0 flex-shrink-0"
+            >
+              <RefreshCw size={11} />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
         {/* Movie list with 2-layer feedback */}
         <div className="flex-grow overflow-y-auto pr-1 space-y-2">
           {displayedMovies.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-center text-cinema-subtle">
               <Film size={36} className="mb-2 opacity-40 text-cinema-gold" />
               <p className="text-sm font-medium text-cinema-white">
-                {isSearching ? 'Searching catalog & TMDB...' : 'No available movies found'}
+                {isSearching
+                  ? 'Searching catalog & TMDB...'
+                  : allMatchesAlreadyInCollection
+                  ? 'All matching movies are already in this collection'
+                  : debouncedQuery
+                  ? `No movies found for "${debouncedQuery}"`
+                  : 'No available movies found'}
               </p>
               <p className="text-xs text-cinema-subtle mt-1 max-w-sm">
-                {searchQuery
-                  ? `No matching movies found for "${searchQuery}". All matching films may already be in this collection.`
+                {allMatchesAlreadyInCollection
+                  ? `All films matching "${debouncedQuery}" have already been added to "${collectionName}".`
+                  : debouncedQuery
+                  ? 'Try searching by a different title, director, character, or franchise.'
                   : 'Start typing to search hundreds of superhero, trending, or international films.'}
               </p>
             </div>

@@ -3,28 +3,43 @@
 
 import { Movie } from '../types/movie';
 import { MovieRepository } from '../db/repositories/movieRepository';
-import { tmdbService } from './tmdbService';
+import { tmdbService, TMDBError } from './tmdbService';
+
+export type SearchErrorCode =
+  | 'OFFLINE'
+  | 'RATE_LIMITED'
+  | 'NETWORK_ERROR'
+  | 'AUTH_ERROR'
+  | 'SERVER_ERROR'
+  | null;
 
 export interface UnifiedSearchResult {
+  sequenceId: number;
   localResults: Movie[];
   tmdbResults: Movie[];
   merged: Movie[];
   isOffline: boolean;
   tmdbError: string | null;
+  errorCode: SearchErrorCode;
+  page: number;
+  totalPages: number;
 }
 
 export interface SearchOptions {
   signal?: AbortSignal;
   excludeMovieIds?: Set<number>;
-  onLocalResults?: (local: Movie[]) => void;
+  onLocalResults?: (local: Movie[], sequenceId: number) => void;
   maxResults?: number;
+  page?: number;
 }
 
 export class UnifiedSearchService {
+  private static currentSequence = 0;
+
   /**
    * Normalize search string for resilient matching
    */
-  private static normalize(str: string): string {
+  public static normalize(str: string): string {
     return str
       .toLowerCase()
       .normalize('NFD')
@@ -123,20 +138,22 @@ export class UnifiedSearchService {
   }
 
   /**
-   * Search TMDB on-demand
+   * Search TMDB on-demand with pagination and error categorization
    */
   public static async searchTMDB(
     query: string,
-    options?: { signal?: AbortSignal; excludeMovieIds?: Set<number> }
-  ): Promise<{ results: Movie[]; error: string | null }> {
+    options?: { signal?: AbortSignal; excludeMovieIds?: Set<number>; page?: number }
+  ): Promise<{ results: Movie[]; totalPages: number; error: string | null; errorCode: SearchErrorCode }> {
     const rawQuery = query.trim();
-    if (!rawQuery) return { results: [], error: null };
+    if (!rawQuery) return { results: [], totalPages: 0, error: null, errorCode: null };
+
+    const page = options?.page || 1;
 
     try {
       const response = await tmdbService.searchMovies(
         rawQuery,
         undefined,
-        1,
+        page,
         options?.signal
       );
 
@@ -145,46 +162,76 @@ export class UnifiedSearchService {
         ? list.filter((m) => !options.excludeMovieIds!.has(m.id))
         : list;
 
-      return { results: filtered, error: null };
+      return {
+        results: filtered,
+        totalPages: response?.totalPages || 1,
+        error: null,
+        errorCode: null,
+      };
     } catch (err: any) {
       if (options?.signal?.aborted) {
-        return { results: [], error: null };
+        return { results: [], totalPages: 0, error: null, errorCode: null };
       }
+
+      let errorCode: SearchErrorCode = 'NETWORK_ERROR';
+      if (err instanceof TMDBError) {
+        if (err.code === 'RATE_LIMITED' || err.status === 429) {
+          errorCode = 'RATE_LIMITED';
+        } else if (err.code === 'AUTHENTICATION_FAILED' || err.status === 401 || err.status === 403) {
+          errorCode = 'AUTH_ERROR';
+        } else if (err.status && err.status >= 500) {
+          errorCode = 'SERVER_ERROR';
+        }
+      } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        errorCode = 'OFFLINE';
+      }
+
       const msg = err?.message || 'Network error querying TMDB';
-      return { results: [], error: msg };
+      return { results: [], totalPages: 0, error: msg, errorCode };
     }
   }
 
   /**
-   * Two-Layer Unified Search:
-   * 1. Query local catalog immediately.
-   * 2. Concurrently query TMDB when online.
-   * 3. Merge results and deduplicate by TMDB ID.
+   * Two-Layer Unified Search with Race Protection & Latest-Request-Wins:
+   * 1. Generates monotonic sequence ID to prevent race conditions.
+   * 2. Queries local catalog immediately.
+   * 3. Concurrently queries TMDB when online.
+   * 4. Merges results and deduplicates by TMDB ID.
    */
   public static async searchUnified(
     query: string,
     options?: SearchOptions
   ): Promise<UnifiedSearchResult> {
+    const seq = ++UnifiedSearchService.currentSequence;
     const rawQuery = query.trim();
+    const page = options?.page || 1;
+
     if (!rawQuery) {
       return {
+        sequenceId: seq,
         localResults: [],
         tmdbResults: [],
         merged: [],
-        isOffline: !navigator.onLine,
+        isOffline: typeof navigator !== 'undefined' && !navigator.onLine,
         tmdbError: null,
+        errorCode: null,
+        page: 1,
+        totalPages: 0,
       };
     }
 
-    // LAYER 1: Fast local catalog search
-    const localResults = await this.searchLocal(rawQuery, {
-      excludeMovieIds: options?.excludeMovieIds,
-      maxResults: options?.maxResults,
-    });
+    // LAYER 1: Fast local catalog search (only for page 1)
+    const localResults =
+      page === 1
+        ? await this.searchLocal(rawQuery, {
+            excludeMovieIds: options?.excludeMovieIds,
+            maxResults: options?.maxResults,
+          })
+        : [];
 
-    // Provide instant feedback if local handler provided
-    if (options?.onLocalResults) {
-      options.onLocalResults(localResults);
+    // Provide instant feedback if local handler provided and this request is still active
+    if (options?.onLocalResults && seq === UnifiedSearchService.currentSequence) {
+      options.onLocalResults(localResults, seq);
     }
 
     const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
@@ -192,24 +239,30 @@ export class UnifiedSearchService {
     // If offline, return local results immediately with offline flag
     if (isOffline) {
       return {
+        sequenceId: seq,
         localResults,
         tmdbResults: [],
         merged: localResults,
         isOffline: true,
         tmdbError: null,
+        errorCode: 'OFFLINE',
+        page: 1,
+        totalPages: 1,
       };
     }
 
     // LAYER 2: Query TMDB in parallel
-    const { results: tmdbResults, error: tmdbError } = await this.searchTMDB(
+    const { results: tmdbResults, totalPages, error: tmdbError, errorCode } = await this.searchTMDB(
       rawQuery,
       {
         signal: options?.signal,
         excludeMovieIds: options?.excludeMovieIds,
+        page,
       }
     );
 
-    // MERGE & DEDUPLICATE by TMDB ID
+    // If a newer search request was launched while this one was in flight, mark it
+    // but still return valid deduplicated data with the sequenceId
     const mergedMap = new Map<number, Movie>();
 
     // 1. Add all local results first (preserves local canonical representations)
@@ -230,30 +283,30 @@ export class UnifiedSearchService {
     const merged = Array.from(mergedMap.values());
 
     return {
+      sequenceId: seq,
       localResults,
       tmdbResults,
       merged,
       isOffline: false,
       tmdbError,
+      errorCode,
+      page,
+      totalPages,
     };
   }
 
   /**
+   * Check if a given sequence ID is the latest active search
+   */
+  public static isLatestSequence(sequenceId: number): boolean {
+    return sequenceId === UnifiedSearchService.currentSequence;
+  }
+
+  /**
    * Ensure a selected movie is persisted into the canonical local catalog
+   * Reuses existing Movie records and performs an intelligent non-destructive merge.
    */
   public static async ensureCanonicalMovie(movie: Movie): Promise<Movie> {
-    const existing = await MovieRepository.getById(movie.id);
-    if (existing) {
-      return existing;
-    }
-
-    const canonical: Movie = {
-      ...movie,
-      source: movie.source || 'tmdb',
-      lastFetched: movie.lastFetched || new Date().toISOString(),
-    };
-
-    await MovieRepository.save(canonical);
-    return canonical;
+    return MovieRepository.save(movie);
   }
 }

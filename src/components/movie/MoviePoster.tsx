@@ -15,6 +15,67 @@ export interface MoviePosterProps {
   aspect?: 'portrait' | 'compact';
 }
 
+interface MovieCardTitleProps {
+  title: string;
+  isCardHovered: boolean;
+  reducedMotion: boolean;
+}
+
+export const MovieCardTitle: React.FC<MovieCardTitleProps> = ({
+  title,
+  isCardHovered,
+  reducedMotion,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLHeadingElement>(null);
+  const [overflowDistance, setOverflowDistance] = useState(0);
+
+  useEffect(() => {
+    if (!containerRef.current || !textRef.current) return;
+    const scrollW = textRef.current.scrollWidth;
+    const clientW = containerRef.current.clientWidth;
+    if (scrollW > clientW + 2) {
+      setOverflowDistance(scrollW - clientW);
+    } else {
+      setOverflowDistance(0);
+    }
+  }, [title]);
+
+  const shouldSlide = isCardHovered && overflowDistance > 0 && !reducedMotion;
+  const slideDuration = Math.max(2, Math.min(5, overflowDistance / 28));
+
+  return (
+    <div
+      ref={containerRef}
+      className="min-h-[2.35rem] h-[2.35rem] max-h-[2.35rem] overflow-hidden w-full min-w-0 relative flex items-start"
+      title={title}
+      aria-label={title}
+    >
+      <h4
+        ref={textRef}
+        className={`font-semibold text-xs text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors leading-tight ${
+          overflowDistance > 0 ? 'whitespace-nowrap inline-block' : 'line-clamp-2 break-words w-full'
+        }`}
+        style={
+          shouldSlide
+            ? {
+                transform: `translateX(-${overflowDistance}px)`,
+                transition: `transform ${slideDuration}s cubic-bezier(0.25, 1, 0.5, 1) 0.35s`,
+              }
+            : overflowDistance > 0
+            ? {
+                transform: 'translateX(0px)',
+                transition: 'transform 0.4s ease-out',
+              }
+            : undefined
+        }
+      >
+        {title}
+      </h4>
+    </div>
+  );
+};
+
 export const MoviePoster: React.FC<MoviePosterProps> = ({
   movie,
   userData,
@@ -23,9 +84,10 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   className = '',
   size = 'md',
 }) => {
-  const { openMovieDetail, toggleFavorite } = useCinema();
+  const { openMovieDetail, toggleFavorite, preferences } = useCinema();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   const handleClick = () => {
@@ -68,6 +130,12 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
     : 'w-36 sm:w-44';
   const shrinkClass = className.includes('w-full') ? 'w-full' : 'flex-shrink-0';
 
+  const isReducedMotion = Boolean(
+    preferences?.motionReduced ||
+      preferences?.reducedMotion ||
+      (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  );
+
   return (
     <div
       onClick={handleClick}
@@ -79,6 +147,12 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           handleClick();
         }
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+      onTouchEnd={() => setTimeout(() => setIsHovered(false), 2500)}
       className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] transition-all duration-300 ease-out min-w-0 ${
         isWatched
           ? 'border border-[#E0AD52]/40 shadow-[0_4px_24px_rgba(224,173,82,0.18)] hover:border-[#E0AD52]'
@@ -168,16 +242,13 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         )}
       </div>
 
-      {/* Card Info Container */}
+      {/* Card Info Container with Controlled Title Region */}
       <div className="p-2.5 sm:p-3 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0">
-        <div className="min-h-[2.35rem] flex items-start w-full min-w-0">
-          <h4
-            className="font-semibold text-xs text-[#F5F3EB] line-clamp-2 break-words leading-tight group-hover:text-[#E0AD52] transition-colors w-full"
-            title={movie.title}
-          >
-            {movie.title}
-          </h4>
-        </div>
+        <MovieCardTitle
+          title={movie.title}
+          isCardHovered={isHovered}
+          reducedMotion={isReducedMotion}
+        />
         <div className="flex items-center justify-between text-[11px] text-[#9E9DA5] mt-1 pt-0.5 border-t border-white/[0.04]">
           {isWatched ? (
             <span className="text-[#E0AD52] font-semibold flex items-center gap-1 text-[10px] tracking-wide">
