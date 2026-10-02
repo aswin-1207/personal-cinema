@@ -192,17 +192,17 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       hapticsService.confirm();
 
       // 4. Check if any collections containing this movie are now 100% complete!
-      const collections = await CollectionRepository.getAll();
-      for (const c of collections) {
-        const colMovies = await CollectionRepository.getCollectionMovies(c.id);
-        if (colMovies.some((cm) => cm.movieId === movie.id)) {
-          const progress = await CollectionRepository.calculateProgress(c.id);
-          if (progress.isComplete) {
-            soundService.playCollectionTriumph();
-            hapticsService.success();
-            setCelebrationCollection(c);
-            break;
-          }
+      const affectedColIds = await CollectionRepository.getCollectionsForMovie(movie.id);
+      for (const colId of affectedColIds) {
+        const c = await CollectionRepository.getById(colId);
+        if (!c) continue;
+        const wasCompleteBefore = Boolean(c.completedAt);
+        const progress = await CollectionRepository.calculateProgress(c.id);
+        if (progress.isComplete && !wasCompleteBefore) {
+          soundService.playCollectionTriumph();
+          hapticsService.success();
+          setCelebrationCollection(c);
+          break;
         }
       }
 
@@ -236,12 +236,9 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await UserMovieRepository.unmarkWatched(movieId);
 
       // Recalculate progress for any collections containing this movie
-      const collections = await CollectionRepository.getAll();
-      for (const c of collections) {
-        const colMovies = await CollectionRepository.getCollectionMovies(c.id);
-        if (colMovies.some((cm) => cm.movieId === movieId)) {
-          await CollectionRepository.calculateProgress(c.id);
-        }
+      const affectedColIds = await CollectionRepository.getCollectionsForMovie(movieId);
+      for (const colId of affectedColIds) {
+        await CollectionRepository.calculateProgress(colId);
       }
 
       soundService.playSubtleClick();

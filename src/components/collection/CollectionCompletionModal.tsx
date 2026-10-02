@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Collection } from '../../types/collection';
+import { Movie } from '../../types/movie';
 import { CollectionRepository } from '../../db/repositories/collectionRepository';
 import { MovieRepository } from '../../db/repositories/movieRepository';
 import { tmdbService } from '../../services/tmdbService';
-import { CheckCircle2, CheckCircle, Share2, X } from 'lucide-react';
+import { Check, Share2, X, Film } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 
 interface CollectionCompletionModalProps {
@@ -18,12 +19,26 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
   onShare,
 }) => {
   const [posters, setPosters] = useState<string[]>([]);
+  const [finalMovie, setFinalMovie] = useState<Movie | null>(null);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   useEffect(() => {
-    soundService.playCollectionComplete();
+    soundService.playCollectionTriumph();
 
-    async function loadPosters() {
+    async function loadData() {
       const colMovies = await CollectionRepository.getCollectionMovies(collection.id);
+      setTotalCount(colMovies.length);
+
+      // Load final movie memory if recorded
+      if (collection.finalMovieId) {
+        const fm = await MovieRepository.getById(collection.finalMovieId);
+        if (fm) setFinalMovie(fm);
+      } else if (colMovies.length > 0) {
+        const lastMovieId = colMovies[colMovies.length - 1].movieId;
+        const fm = await MovieRepository.getById(lastMovieId);
+        if (fm) setFinalMovie(fm);
+      }
+
       const topIds = colMovies.slice(0, 6).map((m) => m.movieId);
       const movies = await MovieRepository.getByIds(topIds);
       const urls = movies
@@ -32,8 +47,8 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
       setPosters(urls);
     }
 
-    loadPosters();
-  }, [collection.id]);
+    loadData();
+  }, [collection.id, collection.finalMovieId]);
 
   const formattedDate = collection.completedAt
     ? new Date(collection.completedAt).toLocaleDateString(undefined, {
@@ -48,41 +63,70 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
       });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cinema-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg bg-cinema-surface border border-cinema-gold/40 rounded-2xl shadow-2xl overflow-hidden p-6 text-center animate-scale-in">
-        {/* Ambient Gold Radial Glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 bg-cinema-gold/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cinema-black/85 backdrop-blur-md animate-cinema-fade">
+      <div className="relative w-full max-w-lg bg-[#131319] border border-[#E0AD52]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden p-6 sm:p-7 text-center animate-cinema-scale">
+        {/* Subtle Ambient Gold Radial Glow */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#E0AD52]/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-cinema-subtle hover:text-cinema-white transition-colors"
+          className="absolute top-4 right-4 p-2 text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors cursor-pointer border-none bg-transparent"
           aria-label="Close"
         >
           <X size={20} />
         </button>
 
         {/* Icon & Title */}
-        <div className="inline-flex p-3 rounded-2xl bg-cinema-gold/15 border border-cinema-gold/30 text-cinema-gold mb-3 shadow-gold">
-          <CheckCircle2 size={36} className="text-cinema-gold" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#E0AD52]/15 border border-[#E0AD52]/30 text-[#E0AD52] mb-3 shadow-[0_0_20px_rgba(224,173,82,0.25)]">
+          <Check size={26} strokeWidth={3} className="text-[#E0AD52]" />
         </div>
 
-        <div className="flex items-center justify-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-cinema-gold mb-1">
-          <CheckCircle size={14} />
-          <span>Collection Mastered</span>
+        <div className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-[#E0AD52] mb-1">
+          <span>COLLECTION COMPLETE ✓</span>
         </div>
 
-        <h2 className="font-serif text-2xl md:text-3xl font-bold text-cinema-white mb-2">
+        <h2 className="font-hero-title text-2xl sm:text-3xl text-[#F5F3EB] mb-1.5">
           {collection.name}
         </h2>
 
-        <p className="text-sm text-cinema-silver mb-5">
-          You've watched every movie in this curated collection. Completed on {formattedDate}.
+        <p className="text-xs sm:text-sm text-[#9E9DA5] mb-5">
+          {totalCount} / {totalCount} WATCHED · Concluded on {formattedDate}
         </p>
+
+        {/* The Final Film Memory */}
+        {finalMovie && (
+          <div className="mb-5 p-3.5 rounded-xl bg-[#09090D] border border-[#E0AD52]/25 flex items-center gap-3.5 text-left shadow-md">
+            <div className="w-11 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#171924] border border-white/10">
+              {finalMovie.posterPath ? (
+                <img
+                  src={tmdbService.getImageUrl(finalMovie.posterPath, 'w185') || ''}
+                  alt={finalMovie.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#E0AD52]">
+                  <Film size={18} />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-[10px] uppercase font-bold tracking-[0.18em] text-[#E0AD52] block">
+                THE FINAL FILM
+              </span>
+              <h4 className="font-serif font-bold text-sm text-[#F5F3EB] truncate mt-0.5">
+                {finalMovie.title}
+              </h4>
+              <p className="text-[11px] text-[#9E9DA5] mt-0.5 truncate">
+                Concluded this cinematic journey
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Poster Collage Strip */}
         {posters.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6 p-2 rounded-xl bg-cinema-charcoal/60 border border-white/5">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-6 p-2 rounded-xl bg-[#09090D] border border-white/5">
             {posters.map((url, i) => (
               <img
                 key={i}
@@ -102,14 +146,17 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
                 onClose();
                 onShare();
               }}
-              className="cinema-button-secondary flex items-center gap-2 px-5 py-2.5"
+              className="cinema-button-secondary flex items-center gap-2 px-5 py-2.5 text-xs font-semibold cursor-pointer"
             >
-              <Share2 size={16} />
+              <Share2 size={15} />
               <span>Share Collection</span>
             </button>
           )}
-          <button onClick={onClose} className="cinema-button-primary px-6 py-2.5">
-            Continue Journey
+          <button
+            onClick={onClose}
+            className="cinema-button-primary px-6 py-2.5 text-xs font-bold cursor-pointer"
+          >
+            Done
           </button>
         </div>
       </div>

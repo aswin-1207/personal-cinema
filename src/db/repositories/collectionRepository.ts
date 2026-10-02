@@ -21,12 +21,17 @@ export class CollectionRepository {
     customCoverMovieId?: number | null;
     sortMode?: Collection['sortMode'];
   }): Promise<Collection> {
+    const trimmedName = data.name ? data.name.trim() : '';
+    if (!trimmedName) {
+      throw new Error('Collection name cannot be empty');
+    }
+
     const db = await getDB();
     const now = new Date().toISOString();
     const collection: Collection = {
       id: crypto.randomUUID ? crypto.randomUUID() : 'col_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-      name: data.name.trim(),
-      description: data.description?.trim() || '',
+      name: trimmedName.slice(0, 100),
+      description: data.description?.trim().slice(0, 500) || '',
       coverType: data.coverType || 'collage',
       customCoverMovieId: data.customCoverMovieId || null,
       sortMode: data.sortMode || 'custom',
@@ -42,9 +47,24 @@ export class CollectionRepository {
   }
 
   static async update(collection: Collection): Promise<void> {
+    const trimmedName = collection.name ? collection.name.trim() : '';
+    if (!trimmedName) {
+      throw new Error('Collection name cannot be empty');
+    }
+    collection.name = trimmedName.slice(0, 100);
+    if (collection.description) {
+      collection.description = collection.description.trim().slice(0, 500);
+    }
+
     const db = await getDB();
     collection.updatedAt = new Date().toISOString();
     await db.put('collections', collection);
+  }
+
+  static async getCollectionsForMovie(movieId: number): Promise<string[]> {
+    const db = await getDB();
+    const items = await db.getAllFromIndex('collectionMovies', 'by-movie', movieId);
+    return items.map((item) => item.collectionId);
   }
 
   static async delete(id: string): Promise<void> {

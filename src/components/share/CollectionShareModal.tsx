@@ -16,7 +16,6 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
   collectionData,
 }) => {
   const [shareUrl, setShareUrl] = useState<string>('');
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
 
   useEffect(() => {
@@ -25,8 +24,6 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
     const payload = ShareService.buildCollectionSharePayload(collectionData);
     const url = ShareService.createCollectionShareUrl(payload);
     setShareUrl(url);
-
-    ShareService.generateQRCode(url).then(setQrCodeUrl);
   }, [isOpen, collectionData]);
 
   const handleShare = async () => {
@@ -55,32 +52,32 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Share Collection" maxWidth="max-w-xl">
       <div className="flex flex-col items-center text-center">
         {/* Collection Card Preview */}
-        <div className="w-full max-w-sm rounded-2xl bg-cinema-surface border border-cinema-gold/30 p-5 shadow-2xl relative overflow-hidden mb-6 text-left">
+        <div className="w-full max-w-sm rounded-2xl bg-[#131319] border border-[#E0AD52]/30 p-5 shadow-2xl relative overflow-hidden mb-6 text-left">
           {collectionData.progress.isComplete && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cinema-gold/20 border border-cinema-gold/40 text-cinema-gold text-xs font-semibold w-fit mb-3">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0AD52]/20 border border-[#E0AD52]/40 text-[#E0AD52] text-xs font-semibold w-fit mb-3">
               <CheckCircle2 size={14} />
               <span>100% Completed</span>
             </div>
           )}
 
-          <h3 className="font-serif font-bold text-xl text-cinema-white mb-1">
+          <h3 className="font-serif font-bold text-xl text-[#F5F3EB] mb-1">
             {collectionData.collection.name}
           </h3>
           {collectionData.collection.description && (
-            <p className="text-xs text-cinema-subtle mb-3 line-clamp-2">
+            <p className="text-xs text-[#9E9DA5] mb-3 line-clamp-2">
               {collectionData.collection.description}
             </p>
           )}
 
           {/* Progress summary */}
           <div className="mb-4">
-            <div className="flex justify-between text-xs text-cinema-silver mb-1">
+            <div className="flex justify-between text-xs text-[#9E9DA5] mb-1">
               <span>{collectionData.progress.watched} of {collectionData.progress.total} watched</span>
-              <span className="font-semibold text-cinema-gold">{collectionData.progress.percent}%</span>
+              <span className="font-semibold text-[#E0AD52]">{collectionData.progress.percent}%</span>
             </div>
-            <div className="w-full h-1.5 bg-cinema-charcoal rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
               <div
-                className="h-full bg-gradient-to-r from-cinema-amber to-cinema-gold rounded-full"
+                className="h-full bg-gradient-to-r from-[#D99C33] to-[#E0AD52] rounded-full"
                 style={{ width: `${collectionData.progress.percent}%` }}
               />
             </div>
@@ -100,27 +97,17 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
             </div>
           )}
 
-          <div className="text-[10px] tracking-wider text-cinema-subtle uppercase border-t border-white/5 pt-2 flex justify-between">
+          <div className="text-[10px] tracking-wider text-[#9E9DA5] uppercase border-t border-white/5 pt-2 flex justify-between">
             <span className="font-bold text-[#E0AD52]">MyCinema Collection</span>
-            <span>Curated Library</span>
+            <span>Curated Journey</span>
           </div>
         </div>
 
-        {/* QR Code */}
-        {qrCodeUrl && (
-          <div className="flex flex-col items-center mb-6">
-            <div className="p-2 rounded-xl bg-cinema-black border border-cinema-gold/30 shadow-lg">
-              <img src={qrCodeUrl} alt="QR Code" className="w-28 h-28 rounded" />
-            </div>
-            <span className="text-[11px] text-cinema-subtle mt-1.5">Scan to view collection</span>
-          </div>
-        )}
-
-        {/* Actions */}
+        {/* Actions (Native Web Share + Copy Link Fallback — NO QR Code per Section 41) */}
         <div className="w-full max-w-sm space-y-2.5">
           <button
             onClick={handleShare}
-            className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold"
+            className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer"
           >
             <Share2 size={16} />
             <span>Share Collection</span>
@@ -128,9 +115,9 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
 
           <button
             onClick={handleCopy}
-            className="cinema-button-secondary w-full py-2.5 flex items-center justify-center gap-2 text-xs"
+            className="cinema-button-secondary w-full py-2.5 flex items-center justify-center gap-2 text-xs cursor-pointer"
           >
-            {copied ? <Check size={14} className="text-cinema-gold" /> : <Copy size={14} />}
+            {copied ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
             <span>{copied ? 'Link Copied to Clipboard!' : 'Copy Share Link'}</span>
           </button>
         </div>

@@ -22,6 +22,7 @@ import {
   FolderPlus,
   Play,
   Heart,
+  Layers,
 } from 'lucide-react';
 
 interface MovieDetailProps {
@@ -39,6 +40,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     setReviewAndNotes,
     removeFromLibrary,
     openMovieDetail,
+    openCollectionDetail,
     showToast,
     dataVersion,
   } = useCinema();
@@ -48,6 +50,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const [credits, setCredits] = useState<{ cast: any[]; director?: string }>({ cast: [] });
   const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [memberCollections, setMemberCollections] = useState<Collection[]>([]);
 
   // Editing state for personal review & notes
   const [notes, setNotes] = useState('');
@@ -106,6 +109,12 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
       CollectionRepository.getAll().then((cols) => {
         if (isMounted) setCollections(cols);
       });
+
+      CollectionRepository.getCollectionsForMovie(movieId).then(async (colIds) => {
+        if (!isMounted) return;
+        const colList = await Promise.all(colIds.map((id) => CollectionRepository.getById(id)));
+        setMemberCollections(colList.filter((c): c is Collection => Boolean(c)));
+      });
     }
 
     loadMovie();
@@ -145,6 +154,10 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     await CollectionRepository.addMovieToCollection(collectionId, movie.id);
     setIsCollectionPickerOpen(false);
     showToast('Movie added to collection');
+    // Refresh member collections
+    const colIds = await CollectionRepository.getCollectionsForMovie(movie.id);
+    const colList = await Promise.all(colIds.map((id) => CollectionRepository.getById(id)));
+    setMemberCollections(colList.filter((c): c is Collection => Boolean(c)));
   };
 
   return (
@@ -279,6 +292,29 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
               </div>
             )}
 
+            {/* In Collections Membership Chips (Section 31 & 33) */}
+            {memberCollections.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-[#9E9DA5] mr-1">
+                  In Collections:
+                </span>
+                {memberCollections.map((col) => (
+                  <button
+                    key={col.id}
+                    onClick={() => {
+                      onClose();
+                      openCollectionDetail(col.id);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#171924] border border-white/10 hover:border-[#E0AD52]/50 text-[11px] text-[#F5F3EB] hover:text-[#E0AD52] transition-colors cursor-pointer flex items-center gap-1.5"
+                    title={`View ${col.name} collection`}
+                  >
+                    <Layers size={11} className="text-[#E0AD52]" />
+                    <span>{col.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Desktop Action Buttons Row */}
             <div className="hidden sm:flex flex-wrap items-center gap-3 pt-2">
               <button
@@ -346,16 +382,30 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                   <p className="text-xs text-[#5C5B64]">No collections created yet.</p>
                 ) : (
                   <div className="max-h-40 overflow-y-auto space-y-1">
-                    {collections.map((col) => (
-                      <button
-                        key={col.id}
-                        onClick={() => handleAddToCollection(col.id)}
-                        className="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#222534] text-xs text-[#9E9DA5] hover:text-[#F5F2F0] flex items-center justify-between cursor-pointer border-none bg-transparent"
-                      >
-                        <span>{col.name}</span>
-                        <Plus size={13} className="text-[#E0AD52]" />
-                      </button>
-                    ))}
+                    {collections.map((col) => {
+                      const isAlreadyInCol = memberCollections.some((mc) => mc.id === col.id);
+                      return (
+                        <button
+                          key={col.id}
+                          onClick={() => {
+                            if (!isAlreadyInCol) handleAddToCollection(col.id);
+                          }}
+                          disabled={isAlreadyInCol}
+                          className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between border-none transition-colors ${
+                            isAlreadyInCol
+                              ? 'bg-transparent text-[#63626B] cursor-default'
+                              : 'hover:bg-[#222534] text-[#9E9DA5] hover:text-[#F5F2F0] cursor-pointer bg-transparent'
+                          }`}
+                        >
+                          <span className="truncate pr-2">{col.name}</span>
+                          {isAlreadyInCol ? (
+                            <span className="text-[10px] text-[#E0AD52] flex-shrink-0">In Collection</span>
+                          ) : (
+                            <Plus size={13} className="text-[#E0AD52] flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

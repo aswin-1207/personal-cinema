@@ -31,9 +31,9 @@ export const CollectionsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Header matching Figma Sagas & Collections */}
+      {/* Header matching Figma Collections */}
       <CinemaHeader
-        badge="SAGAS & CURATION"
+        badge="COLLECTIONS"
         title="Collections"
         subtitle="Group filmographies, director retrospectives, and themed universes."
         action={

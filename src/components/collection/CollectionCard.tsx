@@ -125,7 +125,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-[#5C5B64] gap-2">
             <Layers size={32} />
-            <span className="text-xs font-serif">Curated Saga</span>
+            <span className="text-xs font-serif">Collection</span>
           </div>
         )}
 
