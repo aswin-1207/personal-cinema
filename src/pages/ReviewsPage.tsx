@@ -21,7 +21,7 @@ export const ReviewsPage: React.FC = () => {
   const [items, setItems] = useState<MovieWithUserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'reviewed' | 'rated' | 'favorites' | 'spoilers'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'reviewed' | 'rated' | 'favorites'>('all');
   const [sortBy, setSortBy] = useState<'recent_reviewed' | 'recent_watched' | 'highest_rated' | 'lowest_rated' | 'title'>('recent_reviewed');
 
   // Modal states
@@ -60,8 +60,6 @@ export const ReviewsPage: React.FC = () => {
       result = result.filter((it) => typeof it.userData?.personalRating === 'number');
     } else if (activeFilter === 'favorites') {
       result = result.filter((it) => it.userData?.isFavorite);
-    } else if (activeFilter === 'spoilers') {
-      result = result.filter((it) => it.userData?.hasSpoilers);
     }
 
     // Search by title OR review text
@@ -116,7 +114,6 @@ export const ReviewsPage: React.FC = () => {
       reviewed: items.filter((it) => Boolean(it.userData?.review && it.userData.review.trim().length > 0)).length,
       rated: items.filter((it) => typeof it.userData?.personalRating === 'number').length,
       favorites: items.filter((it) => it.userData?.isFavorite).length,
-      spoilers: items.filter((it) => it.userData?.hasSpoilers).length,
     };
   }, [items]);
 
@@ -203,7 +200,6 @@ export const ReviewsPage: React.FC = () => {
           { id: 'reviewed', label: 'Written Reviews', count: counts.reviewed },
           { id: 'rated', label: 'Rated Films', count: counts.rated },
           { id: 'favorites', label: 'Favorites', count: counts.favorites },
-          { id: 'spoilers', label: 'Spoilers', count: counts.spoilers },
         ].map((tab) => {
           const isActive = activeFilter === tab.id;
           return (

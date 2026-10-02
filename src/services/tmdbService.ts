@@ -2,7 +2,7 @@ import { Movie, Genre } from '../types/movie';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { PreferencesRepository } from '../db/repositories/preferencesRepository';
 import { getDB, TMDBCacheEntry } from '../db/database';
-import { CURATED_LANDMARKS } from './curatedLandmarks';
+import { SEED_MOVIES } from '../data/seedCatalog';
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -167,8 +167,6 @@ export class TMDBService {
     }
   }
 
-  private static directTMDBFailed = false;
-
   /**
    * Core network fetch with retry, backoff, and deduplication
    */
@@ -194,52 +192,53 @@ export class TMDBService {
       directUrl = `${TMDB_BASE_URL}${endpoint}?${directParams.toString()}`;
     }
 
-    // Fast-path: On Vercel / production or if direct TMDB has previously encountered an ISP block/DNS hang,
-    // hit the /api/tmdb proxy immediately without wasting seconds on a dead DNS connection.
-    const isVercelOrProduction = typeof window !== 'undefined' && (
-      window.location.hostname.includes('vercel.app') ||
-      window.location.protocol === 'https:'
-    );
-
-    if ((isVercelOrProduction || this.directTMDBFailed) && typeof window !== 'undefined') {
+    // Priority Route: Browser environment uses /api/tmdb serverless proxy with 9000ms timeout
+    // This bypasses regional ISP DNS blocking and CORS issues reliably across both local dev and production.
+    if (typeof window !== 'undefined') {
       try {
         const proxyParams = new URLSearchParams(params);
         proxyParams.set('endpoint', endpoint);
         const proxyUrl = `/api/tmdb?${proxyParams.toString()}`;
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 9000);
         const proxyHeaders: Record<string, string> = { Accept: 'application/json' };
         if (auth.value) proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
 
+        const onAbort = () => controller.abort();
+        if (signal) signal.addEventListener('abort', onAbort);
+
         const proxyRes = await fetch(proxyUrl, { headers: proxyHeaders, signal: controller.signal });
         clearTimeout(timeoutId);
+        if (signal) signal.removeEventListener('abort', onAbort);
 
         if (proxyRes.ok) {
           const data = await proxyRes.json();
           return data as T;
         }
-      } catch {
-        // Fall back to attempting direct fetch below
+      } catch (err: any) {
+        if (signal?.aborted) {
+          throw new TMDBError('Request aborted by caller', 'NETWORK_ERROR');
+        }
+        // Fall back to direct fetch attempt
       }
     }
 
-    // Attempt direct TMDB with controlled retries (Section 15)
-    let maxAttempts = this.directTMDBFailed ? 1 : 2;
+    // Secondary Route: Direct TMDB with controlled retries
+    let maxAttempts = 2;
     let attempt = 0;
     let lastError: TMDBError | null = null;
 
     while (attempt < maxAttempts) {
       attempt++;
       if (signal?.aborted) {
-        throw new TMDBError('Request aborted', 'NETWORK_ERROR');
+        throw new TMDBError('Request aborted by caller', 'NETWORK_ERROR');
       }
 
       try {
         const timeoutController = new AbortController();
-        const timeoutId = setTimeout(() => timeoutController.abort(), 2500);
+        const timeoutId = setTimeout(() => timeoutController.abort(), 3500);
 
-        // Combine caller signal and timeout signal
         const onAbort = () => timeoutController.abort();
         if (signal) signal.addEventListener('abort', onAbort);
 
@@ -248,7 +247,6 @@ export class TMDBService {
         if (signal) signal.removeEventListener('abort', onAbort);
 
         if (res.ok) {
-          this.directTMDBFailed = false; // Direct connection verified working
           const data = await res.json();
           return data as T;
         }
@@ -283,7 +281,6 @@ export class TMDBService {
         if (signal?.aborted) {
           throw new TMDBError('Request aborted by caller', 'NETWORK_ERROR');
         }
-        this.directTMDBFailed = true; // Mark direct route failed to activate proxy
         lastError =
           err instanceof TMDBError
             ? err
@@ -292,30 +289,6 @@ export class TMDBService {
         if (attempt < maxAttempts) {
           await new Promise((r) => setTimeout(r, attempt * 400));
         }
-      }
-    }
-
-    // Stage 2: Fallback to /api/tmdb serverless proxy (bypasses regional ISP blocks)
-    if (typeof window !== 'undefined') {
-      try {
-        const proxyParams = new URLSearchParams(params);
-        proxyParams.set('endpoint', endpoint);
-        const proxyUrl = `/api/tmdb?${proxyParams.toString()}`;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const proxyHeaders: Record<string, string> = { Accept: 'application/json' };
-        if (auth.value) proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
-
-        const proxyRes = await fetch(proxyUrl, { headers: proxyHeaders, signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (proxyRes.ok) {
-          const data = await proxyRes.json();
-          return data as T;
-        }
-      } catch {
-        // Fallback failed
       }
     }
 
@@ -439,29 +412,10 @@ export class TMDBService {
     };
     if (year) params.year = year.toString();
 
-    try {
-      const data = await this.fetchWithCache<any>('/search/movie', params, { signal });
-      const rawResults = data.results || [];
-      const results = rawResults.map((raw: any) => this.mapRawToMovie(raw));
-      return { results, totalPages: data.total_pages || 1 };
-    } catch (err: any) {
-      if (err instanceof TMDBError && err.code === 'NETWORK_ERROR' && err.message.includes('aborted')) {
-        throw err;
-      }
-      // Check local vault if offline
-      const allLocal = await MovieRepository.getAll();
-      const lower = query.toLowerCase();
-      const localMatches = allLocal.filter((m) => m.title.toLowerCase().includes(lower));
-      const landmarkMatches = CURATED_LANDMARKS.filter((m) => m.title.toLowerCase().includes(lower));
-
-      const mergedMap = new Map<number, Movie>();
-      localMatches.forEach((m) => mergedMap.set(m.id, m));
-      landmarkMatches.forEach((m) => {
-        if (!mergedMap.has(m.id)) mergedMap.set(m.id, m);
-      });
-
-      return { results: Array.from(mergedMap.values()), totalPages: 1 };
-    }
+    const data = await this.fetchWithCache<any>('/search/movie', params, { signal });
+    const rawResults = data.results || [];
+    const results = rawResults.map((raw: any) => this.mapRawToMovie(raw));
+    return { results, totalPages: data.total_pages || 1 };
   }
 
   /**
@@ -482,8 +436,8 @@ export class TMDBService {
       return movie;
     } catch (err) {
       if (local) return local;
-      const landmark = CURATED_LANDMARKS.find((m) => m.id === tmdbId);
-      if (landmark) return landmark;
+      const seed = SEED_MOVIES.find((m) => m.id === tmdbId);
+      if (seed) return seed;
       throw err;
     }
   }
@@ -497,7 +451,7 @@ export class TMDBService {
       const data = await this.fetchWithCache<any>(`/movie/${tmdbId}/similar`);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
     } catch {
-      return CURATED_LANDMARKS.filter((m) => m.id !== tmdbId).slice(0, 8);
+      return SEED_MOVIES.filter((m) => m.id !== tmdbId).slice(0, 8);
     }
   }
 
@@ -534,7 +488,7 @@ export class TMDBService {
     } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
-      return CURATED_LANDMARKS.slice(0, 16);
+      return SEED_MOVIES.filter((m) => m.seedCategory === 'trending').slice(0, 20);
     }
   }
 
@@ -552,7 +506,7 @@ export class TMDBService {
     } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
-      return CURATED_LANDMARKS.slice(8, 24);
+      return SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').slice(0, 20);
     }
   }
 
@@ -601,12 +555,12 @@ export class TMDBService {
     } catch {
       if (params.genreIds && params.genreIds.length > 0) {
         const targetIds = new Set(params.genreIds);
-        const matches = CURATED_LANDMARKS.filter((m) =>
+        const matches = SEED_MOVIES.filter((m) =>
           m.genres.some((g) => targetIds.has(g.id))
         );
-        return matches.length > 0 ? matches : CURATED_LANDMARKS.slice(0, 8);
+        return matches.length > 0 ? matches : SEED_MOVIES.slice(0, 8);
       }
-      return CURATED_LANDMARKS.slice(0, 10);
+      return SEED_MOVIES.slice(0, 10);
     }
   }
 

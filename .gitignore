@@ -35,3 +35,4 @@ scripts/figma*
 scripts/inspect_figma.mjs
 scripts/export_figma_images.mjs
 public/figma_exports/
+.tmp_edge_profile/

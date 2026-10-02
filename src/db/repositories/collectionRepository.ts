@@ -235,19 +235,21 @@ export class CollectionRepository {
           collection.completedAt = new Date().toISOString();
           changed = true;
         }
-        if (collection.finalMovieId !== finalMovieId) {
+        if ((collection.finalMovieId ?? null) !== finalMovieId) {
           collection.finalMovieId = finalMovieId;
           changed = true;
         }
       } else {
-        if (collection.completedAt !== null || collection.finalMovieId !== null) {
+        if (collection.completedAt != null || collection.finalMovieId != null) {
           collection.completedAt = null;
           collection.finalMovieId = null;
           changed = true;
         }
       }
       if (changed) {
-        await this.update(collection);
+        // Direct write without altering collection.updatedAt to avoid triggering infinite re-render loops
+        const db = await getDB();
+        await db.put('collections', collection);
       }
     }
 

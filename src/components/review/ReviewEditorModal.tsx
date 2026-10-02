@@ -5,7 +5,7 @@ import { TMDBService } from '../../services/tmdbService';
 import { RatingControl } from '../movie/RatingControl';
 import { useCinema } from '../../context/CinemaContext';
 import { ReviewRepository } from '../../db/repositories/reviewRepository';
-import { AlertTriangle, Trash2, Save, RotateCcw } from 'lucide-react';
+import { Trash2, Save, RotateCcw } from 'lucide-react';
 
 interface ReviewEditorModalProps {
   isOpen: boolean;
@@ -27,7 +27,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   const [rating, setRating] = useState<number | null>(null);
   const [reviewTitle, setReviewTitle] = useState<string>('');
   const [reviewText, setReviewText] = useState<string>('');
-  const [hasSpoilers, setHasSpoilers] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasDraftRestored, setHasDraftRestored] = useState<boolean>(false);
 
@@ -45,7 +44,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         setReviewTitle(parsed.title || '');
         setReviewText(parsed.text || '');
         setRating(typeof parsed.rating === 'number' ? parsed.rating : initialUserData?.personalRating ?? null);
-        setHasSpoilers(Boolean(parsed.hasSpoilers));
         setHasDraftRestored(true);
         return;
       } catch {
@@ -57,7 +55,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     setRating(initialUserData?.personalRating ?? null);
     setReviewTitle(initialUserData?.reviewTitle || '');
     setReviewText(initialUserData?.review || '');
-    setHasSpoilers(Boolean(initialUserData?.hasSpoilers));
     setHasDraftRestored(false);
   }, [isOpen, movie.id, initialUserData]);
 
@@ -71,7 +68,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           title: reviewTitle,
           text,
           rating,
-          hasSpoilers,
           timestamp: Date.now(),
         })
       );
@@ -87,7 +83,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           title,
           text: reviewText,
           rating,
-          hasSpoilers,
           timestamp: Date.now(),
         })
       );
@@ -99,7 +94,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     setReviewTitle(initialUserData?.reviewTitle || '');
     setReviewText(initialUserData?.review || '');
     setRating(initialUserData?.personalRating ?? null);
-    setHasSpoilers(Boolean(initialUserData?.hasSpoilers));
     setHasDraftRestored(false);
     showToast('Draft discarded. Restored original record.');
   };
@@ -113,7 +107,6 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         rating,
         reviewTitle: reviewTitle.trim() || undefined,
         reviewText: reviewText.trim() || undefined,
-        hasSpoilers,
       });
 
       // Clear draft on successful save
@@ -251,30 +244,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           />
         </div>
 
-        {/* Spoiler Protection Toggle */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-[#0E0E14] border border-white/[0.05]">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle size={15} className="text-amber-400" />
-            <div>
-              <span className="text-xs font-semibold text-[#F5F3EB] block">
-                Contains Spoilers
-              </span>
-              <span className="text-[11px] text-[#9E9DA5]">
-                Blur text by default in journal & share views
-              </span>
-            </div>
-          </div>
 
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hasSpoilers}
-              onChange={(e) => setHasSpoilers(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E0AD52]"></div>
-          </label>
-        </div>
 
         {/* Action Controls */}
         <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">

@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label={title || 'Dialog'}
-        className={`w-full bg-[#131319] border border-white/[0.1] shadow-2xl overflow-hidden flex flex-col rounded-t-[24px] sm:rounded-2xl max-h-[86dvh] sm:max-h-[88dvh] animate-cinema-sheet sm:animate-cinema-scale pb-[calc(env(safe-area-inset-bottom,0px)+8px)] sm:pb-0 ${
+        className={`w-full bg-[#131319] border border-white/[0.1] shadow-2xl overflow-hidden flex flex-col rounded-t-[24px] sm:rounded-2xl max-h-[88dvh] sm:max-h-[88dvh] animate-cinema-sheet sm:animate-cinema-scale pb-[calc(env(safe-area-inset-bottom,0px)+8px)] sm:pb-0 ${
           typeof maxWidth === 'string' && maxWidth.startsWith('max-w-') ? maxWidth : ''
         }`}
         style={{

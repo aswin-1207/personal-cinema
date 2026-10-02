@@ -12,7 +12,7 @@ import { CollectionCard } from '../components/collection/CollectionCard';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import { CinemaButton } from '../components/common/CinemaButton';
-import { CURATED_LANDMARKS } from '../services/curatedLandmarks';
+import { SEED_MOVIES } from '../data/seedCatalog';
 import { atmosphereService } from '../services/atmosphereService';
 import {
   Sparkles,
@@ -120,8 +120,8 @@ export const Home: React.FC = () => {
           chosenHero = allLibrary[0];
         }
 
-        // Fallback hero if user library is empty: use first curated landmark immediately
-        const initialHero = chosenHero || (CURATED_LANDMARKS.length > 0 ? { movie: CURATED_LANDMARKS[0] } : null);
+        // Fallback hero if user library is empty: use first seed movie immediately
+        const initialHero = chosenHero || (SEED_MOVIES.length > 0 ? { movie: SEED_MOVIES[0] } : null);
 
         // Render local state immediately (Section 21: TMDB must NOT block local sections)
         if (isMounted) {
@@ -131,7 +131,7 @@ export const Home: React.FC = () => {
           setRecentlyWatched(watchedListItems);
           setCollections(allCollections);
           setActiveJourney(foundJourney);
-          setRecommendations(CURATED_LANDMARKS.slice(1, 9));
+          setRecommendations(SEED_MOVIES.slice(1, 9));
 
           if (initialHero?.movie) {
             setAmbientColor(atmosphereService.getArtworkAtmosphere(initialHero.movie.backdropPath || initialHero.movie.posterPath));
@@ -190,7 +190,7 @@ export const Home: React.FC = () => {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-  const displayName = preferences.displayName?.trim() || 'Aswin';
+  const displayName = preferences.displayName?.trim();
 
   return (
     <div className="pb-4 space-y-6 sm:space-y-8 select-none">
@@ -200,7 +200,7 @@ export const Home: React.FC = () => {
           MYCINEMA
         </div>
         <h1 className="font-serif font-black text-xl sm:text-2xl md:text-3xl text-[#F5F3EB] tracking-tight">
-          Good {greeting}, {displayName}.
+          Good {greeting}{displayName ? `, ${displayName}` : ''}.
         </h1>
         <p className="text-xs sm:text-sm text-[#9E9DA5]">
           What would you like to watch?

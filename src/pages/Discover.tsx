@@ -401,6 +401,8 @@ export const Discover: React.FC = () => {
               <p className="text-xs text-[#9E9DA5] mt-0.5">
                 {isSearching
                   ? 'Searching curated local vault & TMDB global archive...'
+                  : searchError && searchResults.length === 0
+                  ? 'Connection error reaching movie archive'
                   : `${searchResults.length} films found ${
                       localMatchCount > 0
                         ? `(${localMatchCount} local vault · ${Math.max(0, searchResults.length - localMatchCount)} TMDB)`
@@ -445,14 +447,25 @@ export const Discover: React.FC = () => {
           {isSearching && searchResults.length === 0 ? (
             <LoadingState count={8} layout="grid" />
           ) : searchResults.length === 0 ? (
-            <EmptyState
-              icon={Film}
-              badge="SEARCH ARCHIVE"
-              title="No Films Found"
-              description={`We couldn't locate any movies matching "${query}". Try searching by title, franchise, or character.`}
-              actionText="Reset Search"
-              onAction={() => setQuery('')}
-            />
+            searchError ? (
+              <EmptyState
+                icon={Film}
+                badge="CONNECTION NOTICE"
+                title="Unable to Reach Movie Archive"
+                description={`We could not connect to the global movie archive to search for "${query}". Please verify your network connection or tap retry.`}
+                actionText="Retry Search"
+                onAction={() => setDebouncedQuery(query.trim())}
+              />
+            ) : (
+              <EmptyState
+                icon={Film}
+                badge="SEARCH ARCHIVE"
+                title="No Films Found"
+                description={`We couldn't locate any movies matching "${query}". Try searching by title, franchise, or character.`}
+                actionText="Reset Search"
+                onAction={() => setQuery('')}
+              />
+            )
           ) : (
             <>
               <MovieGrid>

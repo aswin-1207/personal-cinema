@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MovieWithUserData } from '../../types/movie';
 import { TMDBService } from '../../services/tmdbService';
-import { Star, Heart, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Star, Heart, Clock, ChevronRight } from 'lucide-react';
 
 interface ReviewCardProps {
   item: MovieWithUserData;
@@ -11,7 +11,6 @@ interface ReviewCardProps {
 
 export const ReviewCard: React.FC<ReviewCardProps> = ({ item, onOpenDetail, onEdit }) => {
   const { movie, userData } = item;
-  const [revealSpoiler, setRevealSpoiler] = useState(false);
 
   const posterUrl = TMDBService.getPosterUrl(movie.posterPath, 'w342');
   const releaseYear = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
@@ -96,25 +95,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ item, onOpenDetail, onEd
                 </h4>
               )}
 
-              {/* Spoiler Guard */}
-              {userData?.hasSpoilers && !revealSpoiler ? (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setRevealSpoiler(true);
-                  }}
-                  className="px-2.5 py-1.5 rounded-lg bg-[#09090B]/80 border border-amber-500/30 flex items-center gap-2 cursor-pointer hover:bg-[#09090B]"
-                >
-                  <AlertTriangle size={12} className="text-amber-400 flex-shrink-0" />
-                  <span className="text-[11px] text-amber-200/90 font-medium truncate">
-                    Review contains spoilers • Click to reveal
-                  </span>
-                </div>
-              ) : (
-                <p className="text-xs text-[#F5F3EB]/80 leading-relaxed line-clamp-2 sm:line-clamp-3">
-                  {userData?.review}
-                </p>
-              )}
+              <p className="text-xs text-[#F5F3EB]/80 leading-relaxed line-clamp-2 sm:line-clamp-3">
+                {userData?.review}
+              </p>
             </div>
           ) : (
             <div className="mt-2 text-xs text-[#9E9DA5]/70 italic flex items-center gap-1.5">

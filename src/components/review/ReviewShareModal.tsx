@@ -4,7 +4,7 @@ import { MovieWithUserData } from '../../types/movie';
 import { TMDBService } from '../../services/tmdbService';
 import { ShareService } from '../../services/shareService';
 import { useCinema } from '../../context/CinemaContext';
-import { Share2, Copy, Check, Star, AlertTriangle } from 'lucide-react';
+import { Share2, Copy, Check, Star } from 'lucide-react';
 
 interface ReviewShareModalProps {
   isOpen: boolean;
@@ -98,13 +98,6 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
             <p className="text-xs text-[#F5F3EB]/85 leading-relaxed line-clamp-4 italic border-l-2 border-[#E0AD52]/40 pl-3">
               "{review}"
             </p>
-          )}
-
-          {userData?.hasSpoilers && (
-            <div className="flex items-center gap-1.5 text-[11px] text-amber-400 font-medium pt-1">
-              <AlertTriangle size={12} />
-              <span>Note: Contains spoilers</span>
-            </div>
           )}
 
           <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[10px] text-[#63626B] font-mono">

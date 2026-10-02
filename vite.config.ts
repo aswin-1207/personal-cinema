@@ -22,6 +22,13 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/api/tmdb': {
+        target: 'https://personal-cinema-azure.vercel.app',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   }
 });

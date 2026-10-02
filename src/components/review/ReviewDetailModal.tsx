@@ -13,9 +13,6 @@ import {
   Trash2,
   Share2,
   Film,
-  AlertTriangle,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 
 interface ReviewDetailModalProps {
@@ -37,7 +34,6 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
 }) => {
   const { movie, userData } = item;
   const { showToast, notifyDataChanged, openMovieDetail } = useCinema();
-  const [revealSpoilers, setRevealSpoilers] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   if (!isOpen) return null;
@@ -156,41 +152,10 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
           </div>
         )}
 
-        {/* Review Content Body with Spoiler Protection */}
+        {/* Review Content Body */}
         {hasReview ? (
-          <div className="relative space-y-3">
-            {userData?.hasSpoilers && (
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#09090B] border border-amber-500/30 text-xs">
-                <div className="flex items-center gap-2 text-amber-300">
-                  <AlertTriangle size={14} />
-                  <span className="font-semibold">Review contains spoilers</span>
-                </div>
-                <button
-                  onClick={() => setRevealSpoilers(!revealSpoilers)}
-                  className="flex items-center gap-1 text-[11px] text-[#E0AD52] hover:underline bg-transparent border-none p-0 cursor-pointer"
-                >
-                  {revealSpoilers ? (
-                    <>
-                      <EyeOff size={12} />
-                      <span>Hide spoilers</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye size={12} />
-                      <span>Reveal text</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            <div
-              className={`p-4 sm:p-5 rounded-2xl bg-[#0E0E14] border border-white/[0.06] text-xs sm:text-sm text-[#F5F3EB]/90 leading-relaxed font-sans whitespace-pre-wrap ${
-                userData?.hasSpoilers && !revealSpoilers ? 'filter blur-md select-none transition-all' : ''
-              }`}
-            >
-              {userData?.review}
-            </div>
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#0E0E14] border border-white/[0.06] text-xs sm:text-sm text-[#F5F3EB]/90 leading-relaxed font-sans whitespace-pre-wrap">
+            {userData?.review}
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-[#0E0E14] border border-white/[0.05] text-xs text-[#9E9DA5] italic">
