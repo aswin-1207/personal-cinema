@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 
@@ -21,7 +20,7 @@ export class ExportService {
       'Watched At': item.userData?.watchedAt || '',
     }));
 
-    this.downloadFormattedData(rows, `PersonalCinema_Library`, format);
+    await this.downloadFormattedData(rows, `PersonalCinema_Library`, format);
   }
 
   /**
@@ -42,7 +41,7 @@ export class ExportService {
       'Rewatch Count': item.userData?.rewatchCount || 0,
     }));
 
-    this.downloadFormattedData(rows, `PersonalCinema_WatchHistory`, format);
+    await this.downloadFormattedData(rows, `PersonalCinema_WatchHistory`, format);
   }
 
   /**
@@ -61,7 +60,7 @@ export class ExportService {
       'Watched At': item.userData?.watchedAt || '',
     }));
 
-    this.downloadFormattedData(rows, `PersonalCinema_Reviews`, format);
+    await this.downloadFormattedData(rows, `PersonalCinema_Reviews`, format);
   }
 
   /**
@@ -81,10 +80,10 @@ export class ExportService {
     }));
 
     const cleanName = data.collection.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-    this.downloadFormattedData(rows, `Collection_${cleanName}`, format);
+    await this.downloadFormattedData(rows, `Collection_${cleanName}`, format);
   }
 
-  private static downloadFormattedData(rows: any[], baseFilename: string, format: 'csv' | 'json') {
+  private static async downloadFormattedData(rows: any[], baseFilename: string, format: 'csv' | 'json') {
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `${baseFilename}_${dateStr}.${format}`;
 
@@ -93,6 +92,7 @@ export class ExportService {
       const blob = new Blob([jsonStr], { type: 'application/json' });
       this.triggerDownload(blob, filename);
     } else {
+      const XLSX = await import('xlsx');
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
       const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });

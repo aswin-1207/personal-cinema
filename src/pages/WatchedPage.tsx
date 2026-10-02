@@ -16,9 +16,8 @@ export const WatchedPage: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    UserMovieRepository.getAllWithMovies().then((items) => {
+    UserMovieRepository.getWatchedWithMovies().then((watchedItems) => {
       if (!isMounted) return;
-      const watchedItems = items.filter((m) => m.userData?.status === 'watched');
       setMovies(watchedItems);
       setLoading(false);
     });

@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { TMDBService } from './tmdbService';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
@@ -139,6 +138,7 @@ export class ImportService {
    */
   static async getWorkbookSheets(file: File): Promise<WorkbookSheetInfo[]> {
     const buffer = await file.arrayBuffer();
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
 
     return workbook.SheetNames.map((name) => {
@@ -160,6 +160,7 @@ export class ImportService {
    */
   static async parseWorkbookSheet(file: File, sheetName?: string): Promise<string[][]> {
     const buffer = await file.arrayBuffer();
+    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
     const targetName = sheetName || workbook.SheetNames[0];
     const sheet = workbook.Sheets[targetName];

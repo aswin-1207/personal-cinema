@@ -7,6 +7,19 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-icons': ['lucide-react'],
+          'vendor-idb': ['idb'],
+          'vendor-xlsx': ['xlsx'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   server: {
     port: 3000,
     host: true

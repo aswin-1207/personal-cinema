@@ -197,6 +197,7 @@ export class CollectionRepository {
     }
 
     const movieIds = colMovies.map((cm) => cm.movieId);
+    const userMovieMap = await UserMovieRepository.getByMovieIds(movieIds);
     let watched = 0;
     let watching = 0;
     let unwatched = 0;
@@ -204,7 +205,7 @@ export class CollectionRepository {
     let finalMovieId: number | null = null;
 
     for (const mId of movieIds) {
-      const userMovie = await UserMovieRepository.getByMovieId(mId);
+      const userMovie = userMovieMap.get(mId);
       if (userMovie?.status === 'watched') {
         watched++;
         const time = userMovie.watchedAt
@@ -262,22 +263,23 @@ export class CollectionRepository {
 
     const colMovies = await this.getCollectionMovies(collectionId);
     const movieIds = colMovies.map((cm) => cm.movieId);
-    const movies = await MovieRepository.getByIds(movieIds);
+    const [movies, userMovieMap] = await Promise.all([
+      MovieRepository.getByIds(movieIds),
+      UserMovieRepository.getByMovieIds(movieIds),
+    ]);
     const movieMap = new Map(movies.map((m) => [m.id, m]));
 
     // Build movie items with user data
-    const movieItems = await Promise.all(
-      colMovies.map(async (cm) => {
-        const movie = movieMap.get(cm.movieId);
-        if (!movie) return null;
-        const userData = await UserMovieRepository.getByMovieId(cm.movieId);
-        return {
-          movie,
-          userData,
-          position: cm.position,
-        };
-      })
-    );
+    const movieItems = colMovies.map((cm) => {
+      const movie = movieMap.get(cm.movieId);
+      if (!movie) return null;
+      const userData = userMovieMap.get(cm.movieId);
+      return {
+        movie,
+        userData,
+        position: cm.position,
+      };
+    });
 
     const validMovies = movieItems.filter((item): item is NonNullable<typeof item> => item !== null);
 

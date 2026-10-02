@@ -17,11 +17,8 @@ export const WatchlistPage: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    UserMovieRepository.getAllWithMovies().then((items) => {
+    UserMovieRepository.getWatchlistWithMovies().then((watchlistItems) => {
       if (!isMounted) return;
-      const watchlistItems = items.filter(
-        (m) => m.userData?.status === 'want_to_watch' || m.userData?.status === 'watching'
-      );
       setMovies(watchlistItems);
       setLoading(false);
     });

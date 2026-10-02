@@ -8,16 +8,13 @@ export class MovieRepository {
   }
 
   static async getByIds(ids: number[]): Promise<Movie[]> {
+    if (!ids.length) return [];
     const db = await getDB();
     const tx = db.transaction('movies', 'readonly');
     const store = tx.objectStore('movies');
-    const movies: Movie[] = [];
-    for (const id of ids) {
-      const m = await store.get(id);
-      if (m) movies.push(m);
-    }
+    const results = await Promise.all(ids.map((id) => store.get(id)));
     await tx.done;
-    return movies;
+    return results.filter((m): m is Movie => !!m);
   }
 
   static async save(movie: Movie): Promise<Movie> {

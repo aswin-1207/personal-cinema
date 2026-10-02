@@ -8,6 +8,26 @@ export class UserMovieRepository {
     return db.get('userMovies', movieId);
   }
 
+  /**
+   * Batched lookup of multiple userMovies in a single readonly IndexedDB transaction
+   */
+  static async getByMovieIds(movieIds: number[]): Promise<Map<number, UserMovie>> {
+    if (!movieIds.length) return new Map();
+    const db = await getDB();
+    const tx = db.transaction('userMovies', 'readonly');
+    const store = tx.objectStore('userMovies');
+    const results = await Promise.all(movieIds.map((id) => store.get(id)));
+    await tx.done;
+
+    const map = new Map<number, UserMovie>();
+    for (const item of results) {
+      if (item) {
+        map.set(item.movieId, item);
+      }
+    }
+    return map;
+  }
+
   static async getAll(): Promise<UserMovie[]> {
     const db = await getDB();
     return db.getAll('userMovies');
@@ -272,14 +292,70 @@ export class UserMovieRepository {
       }));
   }
 
+  /**
+   * Targeted query for watched movies using the 'by-status' index, avoiding full scans
+   */
+  static async getWatchedWithMovies(): Promise<MovieWithUserData[]> {
+    const db = await getDB();
+    const watchedUserMovies = await db.getAllFromIndex('userMovies', 'by-status', 'watched');
+    if (!watchedUserMovies.length) return [];
+
+    const movieIds = watchedUserMovies.map((um) => um.movieId);
+    const movies = await MovieRepository.getByIds(movieIds);
+    const movieMap = new Map(movies.map((m) => [m.id, m]));
+
+    return watchedUserMovies
+      .filter((um) => movieMap.has(um.movieId))
+      .map((um) => ({
+        movie: movieMap.get(um.movieId)!,
+        userData: um,
+      }));
+  }
+
+  /**
+   * Targeted query for watchlist movies (want_to_watch + watching) using the 'by-status' index
+   */
+  static async getWatchlistWithMovies(): Promise<MovieWithUserData[]> {
+    const db = await getDB();
+    const [wantToWatch, watching] = await Promise.all([
+      db.getAllFromIndex('userMovies', 'by-status', 'want_to_watch'),
+      db.getAllFromIndex('userMovies', 'by-status', 'watching'),
+    ]);
+
+    const watchlistUserMovies = [...wantToWatch, ...watching];
+    if (!watchlistUserMovies.length) return [];
+
+    const movieIds = watchlistUserMovies.map((um) => um.movieId);
+    const movies = await MovieRepository.getByIds(movieIds);
+    const movieMap = new Map(movies.map((m) => [m.id, m]));
+
+    return watchlistUserMovies
+      .filter((um) => movieMap.has(um.movieId))
+      .map((um) => ({
+        movie: movieMap.get(um.movieId)!,
+        userData: um,
+      }));
+  }
+
   static async count(): Promise<{ total: number; watched: number; watching: number; wantToWatch: number; favorites: number }> {
+    const db = await getDB();
+    const [total, watched, watching, wantToWatch] = await Promise.all([
+      db.count('userMovies'),
+      db.countFromIndex('userMovies', 'by-status', 'watched'),
+      db.countFromIndex('userMovies', 'by-status', 'watching'),
+      db.countFromIndex('userMovies', 'by-status', 'want_to_watch'),
+    ]);
+
+    // For favorites count: we can inspect the fast set or small count
     const all = await this.getAll();
+    const favorites = all.filter((m) => m.isFavorite).length;
+
     return {
-      total: all.length,
-      watched: all.filter((m) => m.status === 'watched').length,
-      watching: all.filter((m) => m.status === 'watching').length,
-      wantToWatch: all.filter((m) => m.status === 'want_to_watch').length,
-      favorites: all.filter((m) => m.isFavorite).length,
+      total,
+      watched,
+      watching,
+      wantToWatch,
+      favorites,
     };
   }
 }
