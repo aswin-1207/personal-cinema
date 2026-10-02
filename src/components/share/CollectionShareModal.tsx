@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { CollectionWithMovies } from '../../types/collection';
 import { ShareService } from '../../services/shareService';
-import { Share2, Copy, Check, CheckCircle2 } from 'lucide-react';
+import { useCinema } from '../../context/CinemaContext';
+import {
+  Share2,
+  Copy,
+  Check,
+  CheckCircle2,
+  Film,
+  Sparkles,
+  MessageCircle,
+  Send,
+  Mail,
+} from 'lucide-react';
 
 interface CollectionShareModalProps {
   isOpen: boolean;
@@ -15,8 +26,13 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
   onClose,
   collectionData,
 }) => {
+  const { showToast } = useCinema();
+
   const [shareUrl, setShareUrl] = useState<string>('');
-  const [copied, setCopied] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [copiedText, setCopiedText] = useState<boolean>(false);
+
+  const canNative = ShareService.canNativeShare();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -26,21 +42,49 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
     setShareUrl(url);
   }, [isOpen, collectionData]);
 
-  const handleShare = async () => {
-    const success = await ShareService.shareOrCopy(
-      shareUrl,
-      `Check out "${collectionData.collection.name}" on MyCinema`,
-      `Explore this curated collection: ${collectionData.collection.name} (${collectionData.progress.percent}% watched).`
-    );
-    if (!success) {
-      handleCopy();
+  const getShareText = () => {
+    const isComp = collectionData.progress.isComplete;
+    let text = `Check out "${collectionData.collection.name}" on MyCinema.`;
+    if (isComp) {
+      text += ` Completed 100% (${collectionData.progress.total}/${collectionData.progress.total} films)!`;
+    } else {
+      text += ` Progress: ${collectionData.progress.watched}/${collectionData.progress.total} watched (${collectionData.progress.percent}%).`;
+    }
+    return text;
+  };
+
+  const handleNativeShare = async () => {
+    const text = getShareText();
+
+    const result = await ShareService.share({
+      title: `${collectionData.collection.name} • MyCinema Collection`,
+      text,
+      url: shareUrl,
+    });
+
+    if (result.outcome === 'shared') {
+      showToast('Collection shared successfully!');
+      onClose();
+    } else if (result.outcome === 'copied') {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+      showToast('Link copied to clipboard!');
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const handleCopyLink = async () => {
+    await ShareService.copyLink(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+    showToast('Collection link copied to clipboard!');
+  };
+
+  const handleCopyText = async () => {
+    const textWithUrl = `${getShareText()}\n\n${shareUrl}`;
+    await ShareService.copyText(textWithUrl);
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2500);
+    showToast('Formatted text copied to clipboard!');
   };
 
   const topPosters = collectionData.movies
@@ -48,15 +92,21 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
     .filter(Boolean)
     .slice(0, 4);
 
+  // Find final movie title if completed
+  const finalMovie = collectionData.collection.finalMovieId
+    ? collectionData.movies.find((m) => m.movie.id === collectionData.collection.finalMovieId)
+    : null;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Share Collection" maxWidth="max-w-xl">
       <div className="flex flex-col items-center text-center">
-        {/* Collection Card Preview */}
-        <div className="w-full max-w-sm rounded-2xl bg-[#131319] border border-[#E0AD52]/30 p-5 shadow-2xl relative overflow-hidden mb-6 text-left">
+        {/* Collection Card Live Preview */}
+        <div className="w-full max-w-sm rounded-2xl bg-[#131319] border border-[#E0AD52]/40 p-5 shadow-2xl relative overflow-hidden mb-5 text-left">
+          {/* Completion Status Banner */}
           {collectionData.progress.isComplete && (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0AD52]/20 border border-[#E0AD52]/40 text-[#E0AD52] text-xs font-semibold w-fit mb-3">
               <CheckCircle2 size={14} />
-              <span>100% Completed</span>
+              <span>COLLECTION COMPLETE ✓</span>
             </div>
           )}
 
@@ -69,10 +119,12 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
             </p>
           )}
 
-          {/* Progress summary */}
-          <div className="mb-4">
+          {/* Progress Summary */}
+          <div className="mb-3.5">
             <div className="flex justify-between text-xs text-[#9E9DA5] mb-1">
-              <span>{collectionData.progress.watched} of {collectionData.progress.total} watched</span>
+              <span>
+                {collectionData.progress.watched} of {collectionData.progress.total} watched
+              </span>
               <span className="font-semibold text-[#E0AD52]">{collectionData.progress.percent}%</span>
             </div>
             <div className="w-full h-1.5 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
@@ -83,43 +135,123 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
             </div>
           </div>
 
-          {/* Poster Collage preview */}
+          {/* THE FINAL FILM Memory Card if complete */}
+          {collectionData.progress.isComplete && finalMovie && (
+            <div className="mb-3.5 p-2.5 rounded-xl bg-black/40 border border-[#E0AD52]/30 flex items-center gap-3">
+              <div className="w-9 h-13 rounded overflow-hidden flex-shrink-0 bg-black">
+                {finalMovie.movie.posterPath ? (
+                  <img
+                    src={`https://image.tmdb.org/t/p/w185${finalMovie.movie.posterPath}`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Film size={16} className="text-[#9E9DA5] m-auto" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-wider text-[#E0AD52] font-bold">
+                  The Final Film
+                </div>
+                <div className="text-xs font-semibold text-[#F5F3EB] truncate">
+                  {finalMovie.movie.title}
+                </div>
+                {collectionData.collection.completedAt && (
+                  <div className="text-[10px] text-[#9E9DA5]">
+                    Completed {new Date(collectionData.collection.completedAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Poster Collage Preview */}
           {topPosters.length > 0 && (
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-4 gap-2 mb-3.5">
               {topPosters.map((path, i) => (
                 <img
                   key={i}
                   src={`https://image.tmdb.org/t/p/w185${path}`}
                   alt=""
-                  className="aspect-[2/3] object-cover rounded shadow"
+                  className="aspect-[2/3] object-cover rounded-lg shadow border border-white/5"
                 />
               ))}
             </div>
           )}
 
-          <div className="text-[10px] tracking-wider text-[#9E9DA5] uppercase border-t border-white/5 pt-2 flex justify-between">
-            <span className="font-bold text-[#E0AD52]">MyCinema Collection</span>
+          <div className="text-[10px] tracking-wider text-[#9E9DA5] uppercase border-t border-white/5 pt-2 flex justify-between items-center">
+            <span className="font-bold text-[#E0AD52] flex items-center gap-1">
+              <Sparkles size={11} /> MYCINEMA
+            </span>
             <span>Curated Journey</span>
           </div>
         </div>
 
-        {/* Actions (Native Web Share + Copy Link Fallback — NO QR Code per Section 41) */}
+        {/* Action Controls */}
         <div className="w-full max-w-sm space-y-2.5">
           <button
-            onClick={handleShare}
-            className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer"
+            onClick={handleNativeShare}
+            className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold min-h-[44px] cursor-pointer shadow-gold"
           >
             <Share2 size={16} />
-            <span>Share Collection</span>
+            <span>{canNative ? 'Share via Native Apps' : 'Share Collection'}</span>
           </button>
 
-          <button
-            onClick={handleCopy}
-            className="cinema-button-secondary w-full py-2.5 flex items-center justify-center gap-2 text-xs cursor-pointer"
-          >
-            {copied ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
-            <span>{copied ? 'Link Copied to Clipboard!' : 'Copy Share Link'}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleCopyLink}
+              className="cinema-button-secondary py-2.5 flex items-center justify-center gap-1.5 text-xs min-h-[44px] cursor-pointer"
+            >
+              {copiedLink ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
+              <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+            </button>
+
+            <button
+              onClick={handleCopyText}
+              className="cinema-button-secondary py-2.5 flex items-center justify-center gap-1.5 text-xs min-h-[44px] cursor-pointer"
+            >
+              {copiedText ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
+              <span>{copiedText ? 'Text Copied!' : 'Copy Text'}</span>
+            </button>
+          </div>
+
+          {/* Direct Fallback Links */}
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <a
+              href={ShareService.getWhatsAppUrl(getShareText(), shareUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-emerald-950/40 hover:text-emerald-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
+              title="Share via WhatsApp"
+            >
+              <MessageCircle size={14} />
+              <span>WhatsApp</span>
+            </a>
+
+            <a
+              href={ShareService.getTelegramUrl(getShareText(), shareUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-sky-950/40 hover:text-sky-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
+              title="Share via Telegram"
+            >
+              <Send size={14} />
+              <span>Telegram</span>
+            </a>
+
+            <a
+              href={ShareService.getEmailUrl(
+                `Collection: ${collectionData.collection.name}`,
+                getShareText(),
+                shareUrl
+              )}
+              className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#9E9DA5] hover:text-[#F5F3EB] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
+              title="Share via Email"
+            >
+              <Mail size={14} />
+              <span>Email</span>
+            </a>
+          </div>
         </div>
       </div>
     </Modal>

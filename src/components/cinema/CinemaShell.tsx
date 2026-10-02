@@ -36,16 +36,39 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
 }) => {
   const { celebrationCollection, dismissCelebrationCollection } = useCinema();
   const [ambientColor, setAmbientColor] = useState<string>('rgba(237, 194, 87, 0.08)');
-  const [shareHash, setShareHash] = useState<string>(window.location.hash);
+  const getShareRoute = () => {
+    if (window.location.hash.startsWith('#share-movie=') || window.location.hash.startsWith('#share-col=')) {
+      return window.location.hash;
+    }
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/share/movie/')) {
+      const id = pathname.replace('/share/movie/', '');
+      return `#share-movie=${id}${window.location.search}`;
+    }
+    if (pathname.startsWith('/share/collection/')) {
+      const id = pathname.replace('/share/collection/', '');
+      return `#share-col=${id}${window.location.search}`;
+    }
+    return '';
+  };
+
+  const [shareHash, setShareHash] = useState<string>(getShareRoute());
 
   React.useEffect(() => {
-    const handleHashChange = () => setShareHash(window.location.hash);
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    const handleUrlChange = () => setShareHash(getShareRoute());
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
   }, []);
 
   const handleDismissShare = () => {
     window.location.hash = '';
+    if (window.location.pathname.startsWith('/share/')) {
+      window.history.pushState(null, '', '/');
+    }
     setShareHash('');
   };
 
