@@ -12,6 +12,8 @@ import { ShareModal } from '../components/share/ShareModal';
 import { MoviePoster } from '../components/movie/MoviePoster';
 import { CinemaModeModal } from '../components/cinema/CinemaModeModal';
 import { atmosphereService } from '../services/atmosphereService';
+import { ReviewEditorModal } from '../components/review/ReviewEditorModal';
+import { ReviewShareModal } from '../components/review/ReviewShareModal';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
 import {
@@ -26,6 +28,11 @@ import {
   Play,
   Heart,
   Layers,
+  BookOpen,
+  PenLine,
+  Quote,
+  AlertTriangle,
+  EyeOff,
 } from 'lucide-react';
 
 interface MovieDetailProps {
@@ -41,6 +48,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     toggleFavorite,
     setRating,
     setReviewAndNotes,
+    deleteReview,
     removeFromLibrary,
     openMovieDetail,
     openCollectionDetail,
@@ -64,6 +72,9 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isCollectionPickerOpen, setIsCollectionPickerOpen] = useState(false);
   const [isCinemaModeOpen, setIsCinemaModeOpen] = useState(false);
+  const [isReviewEditorOpen, setIsReviewEditorOpen] = useState(false);
+  const [isReviewShareOpen, setIsReviewShareOpen] = useState(false);
+  const [revealSpoilers, setRevealSpoilers] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -448,8 +459,9 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         <div className="p-6 rounded-2xl bg-[#171924]/70 border border-white/[0.08] space-y-5 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
             <div>
-              <h3 className="font-serif font-bold text-lg text-[#F5F2F0]">
-                Personal Screening Record
+              <h3 className="font-serif font-bold text-lg text-[#F5F2F0] flex items-center gap-2">
+                <BookOpen size={18} className="text-[#E0AD52]" />
+                <span>Personal Screening Record</span>
               </h3>
               <p className="text-xs text-[#9E9DA5]">
                 {userData?.watchedAt
@@ -476,41 +488,135 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             </div>
           </div>
 
-          {/* Personal Review */}
-          <div className="space-y-2">
-            <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-              Personal Review
-            </label>
-            <textarea
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-              placeholder="What did you think of the cinematography, performances, or direction?"
-              className="cinema-input w-full h-24 text-xs leading-relaxed"
-            />
+          {/* Written Film Reflection / Review */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold flex items-center gap-1.5">
+                <span>Personal Reflection</span>
+                {userData?.hasSpoilers && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono flex items-center gap-1">
+                    <AlertTriangle size={10} /> Spoilers
+                  </span>
+                )}
+              </label>
+              <div className="flex items-center gap-2">
+                {userData?.review && (
+                  <>
+                    <button
+                      onClick={() => setIsReviewShareOpen(true)}
+                      className="text-xs text-[#9E9DA5] hover:text-[#E0AD52] transition-colors flex items-center gap-1 border-none bg-transparent cursor-pointer"
+                      title="Share Review"
+                    >
+                      <Share2 size={13} />
+                      <span className="hidden sm:inline">Share</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('Delete this review text? Your watched status and rating will be preserved.')) {
+                          await deleteReview(movieId);
+                          const u = await UserMovieRepository.getByMovieId(movieId);
+                          if (u) {
+                            setUserData(u);
+                            setReview('');
+                          }
+                        }
+                      }}
+                      className="text-xs text-[#9E9DA5] hover:text-red-400 transition-colors flex items-center gap-1 border-none bg-transparent cursor-pointer"
+                      title="Delete Review"
+                    >
+                      <Trash2 size={13} />
+                      <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setIsReviewEditorOpen(true)}
+                  className="cinema-button-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 font-semibold"
+                >
+                  <PenLine size={13} className="text-[#E0AD52]" />
+                  <span>{userData?.review ? 'Edit Reflection' : 'Write Reflection'}</span>
+                </button>
+              </div>
+            </div>
+
+            {userData?.review ? (
+              <div className="p-4 rounded-xl bg-[#10121A] border border-white/[0.06] space-y-2.5">
+                {userData.reviewTitle && (
+                  <h4 className="font-serif font-bold text-base text-[#F5F2F0] flex items-center gap-2">
+                    <Quote size={15} className="text-[#E0AD52] flex-shrink-0" />
+                    <span>{userData.reviewTitle}</span>
+                  </h4>
+                )}
+
+                {userData.hasSpoilers && !revealSpoilers ? (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-amber-300">
+                      <AlertTriangle size={14} />
+                      <span>This reflection contains spoilers.</span>
+                    </div>
+                    <button
+                      onClick={() => setRevealSpoilers(true)}
+                      className="text-xs font-semibold text-[#E0AD52] hover:underline border-none bg-transparent cursor-pointer flex items-center gap-1"
+                    >
+                      <Eye size={12} /> Reveal
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {userData.hasSpoilers && (
+                      <div className="flex justify-end mb-1">
+                        <button
+                          onClick={() => setRevealSpoilers(false)}
+                          className="text-[11px] text-[#9E9DA5] hover:text-[#F5F2F0] border-none bg-transparent cursor-pointer flex items-center gap-1"
+                        >
+                          <EyeOff size={11} /> Hide Spoilers
+                        </button>
+                      </div>
+                    )}
+                    <p className="font-serif italic text-sm text-[#F5F2F0]/90 leading-relaxed whitespace-pre-wrap">
+                      {userData.review}
+                    </p>
+                  </div>
+                )}
+
+                {userData.reviewedAt && (
+                  <div className="text-[11px] text-[#9E9DA5] pt-1 border-t border-white/[0.04]">
+                    Recorded on {new Date(userData.reviewedAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-[#5C5B64] italic">
+                No written reflection added yet. Click &ldquo;Write Reflection&rdquo; to record your thoughts.
+              </p>
+            )}
           </div>
 
-          {/* Private Notes */}
-          <div className="space-y-2">
+          {/* Private Notes (Where watched, with whom, edition, etc.) */}
+          <div className="space-y-2 pt-2 border-t border-white/[0.04]">
             <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-              Private Notes (Where watched, with whom, edition, etc.)
+              Private Notes (Screen format, theater, companions)
             </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. 4K Blu-ray with Sara, IMAX 70mm screening"
-              className="cinema-input w-full text-xs"
-            />
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={handleSaveReviewAndNotes}
-              disabled={isSavingReview}
-              className="cinema-button-primary px-5 py-2.5 text-xs font-bold"
-            >
-              {isSavingReview ? 'Saving...' : 'Save Screening Record'}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. 4K Blu-ray with Sara, IMAX 70mm screening"
+                className="cinema-input flex-1 text-xs"
+              />
+              <button
+                onClick={handleSaveReviewAndNotes}
+                disabled={isSavingReview}
+                className="cinema-button-secondary px-4 py-2 text-xs font-bold sm:w-auto w-full"
+              >
+                {isSavingReview ? 'Saving...' : 'Save Notes'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -601,6 +707,33 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           movie={movie}
           userData={userData || undefined}
           onClose={() => setIsCinemaModeOpen(false)}
+        />
+      )}
+
+      {/* Review & Reflection Editor Modal */}
+      {isReviewEditorOpen && (
+        <ReviewEditorModal
+          isOpen={isReviewEditorOpen}
+          onClose={() => setIsReviewEditorOpen(false)}
+          movie={movie}
+          initialUserData={userData}
+          onSaved={async () => {
+            const u = await UserMovieRepository.getByMovieId(movieId);
+            if (u) {
+              setUserData(u);
+              setReview(u.review || '');
+              setNotes(u.notes || '');
+            }
+          }}
+        />
+      )}
+
+      {/* Dedicated Review Share Modal */}
+      {isReviewShareOpen && (
+        <ReviewShareModal
+          isOpen={isReviewShareOpen}
+          onClose={() => setIsReviewShareOpen(false)}
+          item={{ movie, userData: userData || undefined }}
         />
       )}
     </div>

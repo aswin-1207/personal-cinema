@@ -14,6 +14,7 @@ const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage').then(
 const CollectionDetail = React.lazy(() => import('./pages/CollectionDetail').then((m) => ({ default: m.CollectionDetail })));
 const MovieDetail = React.lazy(() => import('./pages/MovieDetail').then((m) => ({ default: m.MovieDetail })));
 const Profile = React.lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const ReviewsPage = React.lazy(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })));
 
 const AtmosphericLoader: React.FC = () => (
   <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] p-8 text-center animate-fade-in">
@@ -55,6 +56,7 @@ const AppContent: React.FC = () => {
         {activeTab === 'watched' && <WatchedPage />}
         {activeTab === 'collections' && <CollectionsPage />}
         {activeTab === 'profile' && <Profile />}
+        {activeTab === 'reviews' && <ReviewsPage />}
       </React.Suspense>
     </CinemaShell>
   );

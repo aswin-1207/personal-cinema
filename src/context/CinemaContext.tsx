@@ -3,6 +3,7 @@ import { Movie, UserMovie } from '../types/movie';
 import { Collection } from '../types/collection';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
+import { ReviewRepository } from '../db/repositories/reviewRepository';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { PreferencesRepository, DEFAULT_PREFERENCES } from '../db/repositories/preferencesRepository';
 import { validateAndRepairDatabase } from '../db/database';
@@ -11,7 +12,7 @@ import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
 
-export type TabType = 'home' | 'discover' | 'watchlist' | 'watched' | 'collections' | 'profile';
+export type TabType = 'home' | 'discover' | 'watchlist' | 'watched' | 'collections' | 'profile' | 'reviews';
 
 interface ToastState {
   id: string;
@@ -40,7 +41,12 @@ interface CinemaContextType {
   setWatching: (movie: Movie) => Promise<UserMovie>;
   toggleFavorite: (movie: Movie) => Promise<UserMovie>;
   setRating: (movieId: number, rating: number | null) => Promise<UserMovie>;
-  setReviewAndNotes: (movieId: number, data: { review?: string; notes?: string }) => Promise<UserMovie>;
+  setReviewAndNotes: (
+    movieId: number,
+    data: { review?: string; reviewTitle?: string; notes?: string; hasSpoilers?: boolean }
+  ) => Promise<UserMovie>;
+  deleteReview: (movieId: number) => Promise<void>;
+  deleteRating: (movieId: number) => Promise<void>;
   removeFromWatchlist: (movieId: number) => Promise<void>;
   removeFromLibrary: (movieId: number) => Promise<void>;
 
@@ -114,9 +120,19 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.warn('Seed catalog initialization deferred:', err);
       });
 
+    const handleHash = () => {
+      const h = window.location.hash.toLowerCase();
+      if (h === '#reviews' || h === '#journal') {
+        setActiveTab('reviews');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('hashchange', handleHash);
     };
   }, []);
 
@@ -343,7 +359,10 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const setReviewAndNotes = async (movieId: number, data: { review?: string; notes?: string }) => {
+  const setReviewAndNotes = async (
+    movieId: number,
+    data: { review?: string; reviewTitle?: string; notes?: string; hasSpoilers?: boolean }
+  ) => {
     try {
       const updated = await UserMovieRepository.setReviewAndNotes(movieId, data);
       soundService.playSubtleClick();
@@ -353,6 +372,34 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err: any) {
       console.error('Failed to save review/notes:', err);
       showToast('Storage error: could not save screening notes');
+      throw err;
+    }
+  };
+
+  const deleteReview = async (movieId: number) => {
+    try {
+      await ReviewRepository.deleteReview(movieId);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast('Review deleted');
+      notifyDataChanged();
+    } catch (err: any) {
+      console.error('Failed to delete review:', err);
+      showToast('Storage error: could not remove review');
+      throw err;
+    }
+  };
+
+  const deleteRating = async (movieId: number) => {
+    try {
+      await ReviewRepository.deleteRating(movieId);
+      soundService.playSubtleClick();
+      hapticsService.tap();
+      showToast('Rating removed');
+      notifyDataChanged();
+    } catch (err: any) {
+      console.error('Failed to delete rating:', err);
+      showToast('Storage error: could not remove rating');
       throw err;
     }
   };
@@ -409,6 +456,8 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toggleFavorite,
         setRating,
         setReviewAndNotes,
+        deleteReview,
+        deleteRating,
         removeFromWatchlist,
         removeFromLibrary,
         celebrationMovie,

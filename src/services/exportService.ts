@@ -55,9 +55,12 @@ export class ExportService {
       'Movie ID': item.movie.id,
       'Title': item.movie.title,
       'Personal Rating': item.userData?.personalRating ?? '',
+      'Review Title': item.userData?.reviewTitle || '',
       'Review': item.userData?.review || '',
       'Notes': item.userData?.notes || '',
+      'Reviewed At': item.userData?.reviewedAt || '',
       'Watched At': item.userData?.watchedAt || '',
+      'Contains Spoilers': item.userData?.hasSpoilers ? 'Yes' : 'No',
     }));
 
     await this.downloadFormattedData(rows, `PersonalCinema_Reviews`, format);

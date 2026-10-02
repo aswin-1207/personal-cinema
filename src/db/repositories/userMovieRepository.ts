@@ -243,27 +243,52 @@ export class UserMovieRepository {
   }
 
   /**
-   * Update Review & Notes
+   * Update Review & Notes (Film Journal)
    */
   static async setReviewAndNotes(
     movieId: number,
-    data: { review?: string; notes?: string }
+    data: { review?: string; reviewTitle?: string; notes?: string; hasSpoilers?: boolean }
   ): Promise<UserMovie> {
     const existing = await this.getByMovieId(movieId);
     const now = new Date().toISOString();
+    const hasReview = data.review !== undefined ? Boolean(data.review.trim()) : Boolean(existing?.review?.trim());
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'want_to_watch',
+      status: existing?.status || 'watched', // Writing a review implies watched
       personalRating: existing?.personalRating ?? null,
       notes: data.notes !== undefined ? data.notes : existing?.notes,
-      review: data.review !== undefined ? data.review : existing?.review,
+      review: data.review !== undefined ? (data.review.trim() || undefined) : existing?.review,
+      reviewTitle: data.reviewTitle !== undefined ? (data.reviewTitle.trim() || undefined) : existing?.reviewTitle,
+      reviewedAt: hasReview ? (existing?.reviewedAt || now) : null,
+      hasSpoilers: data.hasSpoilers !== undefined ? data.hasSpoilers : existing?.hasSpoilers ?? false,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
-      watchedAt: existing?.watchedAt ?? null,
-      watchingAt: existing?.watchingAt ?? null,
+      watchedAt: existing?.watchedAt || now,
+      watchingAt: null,
       scheduledAt: existing?.scheduledAt ?? null,
-      rewatchCount: existing?.rewatchCount ?? 0,
+      rewatchCount: 0,
+    };
+
+    await this.save(updated);
+    return updated;
+  }
+
+  /**
+   * Delete review while strictly preserving watched status, rating, favorite, notes
+   */
+  static async deleteReview(movieId: number): Promise<UserMovie> {
+    const existing = await this.getByMovieId(movieId);
+    if (!existing) {
+      throw new Error(`Movie #${movieId} not found.`);
+    }
+
+    const updated: UserMovie = {
+      ...existing,
+      review: undefined,
+      reviewTitle: undefined,
+      reviewedAt: null,
+      hasSpoilers: false,
     };
 
     await this.save(updated);

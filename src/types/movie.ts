@@ -57,6 +57,9 @@ export interface UserMovie {
   personalRating?: number | null; // 0.5 to 5.0 (half star steps)
   notes?: string;
   review?: string;
+  reviewTitle?: string;
+  reviewedAt?: string | null; // ISO string
+  hasSpoilers?: boolean;
   isFavorite: boolean;
   addedAt: string; // ISO string
   watchedAt?: string | null; // ISO string

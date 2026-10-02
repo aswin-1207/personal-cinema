@@ -8,6 +8,7 @@ import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
 import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { CinemaHeader } from '../components/ui/CinemaHeader';
+import { ReviewRepository } from '../db/repositories/reviewRepository';
 import {
   Database,
   Upload,
@@ -21,10 +22,11 @@ import {
   EyeOff,
   KeyRound,
   AlertTriangle,
+  BookOpen,
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-  const { preferences, updatePreference, notifyDataChanged, showToast } = useCinema();
+  const { preferences, updatePreference, notifyDataChanged, showToast, setActiveTab, dataVersion } = useCinema();
 
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -60,6 +62,14 @@ export const Profile: React.FC = () => {
     setDisplayName(preferences.displayName || '');
     setTmdbApiKey(preferences.tmdbApiKey || '');
   }, [preferences]);
+
+  const [journalCount, setJournalCount] = useState<number>(0);
+
+  useEffect(() => {
+    ReviewRepository.getAllJournalEntries()
+      .then((entries) => setJournalCount(entries.length))
+      .catch((err) => console.error('Failed to load journal count:', err));
+  }, [dataVersion]);
 
   const handleSaveDisplayName = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -112,6 +122,44 @@ export const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* FILM JOURNAL & REVIEWS DESTINATION */}
+      <section className="space-y-2">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          Film Journal
+        </h2>
+        <div className="rounded-2xl bg-[#131319] border border-[#E0AD52]/20 hover:border-[#E0AD52]/40 transition-colors overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+          <button
+            onClick={() => {
+              setActiveTab('reviews');
+              window.location.hash = '#reviews';
+            }}
+            className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/20 transition-colors">
+                <BookOpen size={20} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors flex items-center gap-2">
+                  <span>Film Journal & Reviews</span>
+                  {journalCount > 0 && (
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30">
+                      {journalCount} {journalCount === 1 ? 'Entry' : 'Entries'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-[#9E9DA5] mt-0.5">
+                  Your private archive of written reflections, personal ratings, and film notes.
+                </div>
+              </div>
+            </div>
+            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-xl font-mono transition-transform group-hover:translate-x-1">
+              ›
+            </span>
+          </button>
+        </div>
+      </section>
 
       {/* PREFERENCES matching Figma 2:451 */}
       <section className="space-y-2">
