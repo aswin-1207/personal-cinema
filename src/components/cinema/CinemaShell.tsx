@@ -97,7 +97,7 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
 
         {/* Main Cinema Content Area (Single Primary Vertical Scroll Container) */}
         <main className="flex-1 min-w-0 md:pl-[240px] w-full relative z-10 pb-[calc(env(safe-area-inset-bottom,0px)+100px)] md:pb-16">
-          <div className="max-w-[1380px] mx-auto px-3.5 sm:px-6 md:px-8 pt-3 sm:pt-5 md:pt-6 w-full">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 w-full">
             {selectedCollectionId ? (
               renderCollectionDetail(selectedCollectionId)
             ) : (

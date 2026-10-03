@@ -166,7 +166,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
           <div className="flex-1 min-w-0 pt-2 sm:pt-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-serif font-bold text-base sm:text-xl text-[#F5F3EB] leading-tight">
+                <h3 className="font-bold text-base sm:text-xl text-[#F5F3EB] leading-tight">
                   {movie.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-[#9E9DA5] font-mono">
@@ -185,7 +185,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
               {typeof rating === 'number' && (
                 <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#E0AD52]/15 border border-[#E0AD52]/30 flex-shrink-0">
                   <Star size={15} className="text-[#E0AD52] fill-[#E0AD52]" />
-                  <span className="text-sm font-black text-[#E0AD52] font-mono">
+                  <span className="text-sm font-bold text-[#E0AD52] font-mono">
                     {rating.toFixed(1)}
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
         {/* Review Title / Headline */}
         {userData?.reviewTitle && (
           <div className="border-l-2 border-[#E0AD52] pl-3.5 py-0.5">
-            <h4 className="font-serif italic text-base sm:text-lg text-[#F5F3EB] font-bold">
+            <h4 className="italic text-base sm:text-lg text-[#F5F3EB] font-semibold">
               "{userData.reviewTitle}"
             </h4>
           </div>

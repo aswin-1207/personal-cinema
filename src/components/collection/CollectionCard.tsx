@@ -73,7 +73,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
   return (
     <div
       onClick={onClick}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] cinema-card-tactile flex flex-col ${className}`}
+      className={`group relative cursor-pointer rounded-2xl overflow-hidden bg-[#131319] border border-white/[0.08] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] cinema-card-tactile flex flex-col ${className}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -125,7 +125,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-[#5C5B64] gap-2">
             <Layers size={32} />
-            <span className="text-xs font-serif">Collection</span>
+            <span className="text-xs font-medium text-[#9E9DA5]">Collection</span>
           </div>
         )}
 
@@ -134,7 +134,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
 
         {/* Completion Badge */}
         {isComplete && (
-          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-black shadow-[0_2px_14px_rgba(224,173,82,0.45)] backdrop-blur-md">
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E0AD52] text-[#09090B] text-[10px] font-bold shadow-[0_2px_14px_rgba(224,173,82,0.45)] backdrop-blur-md">
             <span>✓ COMPLETE</span>
           </div>
         )}
@@ -144,7 +144,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
       <div className="p-3 sm:p-4 bg-[#131319] flex-grow flex flex-col justify-between space-y-2 sm:space-y-3 w-full min-w-0">
         <div className="min-w-0">
           <h4
-            className="font-serif font-bold text-xs sm:text-sm md:text-base text-[#F5F3EB] line-clamp-1 sm:line-clamp-2 break-words group-hover:text-[#E0AD52] transition-all duration-200"
+            className="font-semibold text-sm sm:text-base text-[#F5F3EB] line-clamp-1 sm:line-clamp-2 break-words group-hover:text-[#E0AD52] transition-all duration-200"
             title={collection.name}
           >
             {collection.name}

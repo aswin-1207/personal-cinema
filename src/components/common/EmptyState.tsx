@@ -34,7 +34,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       className={`flex flex-col items-center justify-center text-center p-5 sm:p-7 my-3 sm:my-4 max-w-md mx-auto rounded-2xl bg-[#131319]/80 border border-white/[0.07] shadow-xl relative overflow-hidden ${className}`}
     >
       {badge && (
-        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-[#E0AD52] mb-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E0AD52]/10 border border-[#E0AD52]/20">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#E0AD52] mb-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E0AD52]/10 border border-[#E0AD52]/20">
           <Sparkles size={11} />
           <span>{badge}</span>
         </span>
@@ -44,7 +44,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <Icon size={20} />
       </div>
 
-      <h3 className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] mb-1 tracking-tight">
+      <h3 className="font-semibold text-sm sm:text-base text-[#F5F3EB] mb-1 tracking-tight">
         {title}
       </h3>
 

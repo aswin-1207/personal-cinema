@@ -197,7 +197,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             ) : null}
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="font-serif font-bold text-sm text-[#F5F3EB] truncate">
+            <h4 className="font-semibold text-sm text-[#F5F3EB] truncate">
               {movie.title}
             </h4>
             <p className="text-xs text-[#9E9DA5] font-mono mt-0.5">

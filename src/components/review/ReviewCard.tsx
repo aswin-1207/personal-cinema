@@ -58,7 +58,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ item, onOpenDetail, onEd
           {/* Header Row: Title, Year, Rating */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-serif font-bold text-sm sm:text-base text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors line-clamp-2 break-words" title={movie.title}>
+              <h3 className="font-semibold text-sm sm:text-base text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors line-clamp-2 break-words" title={movie.title}>
                 {movie.title}
               </h3>
               {releaseYear && (

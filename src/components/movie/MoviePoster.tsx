@@ -24,12 +24,12 @@ interface MovieCardTitleProps {
 export const MovieCardTitle: React.FC<MovieCardTitleProps> = ({ title }) => {
   return (
     <div
-      className="h-[2.35rem] min-h-[2.35rem] max-h-[2.35rem] w-full min-w-0 overflow-hidden flex items-start"
+      className="h-[2.5rem] min-h-[2.5rem] max-h-[2.5rem] w-full min-w-0 overflow-hidden flex items-start"
       title={title}
       aria-label={title}
     >
       <h4
-        className="font-semibold text-xs text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors leading-[1.175rem] line-clamp-2 break-words w-full overflow-hidden text-ellipsis"
+        className="font-medium sm:font-semibold text-[13px] sm:text-[14px] text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors leading-[1.25rem] line-clamp-2 break-words w-full overflow-hidden text-ellipsis"
         style={{
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -137,7 +137,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-[#1A1D2C] to-[#0F111A]">
             <Film size={26} className="text-[#E0AD52]/60 mb-2" />
-            <span className="text-xs text-[#F5F3EB] font-serif font-bold line-clamp-2 px-1">
+            <span className="text-xs text-[#F5F3EB] font-semibold line-clamp-2 px-1">
               {movie.title}
             </span>
             {year && <span className="text-[10px] text-[#9E9DA5] mt-1">{year}</span>}
@@ -155,7 +155,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
             </span>
           )}
           {isWatching && !isWatched && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D19830] text-[#09090B] text-[10px] font-black shadow-md backdrop-blur-md">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#D19830] text-[#09090B] text-[10px] font-bold shadow-md backdrop-blur-md">
               <Eye size={11} strokeWidth={2.5} />
               <span>Watching</span>
             </span>
@@ -192,28 +192,25 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         </div>
 
         {/* Poster Star Rating */}
-        {movie.voteAverage > 0 && (
-          <div className="absolute bottom-2 left-2.5 z-10 pointer-events-none flex items-center gap-1 text-[11px] font-bold text-[#E0AD52] drop-shadow">
-            <Star size={11} className="fill-[#E0AD52] text-[#E0AD52]" />
-            <span>{movie.voteAverage.toFixed(1)}</span>
-          </div>
-        )}
       </div>
 
       {/* Card Info Container with Controlled Title Region */}
-      <div className="p-2 sm:p-2.5 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0 overflow-hidden">
+      <div className="p-2.5 sm:p-3 bg-[#131319] flex-grow flex flex-col justify-between w-full min-w-0 overflow-hidden">
         <MovieCardTitle title={movie.title} />
-        <div className="h-5 flex items-center justify-between text-[11px] text-[#9E9DA5] mt-1 pt-0.5 border-t border-white/[0.04] w-full min-w-0 overflow-hidden">
+        <div className="h-5 flex items-center justify-between text-[11px] text-[#9E9DA5] mt-1 pt-1 border-t border-white/[0.04] w-full min-w-0 overflow-hidden">
           {isWatched ? (
-            <span className="text-[#E0AD52] font-semibold flex items-center gap-1 text-[10px] tracking-wide truncate">
-              <span>✓ WATCHED</span>
+            <span className="text-[#E0AD52] font-medium flex items-center gap-1 text-[11px] tracking-wide truncate">
+              <span>✓ Watched</span>
               {watchedDateStr ? <span className="hidden xs:inline">· {watchedDateStr}</span> : null}
             </span>
           ) : (
             <span className="truncate">{year || '—'}{movie.runtime ? ` · ${movie.runtime}m` : ''}</span>
           )}
           {movie.voteAverage > 0 && !isWatched && (
-            <span className="text-[#E0AD52] font-semibold flex-shrink-0 ml-1">★ {movie.voteAverage.toFixed(1)}</span>
+            <span className="text-[#E0AD52] font-medium flex-shrink-0 ml-1.5 flex items-center gap-0.5">
+              <Star size={10} className="fill-[#E0AD52] text-[#E0AD52]" />
+              <span>{movie.voteAverage.toFixed(1)}</span>
+            </span>
           )}
         </div>
       </div>

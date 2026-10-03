@@ -77,7 +77,7 @@ export const WatchlistPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
         <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] sm:text-[11px] font-bold tracking-[0.2em] uppercase">
+          <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase">
             <Bookmark size={12} />
             <span>QUEUE</span>
           </div>

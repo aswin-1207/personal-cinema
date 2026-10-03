@@ -124,7 +124,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
             </div>
           )}
 
-          <h3 className="font-serif font-bold text-xl text-[#F5F3EB] mb-1">
+          <h3 className="font-bold text-xl text-[#F5F3EB] mb-1">
             {collectionData.collection.name}
           </h3>
           {collectionData.collection.description && (

@@ -37,7 +37,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             {isDestructive ? <AlertTriangle size={24} /> : <Trash2 size={24} />}
           </div>
           <div>
-            <h3 className="font-serif font-bold text-lg text-[#F5F3EB]">
+            <h3 className="font-semibold text-lg text-[#F5F3EB]">
               {title}
             </h3>
             <p className="text-xs text-[#9E9DA5] mt-0.5">Please confirm this action</p>

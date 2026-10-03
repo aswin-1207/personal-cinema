@@ -24,7 +24,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
     <div className={`flex items-end justify-between gap-4 ${className}`}>
       <div className="space-y-0.5 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-serif font-bold text-lg sm:text-xl text-[#F5F3EB] tracking-wide">
+          <h3 className="font-semibold text-lg sm:text-xl text-[#F5F3EB] tracking-tight">
             {title}
           </h3>
           {count !== undefined && (

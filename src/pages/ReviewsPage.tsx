@@ -131,7 +131,7 @@ export const ReviewsPage: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-2.5">
-            <h1 className="font-serif font-bold text-xl sm:text-2xl text-[#F5F3EB] tracking-tight">
+            <h1 className="font-bold text-xl sm:text-2xl text-[#F5F3EB] tracking-tight">
               Film Journal
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 font-mono">
@@ -237,7 +237,7 @@ export const ReviewsPage: React.FC = () => {
           />
         ) : (
           <div className="p-8 rounded-2xl bg-[#131319]/60 border border-white/[0.06] text-center space-y-2">
-            <h3 className="font-serif font-bold text-base text-[#F5F3EB]">No Matching Journal Entries</h3>
+            <h3 className="font-semibold text-base text-[#F5F3EB]">No Matching Journal Entries</h3>
             <p className="text-xs text-[#9E9DA5]">
               No entries matched your current search or filter.
             </p>

@@ -580,7 +580,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       {step === 'matching' && (
         <div className="py-12 flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-full border-4 border-cinema-charcoal border-t-cinema-gold animate-spin mb-4" />
-          <h3 className="font-serif font-bold text-xl text-cinema-white mb-2">Matching with TMDB...</h3>
+          <h3 className="font-semibold text-xl text-cinema-white mb-2">Matching with TMDB...</h3>
           <p className="text-sm text-cinema-silver mb-4">
             Processing {progress.processed} of {progress.total} movies
           </p>
@@ -921,7 +921,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           <div className="w-16 h-16 rounded-full bg-cinema-gold/15 border border-cinema-gold/40 flex items-center justify-center text-cinema-gold mb-4 shadow-gold">
             <CheckCircle2 size={36} />
           </div>
-          <h3 className="font-serif font-bold text-2xl text-cinema-white mb-2">Import Complete!</h3>
+          <h3 className="font-bold text-2xl text-cinema-white mb-2">Import Complete!</h3>
           <p className="text-sm text-cinema-silver max-w-sm mb-6">
             Successfully imported {commitResult.importedCount} movies into your cinema library.
             {commitResult.collectionCount > 0 &&

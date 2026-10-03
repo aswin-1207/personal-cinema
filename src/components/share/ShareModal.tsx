@@ -200,7 +200,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 )}
               </div>
               <div className="p-3.5 text-center">
-                <h4 className="font-serif font-bold text-sm text-[#F5F3EB] line-clamp-2 break-words" title={movie.title}>
+                <h4 className="font-semibold text-sm text-[#F5F3EB] line-clamp-2 break-words" title={movie.title}>
                   {movie.title}
                 </h4>
                 <p className="text-[11px] text-[#9E9DA5] mt-0.5">
@@ -239,7 +239,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#131319] via-[#131319]/40 to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-serif font-bold text-base text-[#F5F3EB] drop-shadow-md line-clamp-2 break-words" title={movie.title}>
+                    <h4 className="font-semibold text-base text-[#F5F3EB] drop-shadow-md line-clamp-2 break-words" title={movie.title}>
                       {movie.title}
                     </h4>
                     <p className="text-xs text-[#9E9DA5] drop-shadow">

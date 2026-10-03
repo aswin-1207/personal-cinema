@@ -426,7 +426,7 @@ export const Profile: React.FC = () => {
       <section className="p-5 rounded-2xl bg-[#B81C28]/10 border border-[#B81C28]/25 space-y-3">
         <div className="flex items-center gap-2 text-[#D94048]">
           <AlertTriangle size={18} />
-          <h3 className="text-xs uppercase tracking-wider font-extrabold">Danger Zone</h3>
+          <h3 className="text-xs uppercase tracking-wider font-bold">Danger Zone</h3>
         </div>
         <p className="text-xs text-[#9E9DA5] leading-relaxed">
           These actions can permanently remove local cinema records, ratings, collections, and screening history from this device.

@@ -89,7 +89,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
       <div className="fixed inset-0 z-50 bg-[#09090B]/95 backdrop-blur-xl flex items-center justify-center p-4">
         <div className="text-center space-y-4 max-w-sm bg-[#131319] p-6 rounded-2xl border border-white/10 shadow-2xl">
           <Film size={32} className="text-[#9E9DA5] mx-auto opacity-60" />
-          <h3 className="font-serif font-bold text-lg text-[#F5F3EB]">Shared Content Unavailable</h3>
+          <h3 className="font-semibold text-lg text-[#F5F3EB]">Shared Content Unavailable</h3>
           <p className="text-xs text-[#9E9DA5] leading-relaxed">
             This share link could not be loaded or may have expired.
           </p>
@@ -136,7 +136,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
             )}
           </div>
 
-          <h2 className="font-serif font-bold text-2xl text-[#F5F3EB] mb-1 line-clamp-2">
+          <h2 className="font-bold text-2xl text-[#F5F3EB] mb-1 line-clamp-2">
             {moviePayload.title}
           </h2>
 
@@ -222,7 +222,7 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
             </div>
           )}
 
-          <h2 className="font-serif font-bold text-2xl text-[#F5F3EB] mb-1 line-clamp-2">
+          <h2 className="font-bold text-2xl text-[#F5F3EB] mb-1 line-clamp-2">
             {collectionPayload.name}
           </h2>
 

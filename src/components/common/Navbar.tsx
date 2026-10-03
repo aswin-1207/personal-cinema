@@ -54,7 +54,7 @@ export const CinemaDesktopNav: React.FC = () => {
             <Film size={18} strokeWidth={2.5} />
           </div>
           <div>
-            <div className="font-serif font-black text-[18px] tracking-[0.2em] text-[#F5F3EB] leading-none">
+            <div className="font-bold text-[17px] tracking-[0.16em] text-[#F5F3EB] leading-none">
               MYCINEMA
             </div>
           </div>

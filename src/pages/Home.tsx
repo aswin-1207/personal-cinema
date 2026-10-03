@@ -180,10 +180,10 @@ export const Home: React.FC = () => {
       {/* Compact Top Bar */}
       <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#E0AD52] to-[#D19830] flex items-center justify-center text-[#09090B] font-black text-xs shadow-[0_2px_10px_rgba(224,173,82,0.35)]">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#E0AD52] to-[#D19830] flex items-center justify-center text-[#09090B] font-bold text-xs shadow-[0_2px_10px_rgba(224,173,82,0.35)]">
             <Film size={13} strokeWidth={2.5} />
           </div>
-          <span className="font-serif font-black text-sm tracking-[0.22em] text-[#F5F3EB]">
+          <span className="font-bold text-sm tracking-[0.16em] text-[#F5F3EB]">
             MYCINEMA
           </span>
         </div>
@@ -232,18 +232,18 @@ export const Home: React.FC = () => {
         <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-2.5 sm:mb-3">
             <div>
-              <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] sm:text-[11px] font-bold tracking-[0.16em] uppercase">
+              <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase">
                 <TrendingUp size={13} />
                 <span>CONTINUE YOUR JOURNEY</span>
               </div>
-              <h2 className="font-serif font-bold text-base sm:text-lg text-[#F5F3EB] mt-0.5 break-words">
+              <h2 className="font-semibold text-base sm:text-lg text-[#F5F3EB] mt-0.5 break-words">
                 {activeJourney.collection.name}
               </h2>
             </div>
 
             <button
               onClick={() => openCollectionDetail(activeJourney.collection.id)}
-              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-bold tracking-wide min-h-[44px] cursor-pointer bg-transparent border-none"
+              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-semibold tracking-wide min-h-[44px] cursor-pointer bg-transparent border-none"
             >
               <span>View Collection</span>
               <ChevronRight size={14} />
@@ -255,7 +255,7 @@ export const Home: React.FC = () => {
               <span>
                 {activeJourney.progress.watched} of {activeJourney.progress.total} watched
               </span>
-              <span className="font-bold text-[#E0AD52]">{activeJourney.progress.percent}%</span>
+              <span className="font-semibold text-[#E0AD52]">{activeJourney.progress.percent}%</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-[#09090B] overflow-hidden border border-white/5">
               <div
@@ -281,11 +281,11 @@ export const Home: React.FC = () => {
             </div>
 
             <div className="flex-grow min-w-0 pr-2">
-              <div className="text-[9px] text-[#E0AD52] font-black uppercase tracking-widest">
+              <div className="text-[10px] text-[#E0AD52] font-semibold uppercase tracking-wider">
                 NEXT IN COLLECTION
               </div>
               <h3
-                className="font-serif font-bold text-xs sm:text-sm text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
+                className="font-semibold text-xs sm:text-sm text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
                 title={activeJourney.nextMovie.movie.title}
               >
                 {activeJourney.nextMovie.movie.title}

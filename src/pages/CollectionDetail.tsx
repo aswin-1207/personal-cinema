@@ -114,7 +114,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
     return (
       <div className="py-20 text-center text-[#5C5B64]">
         <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin mx-auto mb-3" />
-        <p className="text-xs font-serif text-[#9E9DA5]">Loading Collection...</p>
+        <p className="text-xs text-[#9E9DA5]">Loading Collection...</p>
       </div>
     );
   }
@@ -301,11 +301,11 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
               )}
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#E0AD52] flex items-center gap-1.5">
+              <div className="text-[10px] font-semibold tracking-wider uppercase text-[#E0AD52] flex items-center gap-1.5">
                 <PlayCircle size={12} />
                 <span>NEXT UNWATCHED IN SEQUENCE</span>
               </div>
-              <h4 className="font-serif font-bold text-sm text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors truncate mt-0.5">
+              <h4 className="font-semibold text-sm text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors truncate mt-0.5">
                 {nextUnwatchedMovie.movie.title}
               </h4>
               <p className="text-[11px] text-[#9E9DA5] truncate">
@@ -338,10 +338,10 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
               )}
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#E0AD52]">
+              <div className="text-[10px] uppercase font-semibold tracking-wider text-[#E0AD52]">
                 THE FINAL FILM
               </div>
-              <div className="font-serif font-bold text-base text-[#F5F3EB] mt-0.5">
+              <div className="font-semibold text-base text-[#F5F3EB] mt-0.5">
                 {finalMovieItem.movie.title}
               </div>
               <div className="text-xs text-[#9E9DA5] mt-0.5">

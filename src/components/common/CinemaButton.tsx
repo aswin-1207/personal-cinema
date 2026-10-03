@@ -21,20 +21,20 @@ export const CinemaButton: React.FC<CinemaButtonProps> = ({
   ...props
 }) => {
   const sizeStyles = {
-    sm: 'text-xs px-3 py-1.5 rounded-lg gap-1.5',
-    md: 'text-xs sm:text-sm px-4 py-2.5 rounded-xl gap-2',
-    lg: 'text-sm sm:text-base px-5 py-3 rounded-2xl gap-2.5',
+    sm: 'text-xs px-3.5 py-1.5 rounded-xl min-h-[36px] gap-1.5',
+    md: 'text-xs sm:text-sm px-4 py-2.5 rounded-xl min-h-[44px] gap-2',
+    lg: 'text-sm sm:text-base px-5 py-3 rounded-2xl min-h-[48px] gap-2.5',
   }[size];
 
   const variantStyles = {
     primary:
-      'bg-gradient-to-r from-[#E0AD52] to-[#D99C33] text-[#09090B] font-bold shadow-[0_4px_20px_rgba(224,173,82,0.3)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.45)] hover:scale-[1.02] active:scale-[0.98]',
+      'bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] font-semibold shadow-[0_2px_12px_rgba(224,173,82,0.25)] active:scale-[0.98]',
     secondary:
-      'bg-white/[0.07] text-[#F5F3EB] border border-white/10 hover:border-[#E0AD52]/50 hover:bg-white/[0.12] active:scale-[0.98]',
+      'bg-[#131319] hover:bg-[#1C1C24] text-[#F5F3EB] border border-white/10 hover:border-white/20 active:scale-[0.98]',
     ghost:
       'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.05] active:scale-[0.98]',
     danger:
-      'bg-[#B81C28]/15 border border-[#B81C28]/40 text-[#D94048] hover:bg-[#B81C28]/30 active:scale-[0.98]',
+      'bg-[#B81C28]/15 border border-[#B81C28]/40 text-[#D94048] hover:bg-[#B81C28]/25 active:scale-[0.98]',
   }[variant];
 
   return (

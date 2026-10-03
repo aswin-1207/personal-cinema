@@ -165,7 +165,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
       <div className="fixed inset-0 z-50 bg-[#09090B] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin" />
-          <span className="text-xs text-[#9E9DA5] font-serif">Projecting Feature...</span>
+          <span className="text-xs text-[#9E9DA5]">Projecting Feature...</span>
         </div>
       </div>
     );
@@ -312,7 +312,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                 {movie.title}
               </h1>
               {movie.tagline && (
-                <p className="text-xs sm:text-sm text-[#E0AD52] italic mt-1 font-serif break-words">
+                <p className="text-xs sm:text-sm text-[#E0AD52]/90 italic mt-1 break-words font-normal">
                   "{movie.tagline}"
                 </p>
               )}
@@ -483,7 +483,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         <div className="p-6 rounded-2xl bg-[#171924]/70 border border-white/[0.08] space-y-5 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
             <div>
-              <h3 className="font-serif font-bold text-lg text-[#F5F2F0] flex items-center gap-2">
+              <h3 className="font-semibold text-lg text-[#F5F2F0] flex items-center gap-2">
                 <BookOpen size={18} className="text-[#E0AD52]" />
                 <span>Personal Screening Record</span>
               </h3>
@@ -566,7 +566,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             {userData?.review ? (
               <div className="p-4 rounded-xl bg-[#10121A] border border-white/[0.06] space-y-2.5">
                 {userData.reviewTitle && (
-                  <h4 className="font-serif font-bold text-base text-[#F5F2F0] flex items-center gap-2">
+                  <h4 className="font-semibold text-base text-[#F5F2F0] flex items-center gap-2">
                     <Quote size={15} className="text-[#E0AD52] flex-shrink-0" />
                     <span>{userData.reviewTitle}</span>
                   </h4>
@@ -597,7 +597,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                         </button>
                       </div>
                     )}
-                    <p className="font-serif italic text-sm text-[#F5F2F0]/90 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-sm text-[#F5F2F0]/90 leading-relaxed whitespace-pre-wrap font-normal">
                       {userData.review}
                     </p>
                   </div>

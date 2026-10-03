@@ -54,7 +54,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Header (Fixed) */}
       {title && (
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] flex-shrink-0">
-          <h3 className="font-serif font-bold text-sm sm:text-base md:text-lg text-[#F5F3EB] line-clamp-1">
+          <h3 className="font-semibold text-base sm:text-lg text-[#F5F3EB] line-clamp-1">
             {title}
           </h3>
           <button

@@ -22,16 +22,16 @@ export const CinemaHeader: React.FC<CinemaHeaderProps> = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {badge && (
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E0AD52] flex-shrink-0">
-              • {badge}
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#E0AD52] flex-shrink-0">
+              {badge}
             </span>
           )}
-          <h1 className="font-serif font-bold text-lg sm:text-xl md:text-2xl text-[#F5F3EB] tracking-tight truncate">
+          <h1 className="font-bold text-xl sm:text-2xl md:text-[28px] text-[#F5F3EB] tracking-tight truncate leading-tight">
             {title}
           </h1>
         </div>
         {subtitle && (
-          <p className="text-[11px] sm:text-xs text-[#9E9DA5] truncate mt-0.5 max-w-xl">
+          <p className="text-xs sm:text-sm text-[#9E9DA5] truncate mt-1 max-w-xl font-normal">
             {subtitle}
           </p>
         )}

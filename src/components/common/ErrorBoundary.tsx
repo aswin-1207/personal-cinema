@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <div className="space-y-2">
-              <h1 className="font-serif text-2xl font-bold tracking-tight text-[#F5F3EB]">
+              <h1 className="text-2xl font-bold tracking-tight text-[#F5F3EB]">
                 Intermission
               </h1>
               <p className="text-xs text-[#9E9DA5] leading-relaxed">

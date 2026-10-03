@@ -143,7 +143,7 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
               <span className="text-[10px] uppercase font-bold tracking-[0.18em] text-[#E0AD52] block">
                 THE FINAL FILM
               </span>
-              <h4 className="font-serif font-bold text-sm text-[#F5F3EB] truncate mt-0.5">
+              <h4 className="font-semibold text-sm text-[#F5F3EB] truncate mt-0.5">
                 {finalMovie.title}
               </h4>
               <p className="text-[11px] text-[#9E9DA5] mt-0.5 truncate">

@@ -20,7 +20,7 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
           <div className="w-10 h-10 mx-auto rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/20 flex items-center justify-center text-[#E0AD52]">
             <Sparkles size={20} />
           </div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F5F3EB]">Featured Screening</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-[#F5F3EB]">Featured Screening</h2>
           <p className="text-xs text-[#9E9DA5] leading-relaxed">
             Discover extraordinary films and build your personal collection to activate the hero stage.
           </p>
@@ -65,21 +65,21 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
       <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 pb-3.5 sm:pb-5 max-w-2xl min-w-0">
         
         {/* Subtle Category Tag */}
-        <div className="flex items-center gap-1.5 text-[#E0AD52] text-[10px] font-bold tracking-[0.2em] uppercase mb-1">
-          <Sparkles size={11} className="text-[#E0AD52]" />
+        <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase mb-1">
+          <Sparkles size={12} className="text-[#E0AD52]" />
           <span>FEATURED SPOTLIGHT</span>
         </div>
 
         {/* Hero Title with Clamp Typography & Overflow Protection */}
         <h1
-          className="font-serif font-black text-lg sm:text-2xl md:text-3xl text-[#F5F3EB] mb-1 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] line-clamp-2 break-words leading-tight"
+          className="font-bold text-xl sm:text-2xl md:text-3xl text-[#F5F3EB] mb-1 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] line-clamp-2 break-words leading-tight"
           title={movie.title}
         >
           {movie.title}
         </h1>
 
         {/* Hero Metadata Strip */}
-        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[#9E9DA5] mb-2 drop-shadow font-medium">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#9E9DA5] mb-2 drop-shadow font-normal">
           {year && <span>{year}</span>}
           {runtime && <span>• {runtime}</span>}
           {topGenres && <span className="hidden xs:inline">• {topGenres}</span>}

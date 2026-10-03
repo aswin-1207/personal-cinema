@@ -123,7 +123,7 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
         </div>
 
         {/* Title and Metadata */}
-        <h2 className="font-serif font-extrabold text-2xl sm:text-4xl text-cinema-white mt-6 mb-1 drop-shadow-lg max-w-xl">
+        <h2 className="font-bold text-2xl sm:text-3xl text-cinema-white mt-6 mb-1 drop-shadow-lg max-w-xl">
           {movie.title}
         </h2>
 
