@@ -3,13 +3,14 @@ import { CollectionRepository } from '../db/repositories/collectionRepository';
 
 export class ExportService {
   /**
-   * Export all Library movies to CSV or JSON
+   * Export all saved titles to CSV or JSON
    */
   static async exportLibrary(format: 'csv' | 'json'): Promise<void> {
     const all = await UserMovieRepository.getAllWithMovies();
     const rows = all.map((item) => ({
       'Movie ID': item.movie.id,
       'Title': item.movie.title,
+      'Type': item.movie.mediaType === 'tv' ? 'Series' : 'Movie',
       'Release Year': item.movie.releaseDate ? item.movie.releaseDate.substring(0, 4) : '',
       'Status': item.userData?.status || 'want_to_watch',
       'Personal Rating': item.userData?.personalRating ?? '',
@@ -20,7 +21,7 @@ export class ExportService {
       'Watched At': item.userData?.watchedAt || '',
     }));
 
-    await this.downloadFormattedData(rows, `PersonalCinema_Library`, format);
+    await this.downloadFormattedData(rows, `MyCinema_Titles`, format);
   }
 
   /**
@@ -33,15 +34,15 @@ export class ExportService {
     const rows = watched.map((item) => ({
       'Movie ID': item.movie.id,
       'Title': item.movie.title,
+      'Type': item.movie.mediaType === 'tv' ? 'Series' : 'Movie',
       'Release Year': item.movie.releaseDate ? item.movie.releaseDate.substring(0, 4) : '',
       'Watched Date': item.userData?.watchedAt || '',
       'Personal Rating': item.userData?.personalRating ?? '',
       'Notes': item.userData?.notes || '',
       'Review': item.userData?.review || '',
-      'Rewatch Count': item.userData?.rewatchCount || 0,
     }));
 
-    await this.downloadFormattedData(rows, `PersonalCinema_WatchHistory`, format);
+    await this.downloadFormattedData(rows, `MyCinema_Watched`, format);
   }
 
   /**
@@ -63,7 +64,7 @@ export class ExportService {
       'Contains Spoilers': item.userData?.hasSpoilers ? 'Yes' : 'No',
     }));
 
-    await this.downloadFormattedData(rows, `PersonalCinema_Reviews`, format);
+    await this.downloadFormattedData(rows, `MyCinema_Reviews`, format);
   }
 
   /**
@@ -77,6 +78,7 @@ export class ExportService {
       'Order': idx + 1,
       'Movie ID': item.movie.id,
       'Title': item.movie.title,
+      'Type': item.movie.mediaType === 'tv' ? 'Series' : 'Movie',
       'Release Year': item.movie.releaseDate ? item.movie.releaseDate.substring(0, 4) : '',
       'Status': item.userData?.status || 'want_to_watch',
       'Personal Rating': item.userData?.personalRating ?? '',

@@ -351,7 +351,8 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // 1. Ensure movie metadata is stored
       await MovieRepository.save(movie);
 
-      // 2. Mark as watched in UserMovie repository
+      // 2. Mark as watched in UserMovie repository (keep the prior record so Undo can restore it)
+      const previous = await UserMovieRepository.getByMovieId(movie.id);
       const updated = await UserMovieRepository.markWatched(movie.id, options);
 
       // 3. Audio & tactile feedback
@@ -376,7 +377,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // 5. Show Undo Toast
       showToast(`✓ Marked "${movie.title}" as Watched`, 'Undo', async () => {
         try {
-          await unmarkWatched(movie.id);
+          await undoMarkWatched(movie.id, previous);
           showToast(`Restored "${movie.title}"`);
         } catch {
           showToast(`Could not restore "${movie.title}"`);
@@ -391,6 +392,31 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       throw err;
     } finally {
       inFlightOps.current.delete(opKey);
+    }
+  };
+
+  // Undo returns the title to exactly where it was (Watching, Watchlist, or untracked).
+  const undoMarkWatched = async (movieId: number, previous: UserMovie | undefined) => {
+    try {
+      if (!previous) {
+        await UserMovieRepository.remove(movieId);
+      } else {
+        const current = await UserMovieRepository.getByMovieId(movieId);
+        await UserMovieRepository.save({
+          ...(current ?? previous),
+          status: previous.status,
+          watchedAt: previous.watchedAt ?? null,
+          watchingAt: previous.watchingAt ?? null,
+        });
+      }
+      const affectedColIds = await CollectionRepository.getCollectionsForMovie(movieId);
+      for (const colId of affectedColIds) {
+        await CollectionRepository.calculateProgress(colId);
+      }
+      notifyDataChanged();
+    } catch (err) {
+      console.error('Failed to undo watched:', err);
+      throw err;
     }
   };
 

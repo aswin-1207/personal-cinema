@@ -45,6 +45,7 @@ export class ReviewRepository {
     const hasReviewContent = Boolean(cleanReviewText && cleanReviewText.length > 0);
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: existing?.status || 'none', // Reviewing or rating does NOT force watched
       personalRating: data.rating !== undefined ? data.rating : existing?.personalRating ?? null,

@@ -6,7 +6,7 @@ import { ReviewCard } from '../components/review/ReviewCard';
 import { ReviewDetailModal } from '../components/review/ReviewDetailModal';
 import { ReviewEditorModal } from '../components/review/ReviewEditorModal';
 import { ReviewShareModal } from '../components/review/ReviewShareModal';
-import { EmptyState } from '../components/common/EmptyState';
+import { EmptyState } from '../components/ui/States';
 import {
   BookOpen,
   Search,
@@ -229,11 +229,10 @@ export const ReviewsPage: React.FC = () => {
       ) : filteredAndSortedItems.length === 0 ? (
         items.length === 0 ? (
           <EmptyState
-            icon={BookOpen}
-            title="NO REVIEWS YET"
-            description="Watch something. Then write what you thought."
-            actionLabel="EXPLORE MOVIES"
-            onAction={() => setActiveTab('discover')}
+            icon={<BookOpen size={20} />}
+            title="No reviews yet"
+            description="Rate or review a title from its detail page."
+            action={{ label: 'Discover', onClick: () => setActiveTab('discover') }}
           />
         ) : (
           <div className="p-8 rounded-2xl bg-[#131319]/60 border border-white/[0.06] text-center space-y-2">
