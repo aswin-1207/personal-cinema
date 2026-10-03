@@ -42,6 +42,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
   const backdropUrl = TMDBService.getBackdropUrl(movie.backdropPath, 'w1280');
   const releaseYear = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
   const rating = userData?.personalRating;
+  const [revealSpoilers, setRevealSpoilers] = useState(false);
   const hasReview = Boolean(userData?.review && userData.review.trim().length > 0);
 
   const watchedDateStr = userData?.watchedAt
@@ -204,13 +205,21 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
         )}
 
         {/* Review Content Body */}
-        {hasReview ? (
+        {hasReview && userData?.hasSpoilers && !revealSpoilers ? (
+          <button
+            type="button"
+            onClick={() => setRevealSpoilers(true)}
+            className="w-full min-h-11 p-4 rounded-2xl bg-[#0E0E14] border border-white/[0.06] text-sm text-[#E0AD52] font-semibold text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0AD52]"
+          >
+            Contains spoilers — tap to reveal
+          </button>
+        ) : hasReview ? (
           <div className="p-4 sm:p-5 rounded-2xl bg-[#0E0E14] border border-white/[0.06] text-xs sm:text-sm text-[#F5F3EB]/90 leading-relaxed font-sans whitespace-pre-wrap">
             {userData?.review}
           </div>
         ) : (
           <div className="p-4 rounded-xl bg-[#0E0E14] border border-white/[0.05] text-xs text-[#9E9DA5] italic">
-            This entry has a personal star score, but no written reflection yet.
+            Rated, no written review yet.
           </div>
         )}
 

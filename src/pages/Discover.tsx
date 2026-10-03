@@ -287,6 +287,10 @@ export const Discover: React.FC = () => {
     };
   }, [debounced, retryKey, remember]);
 
+  useEffect(() => {
+    if (isOnline && searchOffline) setRetryKey((k) => k + 1);
+  }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadMoreResults = async () => {
     if (loadingMore || searchPage >= searchTotal) return;
     setLoadingMore(true);
@@ -386,7 +390,16 @@ export const Discover: React.FC = () => {
       {isSearchMode ? (
         <section aria-label="Search results" aria-busy={searching} className="space-y-3">
           {searchOffline && results.length > 0 && (
-            <p className="text-[12px] text-muted">Offline — showing titles saved on this device.</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[12px] text-muted">Offline — showing titles saved on this device.</p>
+              <button
+                type="button"
+                onClick={() => setRetryKey((k) => k + 1)}
+                className="shrink-0 min-h-9 px-3 rounded-full text-[12px] font-semibold text-gold hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              >
+                Retry
+              </button>
+            </div>
           )}
           {searchError && results.length === 0 && !searching ? (
             <ErrorState

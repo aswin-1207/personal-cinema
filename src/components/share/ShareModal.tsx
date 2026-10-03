@@ -149,6 +149,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   const posterImg = movie.posterPath ? tmdbService.getImageUrl(movie.posterPath, 'w500') : '';
   const backdropImg = movie.backdropPath ? tmdbService.getImageUrl(movie.backdropPath, 'w780') : '';
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const metaLine = [
+    year,
+    movie.mediaType === 'tv' ? 'Series' : 'Movie',
+    movie.mediaType === 'tv'
+      ? movie.numberOfSeasons ? `${movie.numberOfSeasons} season${movie.numberOfSeasons === 1 ? '' : 's'}` : ''
+      : movie.runtime ? `${Math.floor(movie.runtime / 60) ? `${Math.floor(movie.runtime / 60)}h ` : ''}${movie.runtime % 60}m` : '',
+  ].filter(Boolean).join(' · ');
 
   return (
     <Modal
@@ -202,7 +209,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   {movie.title}
                 </h4>
                 <p className="text-[11px] text-[#9E9DA5] mt-0.5">
-                  {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                  {metaLine}
                 </p>
                 {includeRating && userData?.personalRating && (
                   <div className="flex items-center justify-center gap-1 mt-1.5 text-[#E0AD52] text-xs font-semibold">
@@ -241,7 +248,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                       {movie.title}
                     </h4>
                     <p className="text-xs text-[#9E9DA5] drop-shadow">
-                      {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                      {metaLine}
                     </p>
                   </div>
                   {includeRating && userData?.personalRating && (
@@ -291,7 +298,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                     {movie.title}
                   </h4>
                   <p className="text-xs text-[#9E9DA5] mt-0.5">
-                    {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                    {metaLine}
                   </p>
                   {includeRating && userData?.personalRating && (
                     <div className="flex items-center gap-1 text-[#E0AD52] text-xs font-semibold mt-1">
@@ -416,7 +423,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
               className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold min-h-[44px] cursor-pointer shadow-gold"
             >
               <Share2 size={16} />
-              <span>{canNative ? 'Share via Native Apps' : 'Share Movie'}</span>
+              <span>{canNative ? 'Share' : movie.mediaType === 'tv' ? 'Copy series details' : 'Copy movie details'}</span>
             </button>
 
             {/* Copy Link & Copy Text */}

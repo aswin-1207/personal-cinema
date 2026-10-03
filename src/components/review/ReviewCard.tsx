@@ -88,9 +88,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ item, onOpenDetail, onEd
                 </h4>
               )}
 
-              <p className="text-xs text-[#F5F3EB]/80 leading-relaxed line-clamp-2 italic">
-                "{userData?.review}"
-              </p>
+              {userData?.hasSpoilers ? (
+                <p className="text-xs text-[#9E9DA5] italic">Contains spoilers — open to reveal</p>
+              ) : (
+                <p className="text-xs text-[#F5F3EB]/80 leading-relaxed line-clamp-2 italic">
+                  "{userData?.review}"
+                </p>
+              )}
             </div>
           ) : (
             <div className="mt-1.5 text-xs text-[#9E9DA5]/70 italic flex items-center gap-1.5">
