@@ -36,7 +36,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     )}
     <div className="min-w-0 flex-1">
       <h1 className="font-page-title truncate">{title}</h1>
-      {subtitle && <p className="text-[13px] text-muted truncate mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-[13px] text-muted line-clamp-2 mt-0.5">{subtitle}</p>}
     </div>
     {actions && <div className="shrink-0 flex items-center gap-2">{actions}</div>}
     {showProfile && <ProfileButton className="md:hidden -mr-1.5" />}

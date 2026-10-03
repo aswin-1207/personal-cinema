@@ -15,6 +15,7 @@ import { Button } from '../components/ui/Button';
 import { useUserDataMap } from '../hooks/useUserDataMap';
 
 const RECENT_SEARCHES_KEY = 'mycinema_recent_searches';
+const DISCOVER_SCOPE_KEY = 'mycinema_discover_scope';
 
 type Paged = { results: Movie[]; totalPages: number };
 type Scope = 'all' | 'movie' | 'tv';
@@ -306,7 +307,19 @@ export const Discover: React.FC = () => {
 
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [scope, setScope] = useState<Scope>('all');
+  // Discover remounts on every route change; keep the Movies/Series choice for the tab session.
+  const [scope, setScopeState] = useState<Scope>(() => {
+    const saved = sessionStorage.getItem(DISCOVER_SCOPE_KEY);
+    return saved === 'movie' || saved === 'tv' ? saved : 'all';
+  });
+  const setScope = useCallback((next: Scope) => {
+    setScopeState(next);
+    try {
+      sessionStorage.setItem(DISCOVER_SCOPE_KEY, next);
+    } catch {
+      /* storage disabled */
+    }
+  }, []);
   const [results, setResults] = useState<Movie[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -428,9 +441,12 @@ export const Discover: React.FC = () => {
     if (!activeSub) return undefined;
     const rail = DISCOVER_CATEGORIES.find((c) => c.id === activeSub);
     if (rail) return rail;
-    const browse = [...MOODS, ...GENRES].find((b) => b.id === activeSub);
-    return browse ? toBrowseCategory(browse, browseSupports(browse, scope) ? scope : 'all') : undefined;
-  }, [activeSub, scope]);
+    // Browse routes carry their scope ("genre-drama~movie") because the page remounts on navigation.
+    const [browseId, browseScope = 'all'] = activeSub.split('~') as [string, Scope?];
+    const browse = [...MOODS, ...GENRES].find((b) => b.id === browseId);
+    return browse ? toBrowseCategory(browse, browseSupports(browse, browseScope) ? browseScope : 'all') : undefined;
+  }, [activeSub]);
+  const openBrowse = (id: string) => setActiveSub(scope === 'all' ? id : `${id}~${scope}`);
   if (category) return <CategoryPage def={category} />;
 
   const isSearchMode = query.trim().length > 0;
@@ -493,8 +509,8 @@ export const Discover: React.FC = () => {
 
       {!isSearchMode && (
         <>
-          <BrowseChips label="Screening moods" items={MOODS} scope={scope} size="lg" onPick={setActiveSub} />
-          <BrowseChips label="Genres" items={GENRES} scope={scope} size="sm" onPick={setActiveSub} />
+          <BrowseChips label="Screening moods" items={MOODS} scope={scope} size="lg" onPick={openBrowse} />
+          <BrowseChips label="Genres" items={GENRES} scope={scope} size="sm" onPick={openBrowse} />
         </>
       )}
 
