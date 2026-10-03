@@ -26,7 +26,7 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
   const review = userData?.review || '';
   const reviewTitle = userData?.reviewTitle || '';
 
-  const shareText = `"${movie.title}" (${releaseYear}) — MyCinema Film Journal\n` +
+  const shareText = `"${movie.title}" (${releaseYear}) — MyCinema review\n` +
     (typeof rating === 'number' ? `Score: ${rating.toFixed(1)} / 5.0 ⭐\n` : '') +
     (reviewTitle ? `"${reviewTitle}"\n\n` : '\n') +
     (review ? `${review}\n\n` : '') +
@@ -132,9 +132,9 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
           <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[10px] text-[#63626B] font-mono">
             <div className="flex items-center gap-1.5">
               <BrandLogo variant="symbol" size={13} alt="MYCINEMA" />
-              <span>PRIVATE FILM VAULT</span>
+              <span>MYCINEMA</span>
             </div>
-            <span>PERSONAL JOURNAL</span>
+            <span>REVIEW</span>
           </div>
         </div>
       </div>

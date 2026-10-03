@@ -4,30 +4,16 @@ import { WifiOff } from 'lucide-react';
 
 export const OfflineIndicator: React.FC = () => {
   const { isOnline } = useCinema();
-
   if (isOnline) return null;
-
   return (
     <div
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 80,
-        backgroundColor: 'rgba(217, 64, 72, 0.92)',
-        backdropFilter: 'blur(8px)',
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        padding: '6px 16px',
-        letterSpacing: '0.04em',
-      }}
+      role="status"
+      className="relative z-20 flex items-center justify-center gap-2 px-4 pt-[calc(env(safe-area-inset-top,0px)+6px)] pb-1.5 bg-surface-2 border-b border-line text-[12px] text-muted"
     >
-      <WifiOff size={14} />
-      <span>Offline Mode — Your MyCinema library is safely stored on this device.</span>
+      <WifiOff size={13} className="text-gold shrink-0" aria-hidden="true" />
+      <span>
+        <span className="font-semibold text-text">Offline.</span> Your saved titles are still available.
+      </span>
     </div>
   );
 };

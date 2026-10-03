@@ -550,8 +550,8 @@ export class TMDBService {
       const endpoint = mediaType === 'tv' ? `/tv/${tmdbId}/similar` : `/movie/${tmdbId}/similar`;
       const data = await this.fetchWithCache<any>(endpoint);
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
-    } catch {
-      return SEED_MOVIES.filter((m) => m.id !== id).slice(0, 8);
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -611,10 +611,8 @@ export class TMDBService {
         .map((raw: any) =>
           this.mapRawToMovie(raw, mediaType === 'all' ? undefined : (mediaType as MediaType))
         );
-    } catch (err: any) {
-      const local = await MovieRepository.getAll();
-      if (local.length >= 6) return local.slice(0, 20);
-      return SEED_MOVIES.filter((m) => m.seedCategory === 'trending').slice(0, 20);
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -637,10 +635,8 @@ export class TMDBService {
           : undefined
       );
       return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
-    } catch (err: any) {
-      const local = await MovieRepository.getAll();
-      if (local.length >= 6) return local.slice(0, 20);
-      return SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').slice(0, 20);
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -655,8 +651,8 @@ export class TMDBService {
     try {
       const data = await this.fetchWithCache<any>(endpoint, { page: page.toString() });
       return (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
-    } catch {
-      return [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 20);
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -777,13 +773,10 @@ export class TMDBService {
       queryParams.first_air_date_year = params.firstAirDateYear.toString();
     }
 
-    try {
-      const data = await this.fetchWithCache<any>(endpoint, queryParams);
-      const results = (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
-      return { results, totalPages: data.total_pages || 1 };
-    } catch {
-      return { results: SEED_MOVIES.slice(0, 10), totalPages: 1 };
-    }
+    // Failures propagate so the UI can show an error + Retry instead of filler content.
+    const data = await this.fetchWithCache<any>(endpoint, queryParams);
+    const results = (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
+    return { results, totalPages: Math.min(data.total_pages || 1, 500) };
   }
 
   /**
@@ -954,6 +947,46 @@ export class TMDBService {
   /**
    * Tamil Cinema
    */
+  static async getDisneyMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withCompanies: '2|3|6125', // Walt Disney Pictures, Pixar, Walt Disney Animation Studios
+      voteCountGte: 100,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  static async getFoxMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withCompanies: '25|127928', // 20th Century Fox, 20th Century Studios
+      voteCountGte: 100,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  static async getGenreMovies(genreId: number, page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      genreIds: [genreId],
+      voteCountGte: 300,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  static async getPopularSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withoutGenreIds: [10763, 10764, 10767], // news, reality, talk
+      voteCountGte: 200,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
   static async getTamilMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
     return this.discoverPaged({
       mediaType: 'movie',
@@ -1201,6 +1234,10 @@ export const tmdbService = {
   getAnimeSeries: (page: number = 1) => TMDBService.getAnimeSeries(page),
   getRegionalIndianMovies: (page: number = 1) => TMDBService.getRegionalIndianMovies(page),
   getTamilMovies: (page: number = 1) => TMDBService.getTamilMovies(page),
+  getDisneyMovies: (page?: number) => TMDBService.getDisneyMovies(page),
+  getFoxMovies: (page?: number) => TMDBService.getFoxMovies(page),
+  getGenreMovies: (genreId: number, page?: number) => TMDBService.getGenreMovies(genreId, page),
+  getPopularSeries: (page?: number) => TMDBService.getPopularSeries(page),
   getTMDBImageUrl: (path?: string | null, size?: any) => TMDBService.getTMDBImageUrl(path, size),
   getImageUrl: (path?: string | null, size?: any) => TMDBService.getImageUrl(path, size),
   getPosterUrl: (path?: string | null, size?: any) => TMDBService.getPosterUrl(path, size),

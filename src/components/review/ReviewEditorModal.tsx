@@ -27,6 +27,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
   const [rating, setRating] = useState<number | null>(null);
   const [reviewTitle, setReviewTitle] = useState<string>('');
   const [reviewText, setReviewText] = useState<string>('');
+  const [hasSpoilers, setHasSpoilers] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasDraftRestored, setHasDraftRestored] = useState<boolean>(false);
 
@@ -34,6 +35,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setHasSpoilers(initialUserData?.hasSpoilers ?? false);
 
     // Check for existing draft in local storage
     const savedDraft = localStorage.getItem(draftKey);
@@ -107,12 +109,13 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         rating,
         reviewTitle: reviewTitle.trim() || undefined,
         reviewText: reviewText.trim() || undefined,
+        hasSpoilers,
       });
 
       // Clear draft on successful save
       localStorage.removeItem(draftKey);
       notifyDataChanged();
-      showToast(`Saved reflection for "${movie.title}"`);
+      showToast(`Review saved for "${movie.title}"`);
       if (onSaved) onSaved();
       onClose();
     } catch (err: any) {
@@ -149,7 +152,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={existingHasReview ? 'Edit Film Journal' : 'Write Film Journal'}
+      title={existingHasReview ? 'Edit review' : 'Write review'}
       maxWidth={580}
       footer={
         <div className="flex items-center justify-between w-full">
@@ -201,7 +204,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
               {movie.title}
             </h4>
             <p className="text-xs text-[#9E9DA5] font-mono mt-0.5">
-              {releaseYear ? `${releaseYear} • ` : ''}Film Journal
+              {releaseYear ? `${releaseYear} • ` : ''}Review
             </p>
           </div>
 
@@ -256,7 +259,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             type="text"
             value={reviewTitle}
             onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="e.g. A haunting masterclass in atmospheric tension"
+            placeholder="e.g. A haunting, unforgettable thriller"
             className="w-full px-3.5 py-2.5 rounded-xl bg-[#0E0E14] border border-white/10 text-xs sm:text-sm text-[#F5F3EB] placeholder-[#63626B] focus:border-[#E0AD52] focus:outline-none transition-colors"
           />
         </div>
@@ -265,7 +268,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-              Written Reflection / Journal
+              Review
             </label>
             <span className="text-[11px] text-[#63626B] font-mono">
               {reviewText.length} characters
@@ -274,11 +277,22 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
           <textarea
             value={reviewText}
             onChange={(e) => handleTextChange(e.target.value)}
-            placeholder="Record what struck you about the filmmaking, performances, themes, or how this film made you feel..."
+            placeholder="What stood out to you?"
             rows={5}
             className="w-full p-3.5 rounded-xl bg-[#0E0E14] border border-white/10 text-xs sm:text-sm text-[#F5F3EB] placeholder-[#63626B] leading-relaxed focus:border-[#E0AD52] focus:outline-none transition-colors resize-y min-h-[120px]"
           />
         </div>
+
+        <label className="flex items-center gap-3 min-h-11 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={hasSpoilers}
+            onChange={(e) => setHasSpoilers(e.target.checked)}
+            className="h-5 w-5 rounded accent-[#E0AD52]"
+          />
+          <span className="text-sm text-[#F5F3EB]">Contains spoilers</span>
+          <span className="text-xs text-[#9E9DA5]">Hidden until revealed</span>
+        </label>
       </div>
     </Modal>
   );

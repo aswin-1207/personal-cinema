@@ -333,7 +333,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
       case 'mapping':
         return 'Configure Column Mapping';
       case 'matching':
-        return 'Matching with TMDB & Local Vault';
+        return 'Matching titles';
       case 'review':
         return 'Review & Confirm Matches';
       case 'success':
@@ -569,7 +569,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
               onChange={(e) => setTargetCollectionOption(e.target.value)}
               className="cinema-input w-full text-xs sm:text-sm"
             >
-              <option value="none">Main Library Only</option>
+              <option value="none">No collection</option>
               <option value="new">+ Create New Collection for this Import</option>
               {collections.map((col) => (
                 <option key={col.id} value={col.id}>
@@ -865,7 +865,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                           )}
                           {candidate.isDuplicateInLibrary && (
                             <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex-shrink-0">
-                              In Vault
+                              Already saved
                             </span>
                           )}
                           {candidate.isDuplicateInCollection && (
@@ -1014,9 +1014,9 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           </div>
           <h3 className="font-bold text-xl sm:text-2xl text-[#F5F3EB] mb-2">Import Complete!</h3>
           <p className="text-xs sm:text-sm text-[#9E9DA5] max-w-sm">
-            Successfully imported {commitResult.importedCount} movie{commitResult.importedCount === 1 ? '' : 's'} into your cinema library.
+            Imported {commitResult.importedCount} title{commitResult.importedCount === 1 ? '' : 's'}.
             {commitResult.collectionCount > 0 &&
-              ` Added ${commitResult.collectionCount} movie${commitResult.collectionCount === 1 ? '' : 's'} to the collection.`}
+              ` Added ${commitResult.collectionCount} to the collection.`}
           </p>
         </div>
       )}

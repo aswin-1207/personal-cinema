@@ -1,105 +1,135 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Layers, Plus, Upload } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
-import { CollectionRepository } from '../db/repositories/collectionRepository';
-import { Collection } from '../types/collection';
-import { CollectionCard } from '../components/collection/CollectionCard';
 import { CreateCollectionModal } from '../components/collection/CreateCollectionModal';
 import { ImportWizard } from '../components/import/ImportWizard';
-import { EmptyState } from '../components/common/EmptyState';
-import { CinemaHeader } from '../components/ui/CinemaHeader';
-import { FolderPlus, Upload } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
+import { CollectionCard } from '../components/ui/CollectionCard';
+import { ChipGroup } from '../components/ui/ChipGroup';
+import { SortSelect } from '../components/ui/SortSelect';
+import { EmptyState, ErrorState } from '../components/ui/States';
+import { Button, IconButton } from '../components/ui/Button';
+import { useCollectionsOverview } from '../hooks/useCollectionsOverview';
+
+type Filter = 'all' | 'progress' | 'complete';
+type Sort = 'updated' | 'name' | 'progress';
 
 export const CollectionsPage: React.FC = () => {
-  const { openCollectionDetail, dataVersion, notifyDataChanged } = useCinema();
-
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const { openCollectionDetail, dataVersion, notifyDataChanged, showToast } = useCinema();
+  const { overviews, loading, error, reload } = useCollectionsOverview(dataVersion);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [sort, setSort] = useState<Sort>('updated');
 
-  const loadCollections = async () => {
-    setIsLoading(true);
-    try {
-      const all = await CollectionRepository.getAll();
-      setCollections(all);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const counts = useMemo(() => {
+    const complete = overviews.filter((o) => o.progress.isComplete && o.progress.total > 0).length;
+    return { all: overviews.length, complete, progress: overviews.length - complete };
+  }, [overviews]);
 
-  useEffect(() => {
-    loadCollections();
-  }, [dataVersion]);
+  const visible = useMemo(() => {
+    const list = overviews.filter((o) => {
+      const done = o.progress.isComplete && o.progress.total > 0;
+      return filter === 'all' || (filter === 'complete' ? done : !done);
+    });
+    return [...list].sort((a, b) =>
+      sort === 'name'
+        ? a.collection.name.localeCompare(b.collection.name)
+        : sort === 'progress'
+        ? b.progress.percent - a.progress.percent
+        : b.collection.updatedAt.localeCompare(a.collection.updatedAt)
+    );
+  }, [overviews, filter, sort]);
 
   return (
-    <div className="space-y-5 pb-4">
-      {/* Header matching compact cinema layout */}
-      <CinemaHeader
+    <div className="space-y-4 pb-4">
+      <PageHeader
         title="Collections"
-        action={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsImportOpen(true)}
-              className="cinema-button-secondary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-              title="Import movies from CSV, Excel, or Text list"
-            >
-              <Upload size={13} />
-              <span>Import List</span>
-            </button>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer"
-            >
-              <FolderPlus size={13} />
-              <span>+ New Collection</span>
-            </button>
-          </div>
+        subtitle="Organize movies and series your way."
+        actions={
+          <IconButton label="Import a list" variant="ghost" onClick={() => setIsImportOpen(true)}>
+            <Upload size={18} aria-hidden="true" />
+          </IconButton>
         }
       />
 
-      <div className="pt-1">
+      <Button
+        variant="primary"
+        size="lg"
+        icon={<Plus size={18} aria-hidden="true" />}
+        onClick={() => setIsCreateOpen(true)}
+        className="w-full sm:w-auto uppercase tracking-wider text-[14px]"
+      >
+        Create collection
+      </Button>
 
-      {/* Responsive Grid of collections */}
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full border-2 border-cinema-charcoal border-t-cinema-gold animate-spin mb-3" />
-        </div>
-      ) : collections.length === 0 ? (
-        <EmptyState
-          title="No Collections Yet"
-          description="Create your first collection to group your favorite director's filmography or theme nights."
-          actionText="Create Collection"
-          onAction={() => setIsCreateOpen(true)}
-        />
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-          {collections.map((col) => (
-            <CollectionCard
-              key={col.id}
-              collection={col}
-              onClick={() => openCollectionDetail(col.id)}
-            />
-          ))}
+      {overviews.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <ChipGroup<Filter>
+            label="Filter collections"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: 'all', label: 'All', count: counts.all },
+              { value: 'progress', label: 'In progress', count: counts.progress },
+              { value: 'complete', label: 'Complete', count: counts.complete },
+            ]}
+          />
+          <SortSelect<Sort>
+            label="Sort collections"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: 'updated', label: 'Recently updated' },
+              { value: 'name', label: 'Name' },
+              { value: 'progress', label: 'Progress' },
+            ]}
+          />
         </div>
       )}
-      </div>
 
-      {/* Create Modal */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4" aria-hidden="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-[220px] rounded-2xl cinema-skeleton" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState title="Couldn't load collections" onRetry={reload} />
+      ) : overviews.length === 0 ? (
+        <EmptyState
+          icon={<Layers size={22} />}
+          title="No collections yet"
+          description="Group titles by director, franchise or mood and track your progress."
+          action={{ label: 'Create collection', onClick: () => setIsCreateOpen(true) }}
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState compact title={filter === 'complete' ? 'No completed collections yet' : 'Every collection is complete'} />
+      ) : (
+        <section aria-label="Your collections" className="space-y-3">
+          <h2 className="font-section-title">Your collections</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          {visible.map((o) => (
+            <CollectionCard key={o.collection.id} overview={o} onOpen={() => openCollectionDetail(o.collection.id)} />
+          ))}
+          </div>
+        </section>
+      )}
+
       <CreateCollectionModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={(col) => {
-          setCollections((prev) => [...prev, col]);
+          showToast(`Created ${col.name}`);
+          notifyDataChanged();
           openCollectionDetail(col.id);
         }}
       />
-
-      {/* Import Wizard Modal */}
       <ImportWizard
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onComplete={() => {
-          loadCollections();
+          setIsImportOpen(false);
           notifyDataChanged();
         }}
       />
