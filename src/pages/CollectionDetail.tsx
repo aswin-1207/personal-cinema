@@ -1,534 +1,418 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, CheckCircle2, Edit3, ListOrdered, MoreHorizontal, Plus, Share2, Trash2, Upload, X } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { CollectionRepository } from '../db/repositories/collectionRepository';
-import { CollectionWithMovies, CollectionSortMode } from '../types/collection';
-import { MoviePoster } from '../components/movie/MoviePoster';
+import { CollectionSortMode, CollectionWithMovies } from '../types/collection';
+import { getMediaYear } from '../types/movie';
+import { tmdbService } from '../services/tmdbService';
 import { AddMoviesToCollectionModal } from '../components/collection/AddMoviesToCollectionModal';
 import { EditCollectionModal } from '../components/collection/EditCollectionModal';
 import { CollectionShareModal } from '../components/share/CollectionShareModal';
 import { ImportWizard } from '../components/import/ImportWizard';
-import { EmptyState } from '../components/common/EmptyState';
-import {
-  ArrowLeft,
-  Share2,
-  Plus,
-  Trash2,
-  Edit3,
-  Film,
-  ArrowUpDown,
-  MoveUp,
-  MoveDown,
-  X,
-  PlayCircle,
-  CheckCircle2,
-  Upload,
-} from 'lucide-react';
+import { Modal } from '../components/common/Modal';
+import { WatchedButton } from '../components/movie/WatchedButton';
+import { PageHeader } from '../components/ui/PageHeader';
+import { CollectionCollage } from '../components/ui/CollectionCard';
+import { ProgressBar } from '../components/ui/ProgressBar';
+import { ChipGroup } from '../components/ui/ChipGroup';
+import { SortSelect } from '../components/ui/SortSelect';
+import { MediaCard, mediaTypeLabel } from '../components/ui/MediaCard';
+import { MediaGrid } from '../components/ui/MediaGrid';
+import { EmptyState, ErrorState, Spinner } from '../components/ui/States';
+import { Button, IconButton } from '../components/ui/Button';
 
 interface CollectionDetailProps {
   collectionId: string;
   onBack: () => void;
 }
 
+type Filter = 'all' | 'watched' | 'watching' | 'unwatched';
+type Sort = CollectionSortMode | 'releaseDateDesc';
+
 export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId, onBack }) => {
   const { openMovieDetail, showToast, dataVersion, notifyDataChanged } = useCinema();
+  const [data, setData] = useState<CollectionWithMovies | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
+  const [filter, setFilter] = useState<Filter>('all');
+  const [sort, setSort] = useState<Sort>('custom');
+  const [editMode, setEditMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modal, setModal] = useState<'add' | 'edit' | 'share' | 'import' | 'delete' | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const [collectionData, setCollectionData] = useState<CollectionWithMovies | null>(null);
-  const [filter, setFilter] = useState<'all' | 'watched' | 'watching' | 'unwatched'>('all');
-  const [activeSort, setActiveSort] = useState<CollectionSortMode | 'releaseDateDesc'>('custom');
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [reorderMode, setReorderMode] = useState(false);
-
-  const loadData = async () => {
-    const data = await CollectionRepository.getWithMovies(collectionId);
-    setCollectionData(data);
-    if (data?.collection.sortMode) {
-      setActiveSort(data.collection.sortMode);
+  const load = useCallback(async () => {
+    try {
+      const d = await CollectionRepository.getWithMovies(collectionId);
+      setData(d);
+      setStatus(d ? 'ready' : 'missing');
+      return d;
+    } catch (err) {
+      console.error('Failed to load collection:', err);
+      setStatus('error');
+      return null;
     }
-  };
+  }, [collectionId]);
 
   useEffect(() => {
-    loadData();
-  }, [collectionId, dataVersion]);
+    load().then((d) => d && setSort((s) => (s === 'custom' ? d.collection.sortMode : s)));
+  }, [load, dataVersion]);
 
-  const movies = collectionData?.movies || [];
-  const progress = collectionData?.progress;
-  const collection = collectionData?.collection;
+  const movies = data?.movies ?? [];
+  const collection = data?.collection;
 
-  // Find next unwatched movie according to collection order (Section 57)
-  const nextUnwatchedMovie = useMemo(() => {
-    if (!progress || progress.isComplete || progress.unwatched === 0) return null;
-    return movies.find((item) => item.userData?.status !== 'watched') || null;
-  }, [movies, progress]);
+  const counts = useMemo(
+    () => ({
+      all: movies.length,
+      watched: movies.filter((m) => m.userData?.status === 'watched').length,
+      watching: movies.filter((m) => m.userData?.status === 'watching').length,
+      unwatched: movies.filter((m) => m.userData?.status !== 'watched').length,
+    }),
+    [movies]
+  );
 
-  // Sorting and Filtering
-  const displayedMovies = useMemo(() => {
+  const ordered = useMemo(() => {
     if (!collection) return [];
-    // 1. Filter
-    let list = movies.filter((item) => {
-      if (filter === 'watched') return item.userData?.status === 'watched';
-      if (filter === 'watching') return item.userData?.status === 'watching';
-      if (filter === 'unwatched') return item.userData?.status !== 'watched';
-      return true;
-    });
-
-    // 2. Sort
-    return [...list].sort((a, b) => {
-      switch (activeSort) {
-        case 'custom': {
-          const idxA = collection.customOrder.indexOf(a.movie.id);
-          const idxB = collection.customOrder.indexOf(b.movie.id);
-          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-          return a.position - b.position;
-        }
-        case 'releaseDate': {
-          const dateA = a.movie.releaseDate || '0000';
-          const dateB = b.movie.releaseDate || '0000';
-          return dateA.localeCompare(dateB);
-        }
-        case 'releaseDateDesc': {
-          const dateA = a.movie.releaseDate || '0000';
-          const dateB = b.movie.releaseDate || '0000';
-          return dateB.localeCompare(dateA);
-        }
+    const idx = (id: number) => {
+      const i = collection.customOrder.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    const date = (m: (typeof movies)[number]) => m.movie.releaseDate || m.movie.firstAirDate || '0000';
+    return [...movies].sort((a, b) => {
+      switch (sort) {
+        case 'releaseDate':
+          return date(a).localeCompare(date(b));
+        case 'releaseDateDesc':
+          return date(b).localeCompare(date(a));
         case 'title':
           return a.movie.title.localeCompare(b.movie.title);
-        case 'rating': {
-          const rA = a.userData?.personalRating ?? a.movie.voteAverage ?? 0;
-          const rB = b.userData?.personalRating ?? b.movie.voteAverage ?? 0;
-          return rB - rA;
-        }
+        case 'rating':
+          return (b.userData?.personalRating ?? b.movie.voteAverage ?? 0) - (a.userData?.personalRating ?? a.movie.voteAverage ?? 0);
         case 'watchedStatus': {
-          const order: Record<string, number> = { watched: 0, watching: 1, want_to_watch: 2 };
-          const sA = order[a.userData?.status || 'want_to_watch'] ?? 3;
-          const sB = order[b.userData?.status || 'want_to_watch'] ?? 3;
-          return sA - sB;
+          const o: Record<string, number> = { watched: 0, watching: 1, want_to_watch: 2 };
+          return (o[a.userData?.status || ''] ?? 3) - (o[b.userData?.status || ''] ?? 3);
         }
         default:
-          return a.position - b.position;
+          return idx(a.movie.id) - idx(b.movie.id) || a.position - b.position;
       }
     });
-  }, [movies, filter, activeSort, collection]);
+  }, [movies, sort, collection]);
 
-  if (!collectionData || !collection || !progress) {
+  const displayed = useMemo(
+    () =>
+      ordered.filter((m) =>
+        filter === 'watched'
+          ? m.userData?.status === 'watched'
+          : filter === 'watching'
+          ? m.userData?.status === 'watching'
+          : filter === 'unwatched'
+          ? m.userData?.status !== 'watched'
+          : true
+      ),
+    [ordered, filter]
+  );
+
+  const nextUp = useMemo(() => ordered.find((m) => m.userData?.status !== 'watched') ?? null, [ordered]);
+
+  if (status === 'loading') return <Spinner label="Loading collection" />;
+  if (status === 'error') return <ErrorState title="Couldn't load this collection" onRetry={load} />;
+  if (!data || !collection) {
     return (
-      <div className="py-20 text-center text-[#5C5B64]">
-        <div className="w-10 h-10 rounded-full border-2 border-[#1C1C24] border-t-[#E0AD52] animate-spin mx-auto mb-3" />
-        <p className="text-xs text-[#9E9DA5]">Loading Collection...</p>
+      <div className="space-y-4">
+        <PageHeader title="Collection" onBack={onBack} backLabel="Back to Collections" />
+        <EmptyState title="Collection not found" description="It may have been deleted." action={{ label: 'All collections', onClick: onBack }} />
       </div>
     );
   }
 
-  const handleDeleteCollection = async () => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${collection.name}"? This removes the collection grouping, but your movies, watchlist, and watched history will remain.`
-      )
-    ) {
-      await CollectionRepository.delete(collection.id);
-      showToast(`Collection "${collection.name}" deleted.`);
+  const { progress } = data;
+  const complete = progress.isComplete && progress.total > 0;
+  const canReorder = sort === 'custom' && filter === 'all';
+  const backdrop = tmdbService.getBackdropUrl(movies[0]?.movie.backdropPath, 'w1280');
+
+  const removeMovie = async (movieId: number, title: string) => {
+    setBusy(true);
+    try {
+      await CollectionRepository.removeMovieFromCollection(collection.id, movieId);
+      await load();
       notifyDataChanged();
-      onBack();
+      showToast(`Removed ${title}`);
+    } catch {
+      showToast(`Couldn't remove ${title}`);
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleRemoveMovie = async (movieId: number) => {
-    await CollectionRepository.removeMovieFromCollection(collection.id, movieId);
-    showToast('Movie removed from collection.');
-    loadData();
-    notifyDataChanged();
+  const move = async (from: number, to: number) => {
+    if (to < 0 || to >= ordered.length || busy) return;
+    const ids = ordered.map((m) => m.movie.id);
+    const [id] = ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    setBusy(true);
+    try {
+      await CollectionRepository.updateMovieOrder(collection.id, ids);
+      await load();
+    } catch {
+      showToast("Couldn't save the new order");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleMoveMovie = async (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= movies.length) return;
-    const currentOrder = movies.map((m) => m.movie.id);
-    const [moved] = currentOrder.splice(fromIndex, 1);
-    currentOrder.splice(toIndex, 0, moved);
-
-    await CollectionRepository.updateMovieOrder(collection.id, currentOrder);
-    loadData();
+  const deleteCollection = async () => {
+    setBusy(true);
+    try {
+      await CollectionRepository.delete(collection.id);
+      setModal(null);
+      showToast(`Deleted ${collection.name}`);
+      notifyDataChanged();
+      onBack();
+    } catch {
+      showToast("Couldn't delete the collection");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const finalMovieItem = collection.finalMovieId
-    ? movies.find((m) => m.movie.id === collection.finalMovieId)
-    : movies.length > 0
-    ? movies[movies.length - 1]
-    : null;
+  const menuItems = [
+    { label: 'Edit details', icon: <Edit3 size={16} aria-hidden="true" />, onClick: () => setModal('edit') },
+    { label: 'Import a list', icon: <Upload size={16} aria-hidden="true" />, onClick: () => setModal('import') },
+    { label: 'Delete collection', icon: <Trash2 size={16} aria-hidden="true" />, onClick: () => setModal('delete'), danger: true },
+  ];
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
-      {/* Top Navigation Bar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors cursor-pointer border-none min-h-[44px]"
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Collections</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsEditOpen(true)}
-            className="cinema-button-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer min-h-[44px]"
-            title="Edit Collection Name & Cover"
-          >
-            <Edit3 size={13} />
-            <span>Edit</span>
-          </button>
-
-          <button
-            onClick={() => setIsShareOpen(true)}
-            className="cinema-button-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer min-h-[44px]"
-          >
-            <Share2 size={13} />
-            <span>Share Collection</span>
-          </button>
-
-          <button
-            onClick={handleDeleteCollection}
-            className="p-2.5 rounded-xl text-[#9E9DA5] hover:text-[#EF4444] hover:bg-red-950/30 transition-colors cursor-pointer border-none bg-transparent min-h-[44px] min-w-[44px] flex items-center justify-center"
-            title="Delete Collection"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* Universe Hero Stage */}
-      <div className="p-4 sm:p-6 md:p-7 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#131319] to-[#0E0E14] border border-[#E0AD52]/30 relative overflow-hidden shadow-2xl">
-        {/* Subtle Ambient Gold Glow if complete */}
-        {progress.isComplete && (
-          <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#E0AD52]/20 rounded-full blur-3xl pointer-events-none" />
-        )}
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="max-w-2xl space-y-2.5">
-            {progress.isComplete && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E0AD52]/10 border border-[#E0AD52]/30 text-[#E0AD52] text-xs font-semibold tracking-wide">
-                <CheckCircle2 size={13} className="text-[#E0AD52]" />
-                <span>COLLECTION COMPLETE ✓</span>
-              </div>
-            )}
-
-            <h1 className="font-hero-title text-2xl sm:text-4xl text-[#F5F3EB]">
-              {collection.name}
-            </h1>
-
-            {collection.description && (
-              <p className="text-xs sm:text-sm text-[#F5F3EB]/80 leading-relaxed max-w-xl">
-                {collection.description}
-              </p>
-            )}
-
-            {/* Derived Progress Bar */}
-            <div className="space-y-1.5 max-w-md pt-2">
-              <div className="flex justify-between text-xs text-[#9E9DA5]">
-                <span>
-                  {progress.watched} of {progress.total} films watched
-                  {!progress.isComplete && progress.unwatched > 0
-                    ? ` · ${progress.unwatched} remaining`
-                    : ''}
-                </span>
-                <span className={`font-bold ${progress.isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>
-                  {progress.percent}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-[#09090B] rounded-full overflow-hidden border border-white/5">
-                <div
-                  className={`h-full rounded-full transition-all duration-700 ease-out ${
-                    progress.isComplete
-                      ? 'bg-gradient-to-r from-[#D99C33] to-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.4)]'
-                      : 'bg-[#E0AD52]'
-                  }`}
-                  style={{ width: `${progress.percent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Primary Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 flex-wrap">
-            <button
-              onClick={() => setIsAddOpen(true)}
-              className="cinema-button-primary px-4 sm:px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(224,173,82,0.35)] cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>Add Movies</span>
-            </button>
-
-            <button
-              onClick={() => setIsImportOpen(true)}
-              className="cinema-button-secondary px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
-              title="Import movies from CSV, XLSX, or Text list directly into this collection"
-            >
-              <Upload size={14} />
-              <span>Import List</span>
-            </button>
-
-            {movies.length > 1 && (
-              <button
-                onClick={() => {
-                  setReorderMode(!reorderMode);
-                  if (!reorderMode) setActiveSort('custom');
-                }}
-                className={`cinema-button-secondary px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
-                  reorderMode ? 'border-[#E0AD52] text-[#E0AD52]' : ''
-                }`}
-              >
-                <ArrowUpDown size={15} />
-                <span>{reorderMode ? 'Done Reordering' : 'Reorder Sequence'}</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Next Unwatched Spotlight (Section 57) */}
-      {!progress.isComplete && nextUnwatchedMovie && (
-        <div
-          onClick={() => openMovieDetail(nextUnwatchedMovie.movie.id)}
-          className="p-3.5 sm:p-4 rounded-2xl bg-[#131319]/80 border border-white/10 hover:border-[#E0AD52]/40 transition-all cursor-pointer flex items-center justify-between gap-4 group"
-        >
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-10 h-14 rounded-lg overflow-hidden bg-[#09090D] flex-shrink-0 border border-white/5">
-              {nextUnwatchedMovie.movie.posterPath ? (
-                <img
-                  src={`https://image.tmdb.org/t/p/w185${nextUnwatchedMovie.movie.posterPath}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-[#5C5B64]">
-                  Film
-                </div>
+    <div className="space-y-5 pb-6">
+      <PageHeader
+        title=""
+        onBack={onBack}
+        backLabel="Back to Collections"
+        showProfile={false}
+        actions={
+          <>
+            <IconButton label="Share collection" variant="ghost" onClick={() => setModal('share')}>
+              <Share2 size={18} aria-hidden="true" />
+            </IconButton>
+            <div className="relative">
+              <IconButton label="More options" variant="ghost" active={menuOpen} onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen} aria-haspopup="menu">
+                <MoreHorizontal size={18} aria-hidden="true" />
+              </IconButton>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+                  <ul role="menu" className="absolute right-0 top-12 z-40 w-52 rounded-xl bg-surface-2 border border-line-strong p-1 shadow-xl">
+                    {menuItems.map((item) => (
+                      <li key={item.label} role="none">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            item.onClick();
+                          }}
+                          className={`w-full min-h-11 px-3 rounded-lg flex items-center gap-2.5 text-[14px] text-left hover:bg-white/5 ${
+                            item.danger ? 'text-[#F0848A]' : 'text-text'
+                          }`}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
-            <div className="min-w-0">
-              <div className="text-[10px] font-semibold tracking-wider uppercase text-[#E0AD52] flex items-center gap-1.5">
-                <PlayCircle size={12} />
-                <span>NEXT UNWATCHED IN SEQUENCE</span>
-              </div>
-              <h4 className="font-semibold text-sm text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors truncate mt-0.5">
-                {nextUnwatchedMovie.movie.title}
-              </h4>
-              <p className="text-[11px] text-[#9E9DA5] truncate">
-                {nextUnwatchedMovie.movie.releaseDate ? nextUnwatchedMovie.movie.releaseDate.split('-')[0] : ''}
-                {nextUnwatchedMovie.movie.runtime ? ` · ${nextUnwatchedMovie.movie.runtime} min` : ''}
-              </p>
-            </div>
-          </div>
-          <span className="cinema-button-ghost text-xs text-[#E0AD52] group-hover:translate-x-1 transition-transform flex-shrink-0">
-            View Movie →
-          </span>
-        </div>
-      )}
+          </>
+        }
+      />
 
-      {/* The Final Film Memory Card if Completed (Section 43 & 44) */}
-      {progress.isComplete && finalMovieItem && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#131319] to-[#0D0D12] border border-[#E0AD52]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 shadow-md bg-[#18181B]">
-              {finalMovieItem.movie.posterPath ? (
-                <img
-                  src={`https://image.tmdb.org/t/p/w185${finalMovieItem.movie.posterPath}`}
-                  alt={finalMovieItem.movie.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#E0AD52]">
-                  <Film size={20} />
-                </div>
-              )}
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-semibold tracking-wider text-[#E0AD52]">
-                FINAL FILM
+      {/* Hero */}
+      <section className={`relative overflow-hidden rounded-[20px] border bg-surface ${complete ? 'border-green/35' : 'border-line'}`}>
+        {backdrop && <img src={backdrop} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25" />}
+        <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/90 to-surface/50" aria-hidden="true" />
+        <div className="relative p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <CollectionCollage covers={movies.slice(0, 4).map((m) => m.movie)} className="w-full sm:w-[220px] rounded-xl overflow-hidden shrink-0" />
+          <div className="min-w-0 flex-1 flex flex-col">
+            <h1 className="font-page-title break-words">{collection.name}</h1>
+            {collection.description && <p className="mt-1 text-[14px] text-muted line-clamp-3">{collection.description}</p>}
+            <div className="mt-auto pt-4 space-y-2">
+              <div className="flex items-baseline justify-between text-[12px] font-semibold uppercase tracking-wider">
+                <span className="text-muted tabular-nums">
+                  {progress.watched} / {progress.total} watched
+                  {progress.watching > 0 && <span className="text-subtle"> · {progress.watching} watching</span>}
+                </span>
+                <span className={`text-[18px] tabular-nums ${complete ? 'text-green' : 'text-gold'}`}>{progress.percent}%</span>
               </div>
-              <div className="font-semibold text-base text-[#F5F3EB] mt-0.5">
-                {finalMovieItem.movie.title}
-              </div>
+              <ProgressBar value={progress.percent} complete={complete} size="sm" label="Collection progress" />
+              {complete ? (
+                <p className="flex items-center gap-2 text-[13px] font-semibold text-green animate-cinema-fade">
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                  Collection complete
+                  {collection.completedAt && (
+                    <span className="text-muted font-normal">
+                      · {new Date(collection.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
+                </p>
+              ) : null}
             </div>
           </div>
-          <button
-            onClick={() => openMovieDetail(finalMovieItem.movie.id)}
-            className="cinema-button-secondary text-xs px-3.5 py-1.5 self-end sm:self-center flex items-center gap-1.5 text-[#E0AD52] hover:text-[#D49B35] cursor-pointer"
-          >
-            <span>Details</span>
-            <span>→</span>
+        </div>
+      </section>
+
+      {nextUp && !complete && (
+        <section aria-label="Next up" className="flex items-center gap-3 rounded-2xl bg-surface border border-line p-3">
+          <button type="button" onClick={() => openMovieDetail(nextUp.movie.id)} className="shrink-0 w-12 aspect-[2/3] rounded-lg overflow-hidden bg-surface-2" aria-label={`Open ${nextUp.movie.title}`}>
+            {nextUp.movie.posterPath && <img src={tmdbService.getPosterUrl(nextUp.movie.posterPath, 'w92') || ''} alt="" className="w-full h-full object-cover" />}
           </button>
-        </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-caps-label text-gold">Next up</p>
+            <p className="text-[14px] font-semibold text-text truncate">{nextUp.movie.title}</p>
+            <p className="text-[12px] text-muted">{[getMediaYear(nextUp.movie), mediaTypeLabel(nextUp.movie)].filter(Boolean).join(' · ')}</p>
+          </div>
+          <WatchedButton movie={nextUp.movie} userData={nextUp.userData} style="icon" />
+        </section>
       )}
 
-      {/* Filter Tabs & Sort Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-3">
-        {/* Core Filters: ALL | WATCHED | WATCHING | UNWATCHED */}
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          {(['all', 'unwatched', 'watching', 'watched'] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setFilter(mode)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer border-none ${
-                filter === mode
-                  ? 'bg-[#E0AD52] text-[#09090B] font-bold shadow-md'
-                  : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
-              }`}
-            >
-              {mode === 'all'
-                ? `All (${movies.length})`
-                : mode === 'unwatched'
-                ? `Unwatched (${progress.unwatched})`
-                : mode === 'watching'
-                ? `Watching (${progress.watching})`
-                : `Watched (${progress.watched})`}
-            </button>
-          ))}
-        </div>
-
-        {/* Sorting Dropdown (Section 19) */}
-        {!reorderMode && movies.length > 1 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-[#9E9DA5] uppercase tracking-wider font-semibold">Sort:</span>
-            <select
-              value={activeSort}
-              onChange={(e) => setActiveSort(e.target.value as any)}
-              className="bg-[#131319] border border-white/10 rounded-xl px-2.5 py-1 text-xs text-[#F5F3EB] outline-none cursor-pointer"
-            >
-              <option value="custom">Custom Sequence</option>
-              <option value="releaseDate">Release Date (Oldest)</option>
-              <option value="releaseDateDesc">Release Date (Newest)</option>
-              <option value="title">Title (A-Z)</option>
-              <option value="rating">Rating (Highest)</option>
-              <option value="watchedStatus">Watched Status</option>
-            </select>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setModal('add')}>
+          Add titles
+        </Button>
+        {(movies.length > 0 || editMode) && (
+          <Button
+            size="sm"
+            variant={editMode ? 'outline' : 'secondary'}
+            icon={editMode ? <X size={15} aria-hidden="true" /> : <ListOrdered size={15} aria-hidden="true" />}
+            onClick={() => {
+              if (!editMode) {
+                setSort('custom');
+                setFilter('all');
+              }
+              setEditMode((e) => !e);
+            }}
+          >
+            {editMode ? 'Done' : 'Reorder / remove'}
+          </Button>
         )}
       </div>
 
-      {/* Transition into Poster Wall / Reorder Sequence */}
-      {displayedMovies.length === 0 ? (
-        <EmptyState
-          title={`No ${filter === 'all' ? '' : filter} movies in this collection`}
-          description={
-            filter === 'all'
-              ? 'Add movies to this collection to start curating your journey.'
-              : 'Switch filters or add more films to this collection.'
-          }
-          actionText="Add Movies"
-          onAction={() => setIsAddOpen(true)}
-        />
-      ) : reorderMode ? (
-        /* Reorder Sequence Mode */
-        <div className="space-y-2 max-w-2xl">
-          {movies.map((item, index) => (
-            <div
-              key={item.movie.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-[#131319] border border-white/5 gap-2"
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
-                <span className="text-xs font-mono text-[#E0AD52] w-6 flex-shrink-0">{index + 1}.</span>
-                <span
-                  className="text-sm font-semibold text-[#F5F3EB] line-clamp-1 break-words truncate"
-                  title={item.movie.title}
-                >
-                  {item.movie.title}
-                </span>
-                {item.userData?.status === 'watched' && (
-                  <span className="text-[10px] text-[#E0AD52] bg-[#E0AD52]/10 px-1.5 py-0.5 rounded flex-shrink-0">
-                    ✓ Watched
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  onClick={() => handleMoveMovie(index, index - 1)}
-                  disabled={index === 0}
-                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F3EB] cursor-pointer"
-                  title="Move Up"
-                  aria-label={`Move ${item.movie.title} up`}
-                >
-                  <MoveUp size={14} />
-                </button>
-                <button
-                  onClick={() => handleMoveMovie(index, index + 1)}
-                  disabled={index === movies.length - 1}
-                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 text-[#F5F3EB] cursor-pointer"
-                  title="Move Down"
-                  aria-label={`Move ${item.movie.title} down`}
-                >
-                  <MoveDown size={14} />
-                </button>
-                <button
-                  onClick={() => handleRemoveMovie(item.movie.id)}
-                  className="p-1.5 rounded bg-red-950/40 text-red-400 hover:bg-red-900/60 ml-2 cursor-pointer"
-                  title="Remove from Collection"
-                  aria-label={`Remove ${item.movie.title} from collection`}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+      {movies.length > 0 && !editMode && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <ChipGroup<Filter>
+            label="Filter titles"
+            value={filter}
+            onChange={setFilter}
+            size="sm"
+            options={[
+              { value: 'all', label: 'All', count: counts.all },
+              { value: 'watched', label: 'Watched', count: counts.watched },
+              { value: 'watching', label: 'Watching', count: counts.watching },
+              { value: 'unwatched', label: 'Unwatched', count: counts.unwatched },
+            ]}
+          />
+          <SortSelect<Sort>
+            label="Sort titles"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: 'custom', label: 'Custom order' },
+              { value: 'releaseDate', label: 'Release (oldest)' },
+              { value: 'releaseDateDesc', label: 'Release (newest)' },
+              { value: 'title', label: 'Title' },
+              { value: 'rating', label: 'Rating' },
+              { value: 'watchedStatus', label: 'Status' },
+            ]}
+          />
         </div>
+      )}
+
+      {movies.length === 0 ? (
+        <EmptyState compact title="No titles yet" description="Add movies or series to start tracking progress." action={{ label: 'Add titles', onClick: () => setModal('add') }} />
+      ) : editMode && canReorder ? (
+        <ol className="space-y-2" aria-label="Reorder titles" aria-busy={busy}>
+          {ordered.map((m, i) => (
+            <li key={m.movie.id} className="flex items-center gap-3 rounded-xl bg-surface border border-line p-2 pr-1">
+              <span className="w-6 text-center text-[12px] font-semibold text-subtle tabular-nums">{i + 1}</span>
+              <div className="w-10 aspect-[2/3] rounded-md overflow-hidden bg-surface-2 shrink-0">
+                {m.movie.posterPath && <img src={tmdbService.getPosterUrl(m.movie.posterPath, 'w92') || ''} alt="" className="w-full h-full object-cover" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-text truncate">{m.movie.title}</p>
+                <p className="text-[12px] text-muted">{[getMediaYear(m.movie), mediaTypeLabel(m.movie)].filter(Boolean).join(' · ')}</p>
+              </div>
+              <IconButton label={`Move ${m.movie.title} up`} variant="ghost" disabled={i === 0 || busy} onClick={() => move(i, i - 1)}>
+                <ArrowUp size={17} aria-hidden="true" />
+              </IconButton>
+              <IconButton label={`Move ${m.movie.title} down`} variant="ghost" disabled={i === ordered.length - 1 || busy} onClick={() => move(i, i + 1)}>
+                <ArrowDown size={17} aria-hidden="true" />
+              </IconButton>
+              <IconButton label={`Remove ${m.movie.title} from collection`} variant="ghost" disabled={busy} onClick={() => removeMovie(m.movie.id, m.movie.title)}>
+                <Trash2 size={17} className="text-[#F0848A]" aria-hidden="true" />
+              </IconButton>
+            </li>
+          ))}
+        </ol>
+      ) : displayed.length === 0 ? (
+        <EmptyState compact title="Nothing matches this filter" />
       ) : (
-        /* Visual Poster Wall with 2:3 Aspect Ratio */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-          {displayedMovies.map((item) => (
-            <MoviePoster
-              key={item.movie.id}
-              movie={item.movie}
-              userData={item.userData}
-              className="w-full"
-              onClick={() => openMovieDetail(item.movie.id)}
-            />
+        <MediaGrid>
+          {displayed.map((m, i) => (
+            <MediaCard key={m.movie.id} movie={m.movie} userData={m.userData} priority={i < 6} />
           ))}
-        </div>
+        </MediaGrid>
       )}
 
-      {/* Add Movies Modal */}
       <AddMoviesToCollectionModal
-        isOpen={isAddOpen}
+        isOpen={modal === 'add'}
         collectionId={collection.id}
         collectionName={collection.name}
-        onClose={() => setIsAddOpen(false)}
+        onClose={() => setModal(null)}
         onAdded={() => {
-          loadData();
+          load();
           notifyDataChanged();
         }}
       />
-
-      {/* Edit Collection Modal */}
-      <EditCollectionModal
-        isOpen={isEditOpen}
-        collection={collection}
-        onClose={() => setIsEditOpen(false)}
-        onUpdated={(updated) => {
-          setCollectionData((prev) => (prev ? { ...prev, collection: updated } : null));
-          loadData();
-          notifyDataChanged();
-        }}
-      />
-
-      {/* Collection Share Modal */}
-      <CollectionShareModal
-        isOpen={isShareOpen}
-        collectionData={collectionData}
-        onClose={() => setIsShareOpen(false)}
-      />
-
-      {/* Collection Import Wizard Modal */}
+      {modal === 'edit' && (
+        <EditCollectionModal
+          isOpen
+          collection={collection}
+          onClose={() => setModal(null)}
+          onUpdated={() => {
+            setModal(null);
+            load();
+            notifyDataChanged();
+          }}
+        />
+      )}
+      {modal === 'share' && <CollectionShareModal isOpen onClose={() => setModal(null)} collectionData={data} />}
       <ImportWizard
-        isOpen={isImportOpen}
+        isOpen={modal === 'import'}
+        onClose={() => setModal(null)}
         initialCollectionId={collection.id}
-        onClose={() => setIsImportOpen(false)}
         onComplete={() => {
-          loadData();
+          setModal(null);
+          load();
           notifyDataChanged();
-          showToast(`Movies imported into "${collection.name}"`);
         }}
       />
+      <Modal
+        isOpen={modal === 'delete'}
+        onClose={() => setModal(null)}
+        title={`Delete “${collection.name}”?`}
+        maxWidth={420}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModal(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" isLoading={busy} onClick={deleteCollection}>
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[14px] text-muted">Only the collection is removed. Your titles, ratings and watch history stay.</p>
+      </Modal>
     </div>
   );
 };

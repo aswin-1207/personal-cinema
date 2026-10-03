@@ -127,7 +127,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
               className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-lg"
             >
               <Edit3 size={13} />
-              <span>{hasReview ? 'Edit Journal' : 'Write Journal'}</span>
+              <span>{hasReview ? 'Edit review' : 'Write review'}</span>
             </button>
           </div>
         </div>
@@ -150,7 +150,7 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
           {/* Quick Header Badge */}
           <div className="absolute top-3.5 left-4 flex items-center gap-2">
             <span className="px-2.5 py-1 rounded-full bg-[#09090B]/80 text-[#E0AD52] border border-[#E0AD52]/30 text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
-              Film Journal
+              Review
             </span>
           </div>
         </div>

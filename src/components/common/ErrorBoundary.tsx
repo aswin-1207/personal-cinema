@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Intermission
               </h1>
               <p className="text-xs text-[#9E9DA5] leading-relaxed">
-                MyCinema encountered an unexpected render issue. Your personal movie vault and records remain safe.
+                Something went wrong showing this screen. Your saved titles are safe.
               </p>
             </div>
 

@@ -149,7 +149,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={existingHasReview ? 'Edit Film Journal' : 'Write Film Journal'}
+      title={existingHasReview ? 'Edit review' : 'Write review'}
       maxWidth={580}
       footer={
         <div className="flex items-center justify-between w-full">
@@ -201,7 +201,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
               {movie.title}
             </h4>
             <p className="text-xs text-[#9E9DA5] font-mono mt-0.5">
-              {releaseYear ? `${releaseYear} • ` : ''}Film Journal
+              {releaseYear ? `${releaseYear} • ` : ''}Review
             </p>
           </div>
 
@@ -256,7 +256,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
             type="text"
             value={reviewTitle}
             onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="e.g. A haunting masterclass in atmospheric tension"
+            placeholder="e.g. A haunting, unforgettable thriller"
             className="w-full px-3.5 py-2.5 rounded-xl bg-[#0E0E14] border border-white/10 text-xs sm:text-sm text-[#F5F3EB] placeholder-[#63626B] focus:border-[#E0AD52] focus:outline-none transition-colors"
           />
         </div>
@@ -265,7 +265,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-              Written Reflection / Journal
+              Review
             </label>
             <span className="text-[11px] text-[#63626B] font-mono">
               {reviewText.length} characters

@@ -11,8 +11,6 @@ import {
   Check,
   Star,
   Download,
-  MessageCircle,
-  Send,
   Mail,
   Eye,
 } from 'lucide-react';
@@ -156,7 +154,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Share Movie"
+      title={movie.mediaType === 'tv' ? 'Share series' : 'Share movie'}
       maxWidth="max-w-2xl"
       footer={
         <button
@@ -318,7 +316,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   <BrandLogo variant="symbol" size={12} alt="MYCINEMA" />
                   <span>MYCINEMA</span>
                 </div>
-                <span>Personal Vault</span>
+                <span>MyCinema</span>
               </div>
             </div>
           )}
@@ -452,25 +450,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 <span>Save Card</span>
               </button>
 
-              <a
-                href={ShareService.getWhatsAppUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-emerald-950/40 hover:text-emerald-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via WhatsApp web"
-              >
-                <MessageCircle size={14} />
-              </a>
-
-              <a
-                href={ShareService.getTelegramUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-sky-950/40 hover:text-sky-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via Telegram"
-              >
-                <Send size={14} />
-              </a>
 
               <a
                 href={ShareService.getEmailUrl(`Check out ${movie.title} on MyCinema`, getShareText(), shareUrl)}

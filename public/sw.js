@@ -1,5 +1,15 @@
 // MyCinema Production Service Worker v7 (New Brand Identity & Resilient App Shell)
-const CACHE_NAME = 'mycinema-v7';
+const CACHE_NAME = 'mycinema-v8';
+// v2: older versions stored opaque responses, which Chrome pads to ~7 MB each.
+const IMAGE_CACHE_NAME = 'tmdb-images-v2';
+const IMAGE_CACHE_MAX_ENTRIES = 400;
+
+// Keep the poster cache bounded so it never exhausts the origin's storage quota.
+const trimImageCache = async (cache) => {
+  const keys = await cache.keys();
+  const excess = keys.length - IMAGE_CACHE_MAX_ENTRIES;
+  for (let i = 0; i < excess; i++) await cache.delete(keys[i]);
+};
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -31,7 +41,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && key !== 'tmdb-images-cache') {
+          if (key !== CACHE_NAME && key !== IMAGE_CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -52,13 +62,16 @@ self.addEventListener('fetch', (event) => {
   // 2. Handle TMDB image caching (posters and backdrops)
   if (url.hostname === 'image.tmdb.org') {
     event.respondWith(
-      caches.open('tmdb-images-cache').then((cache) => {
+      caches.open(IMAGE_CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          return fetch(event.request)
+          // Request in CORS mode so the cached entry has its real size (opaque
+          // responses are quota-padded and would crowd out IndexedDB data).
+          return fetch(event.request.url, { mode: 'cors', credentials: 'omit' })
+            .catch(() => fetch(event.request))
             .then((networkResponse) => {
-              if (networkResponse.status === 200 || networkResponse.type === 'opaque') {
-                cache.put(event.request, networkResponse.clone());
+              if (networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+                cache.put(event.request, networkResponse.clone()).then(() => trimImageCache(cache)).catch(() => {});
               }
               return networkResponse;
             })

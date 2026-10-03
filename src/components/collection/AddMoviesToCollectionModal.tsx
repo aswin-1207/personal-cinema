@@ -42,6 +42,11 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
 
   // Load existing collection members and available local movies
   const loadInitialData = useCallback(async () => {
+    // Reset synchronously so anything typed while members load is not wiped.
+    setSelectedMovieIds(new Set());
+    setSelectedMoviesMap(new Map());
+    setSearchQuery('');
+    setDebouncedQuery('');
     const colMovies = await CollectionRepository.getCollectionMovies(collectionId);
     const existing = new Set(colMovies.map((cm) => cm.movieId));
 
@@ -50,11 +55,7 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
 
     localAvailableRef.current = availableLocal;
     setExistingMovieIds(existing);
-    setSelectedMovieIds(new Set());
-    setSelectedMoviesMap(new Map());
-    setSearchQuery('');
-    setDebouncedQuery('');
-    setDisplayedMovies(availableLocal.slice(0, 50));
+    setDisplayedMovies((prev) => (prev.length ? prev : availableLocal.slice(0, 50)));
     setIsOffline(typeof navigator !== 'undefined' && !navigator.onLine);
     setSearchError(null);
     setErrorCode(null);
@@ -207,7 +208,7 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Add Movies to "${collectionName}"`}
+      title={`Add titles to "${collectionName}"`}
       maxWidth="max-w-2xl"
       footer={
         <div className="flex items-center justify-between w-full">
@@ -257,7 +258,7 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
         {isOffline && (
           <div className="mb-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-2 text-[11px] text-cinema-subtle">
             <WifiOff size={13} className="text-amber-400" />
-            <span>Offline mode — searching your local catalog</span>
+            <span>Offline. Searching titles saved on this device.</span>
           </div>
         )}
 
@@ -272,8 +273,8 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
                   : errorCode === 'AUTH_ERROR'
                   ? 'TMDB configuration needs attention.'
                   : isOffline
-                  ? 'You are offline. Showing local vault.'
-                  : 'TMDB is temporarily unavailable. Showing local vault.'}
+                  ? 'You are offline. Showing titles saved on this device.'
+                  : 'Search is unavailable right now. Showing titles saved on this device.'}
               </span>
             </div>
             <button
@@ -304,8 +305,8 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
                 {allMatchesAlreadyInCollection
                   ? `All films matching "${debouncedQuery}" have already been added to "${collectionName}".`
                   : debouncedQuery
-                  ? 'Try searching by a different title, director, character, or franchise.'
-                  : 'Start typing to search hundreds of superhero, trending, or international films.'}
+                  ? 'Try a different title.'
+                  : 'Search for a movie or series.'}
               </p>
             </div>
           ) : (
@@ -317,8 +318,18 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
               return (
                 <div
                   key={movie.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  aria-label={`${movie.title}${year ? `, ${year}` : ''}${movie.mediaType === 'tv' ? ', Series' : ', Movie'}`}
                   onClick={() => toggleSelect(movie)}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleSelect(movie);
+                    }
+                  }}
+                  className={`flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
                     isSelected
                       ? 'border-cinema-gold bg-cinema-gold/10 shadow-sm'
                       : 'border-white/5 bg-[#131319] hover:bg-[#1C1C24] hover:border-white/15'
@@ -339,11 +350,6 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
                         <h4 className="text-sm font-semibold text-cinema-white line-clamp-1 break-words" title={movie.title}>
                           {movie.title}
                         </h4>
-                        {movie.source === 'seed' && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cinema-gold/15 text-cinema-gold uppercase tracking-wider">
-                            Catalog
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-cinema-subtle mt-0.5">
                         {year}
