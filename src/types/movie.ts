@@ -40,6 +40,34 @@ export function parseCanonicalId(id: number): { mediaType: MediaType; tmdbId: nu
   return { mediaType: 'movie', tmdbId: id };
 }
 
+export function toCanonicalMediaKey(mediaType: MediaType, tmdbId: number): string {
+  return `${mediaType}:${tmdbId}`;
+}
+
+export function parseCanonicalMediaKey(key: string): { mediaType: MediaType; tmdbId: number } | null {
+  const match = key.match(/^(movie|tv):(\d+)$/);
+  if (!match) return null;
+  return {
+    mediaType: match[1] as MediaType,
+    tmdbId: parseInt(match[2], 10),
+  };
+}
+
+export function getMediaTitle(movie: Partial<Movie> | null | undefined): string {
+  if (!movie) return '';
+  return movie.title || movie.name || '';
+}
+
+export function getMediaDisplayDate(movie: Partial<Movie> | null | undefined): string | undefined {
+  if (!movie) return undefined;
+  return movie.releaseDate || movie.firstAirDate || undefined;
+}
+
+export function getMediaYear(movie: Partial<Movie> | null | undefined): string {
+  const date = getMediaDisplayDate(movie);
+  return date ? date.slice(0, 4) : '';
+}
+
 export interface ProductionCompany {
   id: number;
   name: string;

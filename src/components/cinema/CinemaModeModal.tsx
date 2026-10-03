@@ -43,7 +43,11 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
   const backdropUrl = tmdbService.getBackdropUrl(movie.backdropPath, 'w1280');
   const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
 
-  const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const year = movie.releaseDate
+    ? movie.releaseDate.substring(0, 4)
+    : movie.firstAirDate
+    ? movie.firstAirDate.substring(0, 4)
+    : '';
 
   return (
     <div
@@ -111,7 +115,7 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
             {posterUrl ? (
               <img
                 src={posterUrl}
-                alt={movie.title}
+                alt={movie.title || movie.name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -124,12 +128,16 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
 
         {/* Title and Metadata */}
         <h2 className="font-bold text-2xl sm:text-3xl text-cinema-white mt-6 mb-1 drop-shadow-lg max-w-xl">
-          {movie.title}
+          {movie.title || movie.name}
         </h2>
 
         <div className="flex items-center gap-3 text-xs sm:text-sm text-cinema-silver drop-shadow">
           {year && <span>{year}</span>}
-          {movie.runtime && <span>• {movie.runtime} min</span>}
+          {movie.numberOfSeasons ? (
+            <span>• {movie.numberOfSeasons} {movie.numberOfSeasons === 1 ? 'Season' : 'Seasons'}</span>
+          ) : movie.runtime ? (
+            <span>• {movie.runtime} min</span>
+          ) : null}
           {movie.voteAverage > 0 && (
             <span className="flex items-center gap-1 text-cinema-gold font-semibold">
               <Star size={13} className="fill-cinema-gold" />

@@ -16,6 +16,7 @@ import { BrandLogo } from '../components/common/BrandLogo';
 import {
   ChevronRight,
   TrendingUp,
+  User,
 } from 'lucide-react';
 
 export const Home: React.FC = () => {
@@ -181,14 +182,24 @@ export const Home: React.FC = () => {
       <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
         <BrandLogo variant="inside" size={26} alt="MYCINEMA" />
 
-        <button
-          onClick={() => setActiveTab('discover')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer"
-          title="Search Movies"
-        >
-          <span>Search & Discover</span>
-          <ChevronRight size={13} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('discover')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer min-h-[36px]"
+            title="Search & Discover"
+          >
+            <span>Search & Discover</span>
+            <ChevronRight size={13} />
+          </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer md:hidden flex items-center justify-center min-w-[36px] min-h-[36px]"
+            title="Profile & Settings"
+            aria-label="Profile and settings"
+          >
+            <User size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Compact Cinema Hero */}

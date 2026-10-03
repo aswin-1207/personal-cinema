@@ -44,8 +44,10 @@ export const WatchlistPage: React.FC = () => {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
         (item) =>
-          item.movie.title.toLowerCase().includes(q) ||
-          (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q))
+          (item.movie.title && item.movie.title.toLowerCase().includes(q)) ||
+          (item.movie.name && item.movie.name.toLowerCase().includes(q)) ||
+          (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q)) ||
+          (item.movie.originalName && item.movie.originalName.toLowerCase().includes(q))
       );
     }
 
@@ -58,15 +60,21 @@ export const WatchlistPage: React.FC = () => {
           comparison = dateA.localeCompare(dateB);
           break;
         }
-        case 'year':
-          comparison = (a.movie.releaseDate || '').localeCompare(b.movie.releaseDate || '');
+        case 'year': {
+          const dateA = a.movie.releaseDate || a.movie.firstAirDate || '';
+          const dateB = b.movie.releaseDate || b.movie.firstAirDate || '';
+          comparison = dateA.localeCompare(dateB);
           break;
+        }
         case 'rating':
           comparison = (a.movie.voteAverage || 0) - (b.movie.voteAverage || 0);
           break;
-        case 'title':
-          comparison = a.movie.title.localeCompare(b.movie.title);
+        case 'title': {
+          const tA = a.movie.title || a.movie.name || '';
+          const tB = b.movie.title || b.movie.name || '';
+          comparison = tA.localeCompare(tB);
           break;
+        }
       }
       return sortDesc ? -comparison : comparison;
     });
@@ -81,7 +89,7 @@ export const WatchlistPage: React.FC = () => {
             Watchlist
           </h1>
           <p className="text-xs text-[#9E9DA5]">
-            {counts.all} {counts.all === 1 ? 'film' : 'films'}
+            {counts.all} {counts.all === 1 ? 'title' : 'titles'}
             {counts.watching > 0 ? ` · ${counts.watching} watching` : ''}
           </p>
         </div>

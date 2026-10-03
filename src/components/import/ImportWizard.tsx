@@ -271,8 +271,8 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
     if (!query.trim()) return;
     setIsSearchingOverride(true);
     try {
-      const res = await tmdbService.searchMovies(query);
-      setSearchOverrideResults(res.results.slice(0, 5));
+      const res = await tmdbService.searchMulti(query);
+      setSearchOverrideResults(res.results.slice(0, 6));
     } finally {
       setIsSearchingOverride(false);
     }
@@ -846,11 +846,16 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                           <span className="font-semibold text-[#F5F3EB] text-xs sm:text-sm truncate">
-                            {movie ? movie.title : candidate.row.detectedTitle}
+                            {movie ? movie.title || movie.name : candidate.row.detectedTitle}
                           </span>
-                          {movie?.releaseDate && (
+                          {(movie?.releaseDate || movie?.firstAirDate) && (
                             <span className="text-[11px] text-[#9E9DA5] flex-shrink-0">
-                              ({movie.releaseDate.substring(0, 4)})
+                              ({(movie.releaseDate || movie.firstAirDate)?.substring(0, 4)})
+                            </span>
+                          )}
+                          {movie && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider bg-black/40 text-[#E0AD52] border border-[#E0AD52]/30 flex-shrink-0">
+                              {movie.mediaType === 'tv' || Boolean(movie.firstAirDate) ? 'SERIES' : 'MOVIE'}
                             </span>
                           )}
                           {candidate.status === 'duplicate' && (
@@ -926,11 +931,14 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                             key={opt.id}
                             type="button"
                             onClick={() => handleSelectAmbiguousMatch(originalIdx, opt)}
-                            className="text-[11px] px-2 py-0.5 rounded-lg bg-black/40 hover:bg-[#E0AD52] hover:text-black border border-white/10 text-[#F5F3EB] flex items-center gap-1 transition-all cursor-pointer"
+                            className="text-[11px] px-2 py-1 rounded-lg bg-black/40 hover:bg-[#E0AD52] hover:text-black border border-white/10 text-[#F5F3EB] flex items-center gap-1.5 transition-all cursor-pointer"
                           >
-                            <span>{opt.title}</span>
+                            <span>{opt.title || opt.name}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded font-bold bg-white/15 uppercase">
+                              {opt.mediaType === 'tv' || Boolean(opt.firstAirDate) ? 'SERIES' : 'MOVIE'}
+                            </span>
                             <span className="text-[10px] opacity-70">
-                              ({opt.releaseDate?.substring(0, 4) || 'N/A'})
+                              ({opt.releaseDate?.substring(0, 4) || opt.firstAirDate?.substring(0, 4) || 'N/A'})
                             </span>
                           </button>
                         ))}
@@ -946,7 +954,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                           type="text"
                           value={searchOverrideQuery}
                           onChange={(e) => setSearchOverrideQuery(e.target.value)}
-                          placeholder="Search movie title..."
+                          placeholder="Search movie or TV series..."
                           className="cinema-input flex-grow text-xs py-1"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSearchOverride(searchOverrideQuery);
@@ -980,7 +988,10 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                             className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-white/10 cursor-pointer text-xs"
                           >
                             <span className="text-[#F5F3EB] truncate flex-1">
-                              {res.title} ({res.releaseDate?.substring(0, 4) || 'N/A'})
+                              {res.title || res.name} ({res.releaseDate?.substring(0, 4) || res.firstAirDate?.substring(0, 4) || 'N/A'})
+                            </span>
+                            <span className="text-[9px] px-1 py-0.2 rounded font-bold bg-white/15 text-[#E0AD52] uppercase flex-shrink-0">
+                              {res.mediaType === 'tv' || Boolean(res.firstAirDate) ? 'SERIES' : 'MOVIE'}
                             </span>
                             <span className="text-[10px] text-[#E0AD52] font-bold flex-shrink-0">Select</span>
                           </div>

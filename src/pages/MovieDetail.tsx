@@ -117,13 +117,13 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         !m.credits;
       if (isPartial) {
         try {
-          const fresh = await tmdbService.getMovieDetails(movieId);
+          const fresh = await tmdbService.getDetails(movieId);
           if (fresh) {
             m = await MovieRepository.save(fresh);
             if (isMounted) setMovie(m);
           }
         } catch {
-          // Fall back to local or curated landmark if offline/network error
+          // Fall back to local if offline/network error
         }
       }
 

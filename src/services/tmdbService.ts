@@ -471,6 +471,41 @@ export class TMDBService {
   }
 
   /**
+   * Search specifically for TV series
+   */
+  static async searchTV(
+    query: string,
+    page: number = 1,
+    firstAirDateYear?: number,
+    signal?: AbortSignal
+  ): Promise<{ results: Movie[]; totalPages: number }> {
+    if (!query.trim()) return { results: [], totalPages: 0 };
+    const params: Record<string, string> = {
+      query: query.trim(),
+      page: page.toString(),
+      include_adult: 'false',
+    };
+    if (firstAirDateYear) params.first_air_date_year = firstAirDateYear.toString();
+
+    const data = await this.fetchWithCache<any>('/search/tv', params, { signal });
+    const rawResults = data.results || [];
+    const results = rawResults.map((raw: any) => this.mapRawToMovie(raw, 'tv'));
+    return { results, totalPages: data.total_pages || 1 };
+  }
+
+  /**
+   * Alias for movie search
+   */
+  static async searchMovies(
+    query: string,
+    page: number = 1,
+    year?: number,
+    signal?: AbortSignal
+  ): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.search(query, year, page, signal);
+  }
+
+  /**
    * Get full details for Movie or TV Series with credits
    */
   static async getDetails(id: number): Promise<Movie> {
@@ -497,6 +532,14 @@ export class TMDBService {
     }
   }
 
+  static async getTVDetails(tvId: number): Promise<Movie> {
+    return this.getDetails(toCanonicalId('tv', tvId));
+  }
+
+  static async getMovieDetails(movieId: number): Promise<Movie> {
+    return this.getDetails(toCanonicalId('movie', movieId));
+  }
+
   static async getById(id: number): Promise<Movie> {
     return this.getDetails(id);
   }
@@ -510,6 +553,10 @@ export class TMDBService {
     } catch {
       return SEED_MOVIES.filter((m) => m.id !== id).slice(0, 8);
     }
+  }
+
+  static async getTVSimilar(tvId: number): Promise<Movie[]> {
+    return this.getSimilar(toCanonicalId('tv', tvId));
   }
 
   static async getCredits(id: number): Promise<{ cast: any[]; crew: any[]; director?: string }> {
@@ -528,6 +575,10 @@ export class TMDBService {
     } catch {
       return { cast: [], crew: [] };
     }
+  }
+
+  static async getTVCredits(tvId: number): Promise<{ cast: any[]; crew: any[]; director?: string }> {
+    return this.getCredits(toCanonicalId('tv', tvId));
   }
 
   /**
@@ -607,6 +658,31 @@ export class TMDBService {
     } catch {
       return [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 20);
     }
+  }
+
+  static async getTrendingTV(
+    timeWindow: 'day' | 'week' = 'week',
+    onRevalidate?: (series: Movie[]) => void,
+    page: number = 1
+  ): Promise<Movie[]> {
+    return this.getTrending(timeWindow, onRevalidate, 'tv', page);
+  }
+
+  static async getPopularTV(
+    page: number = 1,
+    onRevalidate?: (series: Movie[]) => void
+  ): Promise<Movie[]> {
+    return this.getPopular(page, onRevalidate, 'tv');
+  }
+
+  static async getTopRatedTV(page: number = 1): Promise<Movie[]> {
+    return this.getTopRated('tv', page);
+  }
+
+  static async discoverTV(
+    params: Omit<Parameters<typeof TMDBService.discoverPaged>[0], 'mediaType'>
+  ): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({ ...params, mediaType: 'tv' });
   }
 
   /**
@@ -1070,8 +1146,12 @@ export class TMDBService {
 export const tmdbService = {
   searchMovies: (query: string, year?: number, page?: number, signal?: AbortSignal) =>
     TMDBService.search(query, year, page, signal),
+  searchTV: (query: string, page?: number, firstAirDateYear?: number, signal?: AbortSignal) =>
+    TMDBService.searchTV(query, page, firstAirDateYear, signal),
   searchMulti: (query: string, page?: number, signal?: AbortSignal) =>
     TMDBService.searchMulti(query, page, signal),
+  getDetails: (id: number) => TMDBService.getDetails(id),
+  getTVDetails: (tvId: number) => TMDBService.getTVDetails(tvId),
   getMovieDetails: (id: number) => TMDBService.getById(id),
   getTrending: (
     window: 'day' | 'week' = 'week',
@@ -1079,19 +1159,30 @@ export const tmdbService = {
     mediaType: 'all' | 'movie' | 'tv' = 'movie',
     page: number = 1
   ) => TMDBService.getTrending(window, onRevalidate, mediaType, page),
+  getTrendingTV: (
+    window: 'day' | 'week' = 'week',
+    onRevalidate?: (series: Movie[]) => void,
+    page: number = 1
+  ) => TMDBService.getTrendingTV(window, onRevalidate, page),
   getPopular: (
     page: number = 1,
     onRevalidate?: (movies: Movie[]) => void,
     mediaType: 'movie' | 'tv' = 'movie'
   ) => TMDBService.getPopular(page, onRevalidate, mediaType),
+  getPopularTV: (page: number = 1, onRevalidate?: (series: Movie[]) => void) =>
+    TMDBService.getPopularTV(page, onRevalidate),
   getTopRated: (mediaType: 'movie' | 'tv' = 'movie', page: number = 1) =>
     TMDBService.getTopRated(mediaType, page),
+  getTopRatedTV: (page: number = 1) => TMDBService.getTopRatedTV(page),
   getSimilar: (id: number) => TMDBService.getSimilar(id),
+  getTVSimilar: (tvId: number) => TMDBService.getTVSimilar(tvId),
   getCredits: (id: number) => TMDBService.getCredits(id),
+  getTVCredits: (tvId: number) => TMDBService.getTVCredits(tvId),
   getGenres: (mediaType: 'movie' | 'tv' = 'movie') => TMDBService.getGenres(mediaType),
   discoverPaged: (params: Parameters<typeof TMDBService.discoverPaged>[0]) =>
     TMDBService.discoverPaged(params),
   discover: (params: Parameters<typeof TMDBService.discoverPaged>[0]) => TMDBService.discover(params),
+  discoverTV: (params: Parameters<typeof TMDBService.discoverTV>[0]) => TMDBService.discoverTV(params),
   discoverMovies: (params: { with_genres?: string; sort_by?: string }) =>
     TMDBService.discover({
       genreIds: params.with_genres ? params.with_genres.split(',').map((g) => parseInt(g, 10)) : undefined,

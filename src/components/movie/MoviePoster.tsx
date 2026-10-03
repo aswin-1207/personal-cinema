@@ -72,7 +72,11 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
     }
   }, [posterUrl]);
 
-  const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const year = movie.releaseDate
+    ? movie.releaseDate.substring(0, 4)
+    : movie.firstAirDate
+    ? movie.firstAirDate.substring(0, 4)
+    : '';
   const isWatched = userData?.status === 'watched';
   const isWatching = userData?.status === 'watching';
   const isWatchlist = userData?.status === 'want_to_watch';
@@ -96,6 +100,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
     ? 'w-[170px] sm:w-[210px]'
     : 'w-[140px] xs:w-[155px] sm:w-[170px] md:w-[185px]';
   const shrinkClass = className.includes('w-full') ? 'w-full' : 'flex-shrink-0';
+  const isTVSeries = movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons);
 
   return (
     <div
@@ -125,7 +130,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           <img
             ref={imgRef}
             src={posterUrl}
-            alt={movie.title}
+            alt={movie.title || movie.name || 'Poster'}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
             onLoad={() => setImageLoaded(true)}
@@ -138,7 +143,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-gradient-to-br from-[#1A1D2C] to-[#0F111A]">
             <Film size={26} className="text-[#E0AD52]/60 mb-2" />
             <span className="text-xs text-[#F5F3EB] font-semibold line-clamp-2 px-1">
-              {movie.title}
+              {movie.title || movie.name}
             </span>
             {year && <span className="text-[10px] text-[#9E9DA5] mt-1">{year}</span>}
           </div>
@@ -165,9 +170,13 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
               <Bookmark size={11} className="fill-[#E0AD52]" />
             </span>
           )}
-          {(movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons)) && (
+          {isTVSeries ? (
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#09090B]/85 text-[#E0AD52] border border-[#E0AD52]/40 uppercase tracking-wider backdrop-blur-md shadow-sm">
-              TV
+              SERIES
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-[#09090B]/75 text-[#B7B5B3] border border-white/10 uppercase tracking-wider backdrop-blur-md shadow-sm">
+              MOVIE
             </span>
           )}
         </div>

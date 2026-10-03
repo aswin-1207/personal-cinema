@@ -21,7 +21,6 @@ export class ScrollLockManager {
       document.documentElement.classList.add('modal-open');
 
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
     }
   }
 
@@ -38,7 +37,6 @@ export class ScrollLockManager {
 
       document.body.style.overflow = this.originalBodyOverflow || '';
       document.documentElement.style.overflow = this.originalHtmlOverflow || '';
-      document.body.style.touchAction = '';
     }
   }
 
@@ -54,7 +52,6 @@ export class ScrollLockManager {
 
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
-    document.body.style.touchAction = '';
   }
 
   /**

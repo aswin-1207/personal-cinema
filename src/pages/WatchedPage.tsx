@@ -35,9 +35,12 @@ export const WatchedPage: React.FC = () => {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter((item) =>
-        item.movie.title.toLowerCase().includes(q) ||
-        (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q))
+      list = list.filter(
+        (item) =>
+          (item.movie.title && item.movie.title.toLowerCase().includes(q)) ||
+          (item.movie.name && item.movie.name.toLowerCase().includes(q)) ||
+          (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q)) ||
+          (item.movie.originalName && item.movie.originalName.toLowerCase().includes(q))
       );
     }
 
@@ -59,12 +62,15 @@ export const WatchedPage: React.FC = () => {
           return rB - rA;
         }
         case 'year': {
-          const yA = a.movie.releaseDate || '';
-          const yB = b.movie.releaseDate || '';
+          const yA = a.movie.releaseDate || a.movie.firstAirDate || '';
+          const yB = b.movie.releaseDate || b.movie.firstAirDate || '';
           return yB.localeCompare(yA);
         }
-        case 'title':
-          return a.movie.title.localeCompare(b.movie.title);
+        case 'title': {
+          const tA = a.movie.title || a.movie.name || '';
+          const tB = b.movie.title || b.movie.name || '';
+          return tA.localeCompare(tB);
+        }
         default:
           return 0;
       }
@@ -77,10 +83,10 @@ export const WatchedPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
         <div className="space-y-0.5">
           <h1 className="font-hero-title text-xl sm:text-2xl md:text-3xl text-[#F5F3EB]">
-            Watched Movies
+            Watched Titles
           </h1>
           <p className="text-xs text-[#9E9DA5]">
-            {movies.length} {movies.length === 1 ? 'film' : 'films'}
+            {movies.length} {movies.length === 1 ? 'title' : 'titles'}
           </p>
         </div>
 

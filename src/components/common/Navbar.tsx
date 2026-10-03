@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Compass, Bookmark, Layers, User, LucideIcon, Sparkles } from 'lucide-react';
+import { Home, Compass, Bookmark, CheckCircle2, Layers, User, LucideIcon, Sparkles } from 'lucide-react';
 import { useCinema, TabType } from '../../context/CinemaContext';
 import { BrandLogo } from './BrandLogo';
 
@@ -13,6 +13,7 @@ const DESKTOP_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
   { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+  { id: 'watched', label: 'Watched', icon: CheckCircle2 },
   { id: 'collections', label: 'Collections', icon: Layers },
   { id: 'profile', label: 'Profile', icon: User },
 ];
@@ -21,8 +22,8 @@ const MOBILE_NAV_ITEMS: NavItemDef[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'discover', label: 'Discover', icon: Compass },
   { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
+  { id: 'watched', label: 'Watched', icon: CheckCircle2 },
   { id: 'collections', label: 'Collections', icon: Layers },
-  { id: 'profile', label: 'Profile', icon: User },
 ];
 
 export const CinemaDesktopNav: React.FC = () => {

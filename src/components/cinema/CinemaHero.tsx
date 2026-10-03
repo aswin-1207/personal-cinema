@@ -33,8 +33,17 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
     ? tmdbService.getPosterUrl(movie.posterPath, 'w780')
     : null;
 
-  const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
-  const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : null;
+  const title = movie.title || movie.name;
+  const year = movie.releaseDate
+    ? movie.releaseDate.substring(0, 4)
+    : movie.firstAirDate
+    ? movie.firstAirDate.substring(0, 4)
+    : '';
+  const duration = movie.numberOfSeasons
+    ? `${movie.numberOfSeasons} ${movie.numberOfSeasons === 1 ? 'Season' : 'Seasons'}`
+    : movie.runtime
+    ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m`
+    : null;
   const topGenres = movie.genres && movie.genres.length > 0 ? movie.genres.slice(0, 2).map((g) => g.name).join(', ') : null;
 
   return (
@@ -64,15 +73,20 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
         {/* Hero Title with Clamp Typography & Overflow Protection */}
         <h1
           className="font-bold text-xl sm:text-2xl md:text-3xl text-[#F5F3EB] mb-1 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] line-clamp-2 break-words leading-tight"
-          title={movie.title}
+          title={title}
         >
-          {movie.title}
+          {title}
         </h1>
 
         {/* Hero Metadata Strip */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-[#9E9DA5] mb-2 drop-shadow font-normal">
           {year && <span>{year}</span>}
-          {runtime && <span>• {runtime}</span>}
+          {duration && <span>• {duration}</span>}
+          {movie.mediaType === 'tv' && (
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#E0AD52]/20 text-[#E0AD52] border border-[#E0AD52]/30 uppercase tracking-wider">
+              SERIES
+            </span>
+          )}
           {topGenres && <span className="hidden xs:inline">• {topGenres}</span>}
           {movie.voteAverage > 0 && (
             <span className="flex items-center gap-1 text-[#E0AD52] font-semibold bg-[#E0AD52]/10 px-1.5 py-0.5 rounded-full border border-[#E0AD52]/20">

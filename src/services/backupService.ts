@@ -110,8 +110,8 @@ export class BackupService {
         // Validate sample movie integrity
         for (let i = 0; i < Math.min(5, parsed.movies.length); i++) {
           const m = parsed.movies[i];
-          if (!m || typeof m.id !== 'number' || !m.title) {
-            errors.push(`Invalid movie record at index ${i}: missing valid id or title.`);
+          if (!m || typeof m.id !== 'number' || (!m.title && !m.name)) {
+            errors.push(`Invalid media record at index ${i}: missing valid id or title/name.`);
             break;
           }
         }
@@ -170,7 +170,8 @@ export class BackupService {
       const local = localMap.get(backupItem.movieId);
       if (!local) continue;
 
-      const title = movieMap.get(backupItem.movieId)?.title || `Movie #${backupItem.movieId}`;
+      const media = movieMap.get(backupItem.movieId);
+      const title = media?.title || media?.name || `Media #${backupItem.movieId}`;
 
       // Check rating conflict
       if (

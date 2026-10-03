@@ -205,6 +205,7 @@ export class ImportService {
     cleanTitle: string;
     searchNormalizedTitle: string;
     year?: number | null;
+    mediaType?: 'movie' | 'tv' | null;
     status?: MovieStatus | null;
     rating?: number | null;
     watchedDate?: string | null;
@@ -268,6 +269,16 @@ export class ImportService {
       }
     }
 
+    // Check for media type indicators: [Series], (TV), [Show], etc.
+    let mediaType: 'movie' | 'tv' | null = null;
+    if (/\b(tv\s*series|tv\s*show|series|web\s*series|anime|season\s*\d+|s\d{1,2})\b/i.test(text)) {
+      mediaType = 'tv';
+      text = text.replace(/\b(tv\s*series|tv\s*show|series|web\s*series|season\s*\d+|s\d{1,2})\b/gi, '').trim();
+    } else if (/\b(movie|film|cinema)\b/i.test(text)) {
+      mediaType = 'movie';
+      text = text.replace(/\b(movie|film|cinema)\b/gi, '').trim();
+    }
+
     // Strip dangling trailing delimiters (colon, hyphen) without stripping internal hyphens (like "Spider-Man")
     text = text.replace(/^[-–—:\s]+|[-–—:\s]+$/g, '').trim();
 
@@ -278,6 +289,7 @@ export class ImportService {
       cleanTitle: text,
       searchNormalizedTitle: searchNormalized,
       year,
+      mediaType,
       status,
       rating,
       favorite,
@@ -302,8 +314,8 @@ export class ImportService {
         field = 'status';
       } else if (/^(my\s*rating|personal\s*rating|rating|score|stars|user\s*rating)$/i.test(lower)) {
         field = 'rating';
-      } else if (/^(notes?|review|thoughts?|comments?|journal)$/i.test(lower)) {
-        field = 'notes';
+      } else if (/^(type|media(\s*type)?|kind|format|category)$/i.test(lower)) {
+        field = 'mediaType';
       } else if (/^(watched(\s*at|\s*date|\s*on)?|date\s*watched|viewed(\s*at|\s*date)?)$/i.test(lower)) {
         field = 'watchedDate';
       } else if (/^(favorite|fav|starred|heart)$/i.test(lower)) {
@@ -345,6 +357,7 @@ export class ImportService {
 
     const titleCol = titleMap.columnIndex;
     const yearCol = mappings.find((m) => m.mappedField === 'year')?.columnIndex ?? -1;
+    const mediaTypeCol = mappings.find((m) => m.mappedField === 'mediaType')?.columnIndex ?? -1;
     const statusCol = mappings.find((m) => m.mappedField === 'status')?.columnIndex ?? -1;
     const ratingCol = mappings.find((m) => m.mappedField === 'rating')?.columnIndex ?? -1;
     const notesCol = mappings.find((m) => m.mappedField === 'notes')?.columnIndex ?? -1;
@@ -369,6 +382,14 @@ export class ImportService {
         if (!isNaN(parsedYear) && parsedYear > 1880 && parsedYear < 2100) {
           year = parsedYear;
         }
+      }
+
+      // Parse explicit media type if available
+      let mediaType = cleaned.mediaType;
+      if (mediaTypeCol !== -1 && row[mediaTypeCol]) {
+        const typeVal = String(row[mediaTypeCol]).toLowerCase().trim();
+        if (/tv|series|show|episode|season/i.test(typeVal)) mediaType = 'tv';
+        else if (/movie|film|feature/i.test(typeVal)) mediaType = 'movie';
       }
 
       // Parse explicit status if available
@@ -414,6 +435,7 @@ export class ImportService {
         cleanTitle: cleaned.cleanTitle || rawTitle,
         searchNormalizedTitle: cleaned.searchNormalizedTitle,
         detectedYear: year,
+        detectedMediaType: mediaType,
         detectedStatus: status,
         detectedRating: rating,
         detectedNotes: notes,
@@ -454,17 +476,26 @@ export class ImportService {
             cleanTitle: cleaned.cleanTitle,
             searchNormalizedTitle: cleaned.searchNormalizedTitle,
             detectedYear: cleaned.year,
+            detectedMediaType: cleaned.mediaType,
             detectedStatus: cleaned.status,
           };
         }
         const titleStr = item.title || item.name || '';
         const cleaned = this.cleanMovieTitle(titleStr);
+        let mediaType = cleaned.mediaType;
+        if (item.mediaType || item.type) {
+          const t = String(item.mediaType || item.type).toLowerCase();
+          if (/tv|series|show/i.test(t)) mediaType = 'tv';
+          else if (/movie|film/i.test(t)) mediaType = 'movie';
+        }
+
         return {
           rawText: titleStr,
           detectedTitle: cleaned.cleanTitle,
           cleanTitle: cleaned.cleanTitle,
           searchNormalizedTitle: cleaned.searchNormalizedTitle,
           detectedYear: item.year || cleaned.year,
+          detectedMediaType: mediaType,
           detectedStatus: item.status || cleaned.status,
           detectedRating: item.rating || item.personalRating || cleaned.rating,
           detectedNotes: item.notes || item.review || cleaned.notes,
@@ -487,6 +518,7 @@ export class ImportService {
         cleanTitle: cleaned.cleanTitle,
         searchNormalizedTitle: cleaned.searchNormalizedTitle,
         detectedYear: cleaned.year,
+        detectedMediaType: cleaned.mediaType,
         detectedStatus: cleaned.status,
         detectedRating: cleaned.rating,
         detectedNotes: cleaned.notes,
@@ -556,7 +588,11 @@ export class ImportService {
             let results: Movie[] = [];
             const exactLocal = localMatches.find((lm) => {
               const lmNorm = UnifiedSearchService.normalize(lm.title);
-              const lmYear = lm.releaseDate ? parseInt(lm.releaseDate.substring(0, 4), 10) : null;
+              const lmYear = lm.releaseDate
+                ? parseInt(lm.releaseDate.substring(0, 4), 10)
+                : lm.firstAirDate
+                ? parseInt(lm.firstAirDate.substring(0, 4), 10)
+                : null;
               return lmNorm === normTitle && (!queryYear || queryYear === lmYear);
             });
 
@@ -564,7 +600,11 @@ export class ImportService {
               results = [exactLocal];
             } else {
               // Layer 2: On-demand TMDB query with retry & backoff
-              results = await this.searchTMDBWithRetry(row.detectedTitle, row.detectedYear || undefined);
+              results = await this.searchTMDBWithRetry(
+                row.detectedTitle,
+                row.detectedYear || undefined,
+                row.detectedMediaType
+              );
             }
 
             if (results.length === 0) {
@@ -586,7 +626,11 @@ export class ImportService {
             let confidence: MatchConfidence = 'low';
             let status: ImportItemStatus = 'matched';
 
-            const topYear = top.releaseDate ? parseInt(top.releaseDate.substring(0, 4), 10) : null;
+            const topYear = top.releaseDate
+              ? parseInt(top.releaseDate.substring(0, 4), 10)
+              : top.firstAirDate
+              ? parseInt(top.firstAirDate.substring(0, 4), 10)
+              : null;
 
             if (normTitle === normTop && (!queryYear || queryYear === topYear)) {
               confidence = 'high';
@@ -594,7 +638,7 @@ export class ImportService {
               confidence = 'medium';
             }
 
-            // Ambiguity check: e.g. "The Batman" (2004) vs "The Batman" (2022)
+            // Ambiguity check: e.g. "The Batman" (2004) vs "The Batman" (2022) or Movie vs TV Series
             const closeMatches = results.filter((m) => {
               const mNorm = UnifiedSearchService.normalize(m.title);
               return mNorm === normTitle;
@@ -627,7 +671,7 @@ export class ImportService {
               matchedMovie: top,
               confidence,
               status,
-              ambiguousOptions: closeMatches.length > 1 ? closeMatches.slice(0, 4) : undefined,
+              ambiguousOptions: results.length > 1 ? results.slice(0, 4) : undefined,
               isDuplicateInLibrary,
               isDuplicateInCollection,
               isDuplicateInBatch: isBatchDuplicate,
@@ -661,12 +705,38 @@ export class ImportService {
   private static async searchTMDBWithRetry(
     title: string,
     year?: number,
+    mediaType?: 'movie' | 'tv' | null,
     retries = 2
   ): Promise<Movie[]> {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
+        if (mediaType === 'tv') {
+          const { results } = await TMDBService.searchTV(title, 1, year);
+          if (results && results.length > 0) return results;
+        } else if (mediaType === 'movie') {
+          const { results } = await TMDBService.search(title, year);
+          if (results && results.length > 0) return results;
+        }
+
+        // Multi-search to find both movies and series
+        const multi = await TMDBService.searchMulti(title, 1);
+        if (multi && multi.results && multi.results.length > 0) {
+          if (year) {
+            const yearStr = year.toString();
+            const yearMatched = multi.results.filter(
+              (m) =>
+                (m.releaseDate && m.releaseDate.startsWith(yearStr)) ||
+                (m.firstAirDate && m.firstAirDate.startsWith(yearStr))
+            );
+            if (yearMatched.length > 0) {
+              return [...yearMatched, ...multi.results.filter((m) => !yearMatched.includes(m))];
+            }
+          }
+          return multi.results;
+        }
+
         const { results } = await TMDBService.search(title, year);
-        return results;
+        return results || [];
       } catch (err: any) {
         if (attempt === retries) throw err;
         const delay = (attempt + 1) * 300;

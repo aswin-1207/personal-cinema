@@ -11,6 +11,7 @@ export type CanonicalField =
   | 'notes'
   | 'watchedDate'
   | 'favorite'
+  | 'mediaType'
   | 'ignore';
 
 export interface ColumnMapping {
@@ -32,6 +33,7 @@ export interface ExtractedMovieRow {
   cleanTitle?: string;
   searchNormalizedTitle?: string;
   detectedYear?: number | null;
+  detectedMediaType?: 'movie' | 'tv' | null;
   detectedStatus?: MovieStatus | null;
   detectedRating?: number | null;
   detectedNotes?: string | null;
