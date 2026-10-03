@@ -103,7 +103,7 @@ export class TMDBService {
   static async getAuthConfig(): Promise<TMDBAuthConfig> {
     const prefs = await PreferencesRepository.getPreferences();
     const userKey = prefs.tmdbApiKey?.trim();
-    if (userKey) {
+    if (userKey && userKey !== 'b8b7e2d9b936e7ec548679d98bc19d3e') {
       const type = userKey.startsWith('ey') && userKey.length > 50 ? 'bearer_token' : 'v3_key';
       return { type, value: userKey, source: 'user_override' };
     }
@@ -115,7 +115,7 @@ export class TMDBService {
       ''
     ).trim();
 
-    if (envKey) {
+    if (envKey && envKey !== 'b8b7e2d9b936e7ec548679d98bc19d3e') {
       const type = envKey.startsWith('ey') && envKey.length > 50 ? 'bearer_token' : 'v3_key';
       return { type, value: envKey, source: 'environment' };
     }
@@ -203,7 +203,10 @@ export class TMDBService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 9000);
         const proxyHeaders: Record<string, string> = { Accept: 'application/json' };
-        if (auth.value) proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
+        // Only forward custom key if user explicitly provided a personal override in Settings
+        if (auth.source === 'user_override' && auth.value) {
+          proxyHeaders['Authorization'] = `Bearer ${auth.value}`;
+        }
 
         const onAbort = () => controller.abort();
         if (signal) signal.addEventListener('abort', onAbort);
@@ -216,11 +219,36 @@ export class TMDBService {
           const data = await proxyRes.json();
           return data as T;
         }
+
+        // Categorize HTTP errors returned from proxy
+        if (proxyRes.status === 401 || proxyRes.status === 403) {
+          throw new TMDBError(
+            'TMDB authentication failed. Check credentials.',
+            'AUTHENTICATION_FAILED',
+            proxyRes.status
+          );
+        }
+        if (proxyRes.status === 429) {
+          throw new TMDBError('TMDB rate limit reached. Try again shortly.', 'RATE_LIMITED', 429);
+        }
+        if (proxyRes.status === 404) {
+          throw new TMDBError('Resource not found on TMDB.', 'TMDB_REQUEST_FAILED', 404);
+        }
+        if (proxyRes.status >= 500) {
+          throw new TMDBError('TMDB service is temporarily unavailable.', 'TMDB_REQUEST_FAILED', proxyRes.status);
+        }
+        throw new TMDBError(`HTTP ${proxyRes.status}: ${proxyRes.statusText}`, 'TMDB_REQUEST_FAILED', proxyRes.status);
       } catch (err: any) {
+        if (err instanceof TMDBError) {
+          throw err;
+        }
         if (signal?.aborted) {
           throw new TMDBError('Request aborted by caller', 'NETWORK_ERROR');
         }
-        // Fall back to direct fetch attempt
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          throw new TMDBError('Device is offline', 'NETWORK_ERROR');
+        }
+        // Fall back to direct fetch attempt only on network transport failures
       }
     }
 

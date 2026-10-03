@@ -495,10 +495,12 @@ export const Discover: React.FC = () => {
             <div className="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between gap-2 text-xs text-red-300">
               <span className="truncate">
                 {searchErrorCode === 'RATE_LIMITED'
-                  ? 'TMDB rate limit reached. Showing local catalog.'
+                  ? 'TMDB request limit reached. Try again shortly.'
                   : searchErrorCode === 'AUTH_ERROR'
-                  ? 'TMDB authentication failed. Check credentials.'
-                  : 'Unable to sync with TMDB global archive. Showing local vault.'}
+                  ? 'TMDB configuration needs attention.'
+                  : isSearchOffline
+                  ? 'You are offline. Showing local vault.'
+                  : 'TMDB is temporarily unavailable. Showing local vault.'}
               </span>
               <button
                 onClick={() => setDebouncedQuery(query.trim())}

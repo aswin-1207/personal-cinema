@@ -244,10 +244,12 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
               <AlertCircle size={14} className="flex-shrink-0 text-red-400" />
               <span className="truncate">
                 {errorCode === 'RATE_LIMITED'
-                  ? 'TMDB rate limit reached. Please wait a moment.'
+                  ? 'TMDB request limit reached. Try again shortly.'
                   : errorCode === 'AUTH_ERROR'
-                  ? 'TMDB authentication failed. Check API key.'
-                  : 'Unable to reach TMDB. Showing local vault.'}
+                  ? 'TMDB configuration needs attention.'
+                  : isOffline
+                  ? 'You are offline. Showing local vault.'
+                  : 'TMDB is temporarily unavailable. Showing local vault.'}
               </span>
             </div>
             <button

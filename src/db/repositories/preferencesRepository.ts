@@ -6,7 +6,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   soundEnabled: true,
   hapticsEnabled: true,
   motionReduced: false,
-  tmdbApiKey: 'b8b7e2d9b936e7ec548679d98bc19d3e', // Default demo key, customizable in profile
+  tmdbApiKey: '', // Server-side proxy manages TMDB credentials by default
   backupReminderDays: 30,
   lastBackupDate: null,
 };
@@ -17,7 +17,13 @@ export class PreferencesRepository {
       const db = await getDB();
       const stored = await db.get('preferences', 'user_preferences');
       if (stored && stored.value) {
-        return { ...DEFAULT_PREFERENCES, ...stored.value };
+        const prefs = { ...DEFAULT_PREFERENCES, ...stored.value };
+        // Purge legacy dead demo key if previously stored in IndexedDB
+        if (prefs.tmdbApiKey === 'b8b7e2d9b936e7ec548679d98bc19d3e') {
+          prefs.tmdbApiKey = '';
+          await db.put('preferences', { key: 'user_preferences', value: prefs });
+        }
+        return prefs;
       }
     } catch {
       // Fallback if DB is initializing

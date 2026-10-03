@@ -1,5 +1,5 @@
-// MyCinema Production Service Worker v5 (Resilient Network-First App Shell & TMDB Image Cache)
-const CACHE_NAME = 'mycinema-v5';
+// MyCinema Production Service Worker v6 (Resilient Network-First App Shell & TMDB Image Cache)
+const CACHE_NAME = 'mycinema-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

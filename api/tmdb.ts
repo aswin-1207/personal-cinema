@@ -2,6 +2,10 @@
 // Ensures 100% connectivity worldwide regardless of regional ISP DNS blocks
 import type { IncomingMessage, ServerResponse } from 'http';
 
+const DEAD_KEYS = new Set([
+  'b8b7e2d9b936e7ec548679d98bc19d3e',
+]);
+
 export default async function handler(req: IncomingMessage & { query?: Record<string, string> }, res: ServerResponse) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,21 +20,33 @@ export default async function handler(req: IncomingMessage & { query?: Record<st
 
   try {
     const urlObj = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
-    const endpoint = urlObj.searchParams.get('endpoint');
+    let endpoint = urlObj.searchParams.get('endpoint');
 
     if (!endpoint) {
       res.statusCode = 400;
       res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.end(JSON.stringify({ error: 'Missing endpoint parameter' }));
       return;
     }
 
+    // Ensure endpoint has leading slash
+    if (!endpoint.startsWith('/')) {
+      endpoint = '/' + endpoint;
+    }
+
     // Determine TMDB API Key from client header, environment, or verified fallback
     const clientAuth = (req.headers.authorization || '').trim();
+    let clientKey = clientAuth.startsWith('Bearer ') ? clientAuth.slice(7).trim() : clientAuth;
+    if (DEAD_KEYS.has(clientKey)) {
+      clientKey = '';
+    }
+
     const apiKey =
-      (clientAuth.startsWith('Bearer ') ? clientAuth.slice(7).trim() : '') ||
-      process.env.VITE_TMDB_API_KEY ||
+      clientKey ||
       process.env.TMDB_API_KEY ||
+      process.env.VITE_TMDB_API_KEY ||
+      process.env.TMDB_ACCESS_TOKEN ||
       process.env.VITE_TMDB_ACCESS_TOKEN ||
       '15d2ea6d0dc1d476efbca3eba2b9bbfb';
 
@@ -62,11 +78,19 @@ export default async function handler(req: IncomingMessage & { query?: Record<st
 
     res.statusCode = tmdbRes.status;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
+
+    // ONLY cache successful responses (200 OK)! Never cache errors on Edge CDN
+    if (tmdbRes.status === 200) {
+      res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
+    } else {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+
     res.end(data);
   } catch (err: any) {
     res.statusCode = 502;
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.end(JSON.stringify({ error: 'TMDB proxy error', message: err?.message || 'Upstream request failed' }));
   }
 }
