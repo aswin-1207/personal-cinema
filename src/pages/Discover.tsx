@@ -368,7 +368,7 @@ export const Discover: React.FC = () => {
       />
 
       {/* Cinema Search Console */}
-      <div className="w-full max-w-2xl space-y-2.5">
+      <div className="w-full space-y-2.5">
         <SearchField
           value={query}
           onChange={setQuery}
@@ -625,7 +625,20 @@ export const Discover: React.FC = () => {
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 3. TAMIL CINEMA */}
+              {/* 3. HOLLYWOOD & GLOBAL BLOCKBUSTERS */}
+              <MoviePosterRail
+                title="HOLLYWOOD BLOCKBUSTERS"
+                badge="HOLLYWOOD"
+                actionLabel="View All"
+                onAction={() => setViewAllRail({ title: 'Hollywood Hits', movies: recentBlockbusters })}
+                items={recentBlockbusters.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* 4. TAMIL CINEMA */}
               <MoviePosterRail
                 title="TAMIL CINEMA"
                 badge="KOLLYWOOD"
@@ -638,33 +651,46 @@ export const Discover: React.FC = () => {
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 4. SUPERHERO & FRANCHISES */}
+              {/* 5. INDIAN PAN-CINEMA */}
               <MoviePosterRail
-                title="SUPERHERO UNIVERSES"
-                badge="FRANCHISES"
+                title="INDIAN PAN-CINEMA"
+                badge="INDIAN"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Superhero Universes', movies: superheroMovies })}
-                items={superheroMovies.map((m) => ({
+                onAction={() => setViewAllRail({ title: 'Indian Pan-Cinema', movies: indianMovies })}
+                items={indianMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 5. SCI-FI LANDMARKS */}
+              {/* 6. MARVEL CINEMATIC & LEGACY */}
               <MoviePosterRail
-                title="SCI-FI LANDMARKS"
-                badge="SCI-FI"
+                title="MARVEL CINEMATIC & LEGACY"
+                badge="MARVEL"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Sci-Fi Landmarks', movies: scifiMovies })}
-                items={scifiMovies.map((m) => ({
+                onAction={() => setViewAllRail({ title: 'Marvel Cinematic & Legacy', movies: marvelMovies })}
+                items={marvelMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 6. HIGH-OCTANE ACTION */}
+              {/* 7. DC EXTENDED UNIVERSE */}
+              <MoviePosterRail
+                title="DC EXTENDED UNIVERSE"
+                badge="DC"
+                actionLabel="View All"
+                onAction={() => setViewAllRail({ title: 'DC Extended Universe', movies: dcMovies })}
+                items={dcMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* 8. HIGH-OCTANE ACTION */}
               <MoviePosterRail
                 title="HIGH-OCTANE ACTION"
                 badge="ACTION"
@@ -677,7 +703,33 @@ export const Discover: React.FC = () => {
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 7. CRITICALLY ACCLAIMED */}
+              {/* 9. ATMOSPHERIC HORROR */}
+              <MoviePosterRail
+                title="ATMOSPHERIC HORROR"
+                badge="HORROR"
+                actionLabel="View All"
+                onAction={() => setViewAllRail({ title: 'Atmospheric Horror', movies: horrorMovies })}
+                items={horrorMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* 10. SCI-FI LANDMARKS */}
+              <MoviePosterRail
+                title="SCI-FI LANDMARKS"
+                badge="SCI-FI"
+                actionLabel="View All"
+                onAction={() => setViewAllRail({ title: 'Sci-Fi Landmarks', movies: scifiMovies })}
+                items={scifiMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* 11. CRITICALLY ACCLAIMED */}
               <MoviePosterRail
                 title="CRITICALLY ACCLAIMED"
                 badge="TOP RATED"

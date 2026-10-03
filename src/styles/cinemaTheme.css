@@ -127,8 +127,9 @@ html {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: scroll; /* Primary vertical scroll owner, preserves scrollbar gutter */
+  overflow-x: clip;
+  overflow-y: auto; /* Designated single root vertical scroll owner */
+  height: 100%;
   scroll-behavior: smooth;
 }
 
@@ -137,7 +138,7 @@ body {
   padding: 0;
   background-color: var(--cinema-bg);
   color: var(--cinema-text);
-  min-height: 100dvh;
+  min-height: 100%;
   position: relative;
   -webkit-overflow-scrolling: touch;
 }

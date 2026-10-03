@@ -75,7 +75,7 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
   return (
     <CinemaShellContext.Provider value={{ ambientColor, setAmbientColor }}>
       {/* LAYER 0: Base Cinema Canvas */}
-      <div className="min-h-[100dvh] bg-[#09090B] text-[#F5F3EB] flex flex-col md:flex-row relative antialiased selection:bg-[#E0AD52] selection:text-[#09090B] overflow-x-hidden">
+      <div className="min-h-[100dvh] bg-[#09090B] text-[#F5F3EB] flex flex-col md:flex-row relative antialiased selection:bg-[#E0AD52] selection:text-[#09090B]">
         
         {/* LAYER 1: Dynamic Ambient Glow (Atmosphere derived from active artwork with gold and purple undertones) */}
         <div
@@ -96,7 +96,7 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <CinemaMobileNav />
 
         {/* Main Cinema Content Area (Single Primary Vertical Scroll Container) */}
-        <main className="flex-1 min-w-0 md:pl-[240px] w-full relative z-10 pb-[calc(env(safe-area-inset-bottom,0px)+72px)] md:pb-12">
+        <main className="flex-1 min-w-0 md:pl-[240px] w-full relative z-10 pb-[calc(env(safe-area-inset-bottom,0px)+100px)] md:pb-16">
           <div className="max-w-[1380px] mx-auto px-3.5 sm:px-6 md:px-8 pt-3 sm:pt-5 md:pt-6 w-full">
             {selectedCollectionId ? (
               renderCollectionDetail(selectedCollectionId)

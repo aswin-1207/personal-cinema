@@ -370,15 +370,6 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
             {/* Desktop Action Buttons Row */}
             <div className="hidden sm:flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={() => setIsCinemaModeOpen(true)}
-                className="cinema-button-primary px-5 py-3 flex items-center gap-2 text-xs font-bold shadow-[0_4px_20px_rgba(237,194,87,0.35)]"
-                title="Enter Atmospheric Cinema Mode"
-              >
-                <Play size={15} className="fill-[#09090D]" />
-                <span>Cinema Mode</span>
-              </button>
-
               <WatchedButton movie={movie} userData={userData || undefined} style="prominent" />
 
               <button
@@ -423,6 +414,15 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
               >
                 <FolderPlus size={15} />
                 <span>Add to Collection</span>
+              </button>
+
+              <button
+                onClick={() => setIsCinemaModeOpen(true)}
+                className="cinema-button-secondary px-4 py-3 flex items-center gap-2 text-xs font-semibold text-[#9E9DA5] hover:text-[#E0AD52]"
+                title="Atmospheric Cinema Ambient View"
+              >
+                <Play size={14} className="fill-current" />
+                <span>Atmospheric Mode</span>
               </button>
             </div>
 
@@ -698,20 +698,36 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         )}
       </div>
 
-      {/* MOBILE STICKY ACTION BAR (Section 40) respecting safe-area-inset-bottom */}
+      {/* MOBILE STICKY ACTION BAR respecting safe-area-inset-bottom */}
       <div
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#09090B]/95 backdrop-blur-2xl border-t border-white/10 flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-[#09090B]/95 backdrop-blur-2xl border-t border-white/10 flex items-center gap-2.5 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
         style={{ paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 8px))' }}
       >
         <div className="flex-1 min-w-0">
           <WatchedButton movie={movie} userData={userData || undefined} style="prominent" />
         </div>
         <button
-          onClick={() => setIsCinemaModeOpen(true)}
-          className="p-3.5 rounded-xl bg-white/[0.08] border border-white/10 text-[#E0AD52] active:scale-95 transition-transform cursor-pointer flex-shrink-0"
-          title="Cinema Mode"
+          onClick={async () => {
+            soundService.playSubtleClick();
+            hapticsService.confirm();
+            if (userData?.status === 'want_to_watch') {
+              await removeFromWatchlist(movie.id);
+              const updated = await UserMovieRepository.getByMovieId(movie.id);
+              setUserData(updated || null);
+            } else {
+              const updated = await addToWatchlist(movie);
+              setUserData(updated);
+            }
+          }}
+          className={`p-3.5 rounded-xl border active:scale-95 transition-all cursor-pointer flex-shrink-0 min-w-[48px] min-h-[48px] flex items-center justify-center ${
+            userData?.status === 'want_to_watch'
+              ? 'bg-[#E0AD52]/20 border-[#E0AD52] text-[#E0AD52]'
+              : 'bg-white/[0.08] border-white/10 text-[#9E9DA5] hover:text-[#F5F3EB]'
+          }`}
+          title={userData?.status === 'want_to_watch' ? 'In Watchlist' : 'Add to Watchlist'}
+          aria-label={userData?.status === 'want_to_watch' ? 'In Watchlist' : 'Add to Watchlist'}
         >
-          <Play size={18} className="fill-[#E0AD52]" />
+          <Bookmark size={18} className={userData?.status === 'want_to_watch' ? 'fill-[#E0AD52]' : ''} />
         </button>
       </div>
 

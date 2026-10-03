@@ -41,7 +41,7 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
   const topGenres = movie.genres && movie.genres.length > 0 ? movie.genres.slice(0, 2).map((g) => g.name).join(', ') : null;
 
   return (
-    <div className="relative w-full h-[32vh] xs:h-[35vh] sm:h-[40vh] min-h-[240px] max-h-[380px] bg-[#09090B] rounded-2xl sm:rounded-3xl overflow-hidden flex items-end shadow-2xl border border-white/5 group select-none">
+    <div className="relative w-full h-[32vh] xs:h-[35vh] sm:h-[40vh] min-h-[240px] max-h-[380px] bg-[#09090B] rounded-2xl sm:rounded-3xl overflow-hidden flex items-end shadow-2xl border border-white/5 group">
       
       {/* LAYER 2: Backdrop Artwork with Ambient Scale */}
       {backdropUrl && (

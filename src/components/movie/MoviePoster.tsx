@@ -91,10 +91,10 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
   const widthClass = hasExplicitWidth
     ? ''
     : size === 'sm'
-    ? 'w-[115px] sm:w-[135px]'
+    ? 'w-[120px] sm:w-[140px]'
     : size === 'lg'
-    ? 'w-[165px] sm:w-[200px]'
-    : 'w-[130px] xs:w-[145px] sm:w-[165px] md:w-[180px]';
+    ? 'w-[170px] sm:w-[210px]'
+    : 'w-[140px] xs:w-[155px] sm:w-[170px] md:w-[185px]';
   const shrinkClass = className.includes('w-full') ? 'w-full' : 'flex-shrink-0';
 
   return (
@@ -108,7 +108,7 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           handleClick();
         }
       }}
-      className={`group relative cursor-pointer select-none rounded-2xl overflow-hidden bg-[#131319] cinema-card-tactile min-w-0 ${
+      className={`group relative cursor-pointer rounded-2xl overflow-hidden bg-[#131319] cinema-card-tactile min-w-0 ${
         isWatched
           ? 'border border-[#E0AD52]/40 shadow-[0_4px_24px_rgba(224,173,82,0.18)] hover:border-[#E0AD52]'
           : 'border border-white/[0.07] hover:border-[#E0AD52]/50 shadow-[0_6px_20px_rgba(0,0,0,0.55)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)]'
