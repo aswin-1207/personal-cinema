@@ -171,24 +171,80 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     ScrollLockManager.forceUnlockAll();
   }, [activeTab]);
 
+  // Handle popstate for browser back button support
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#movie=')) {
+        const id = parseInt(hash.replace('#movie=', ''), 10);
+        if (!isNaN(id)) setSelectedMovieId(id);
+      } else {
+        setSelectedMovieId(null);
+      }
+
+      if (hash.startsWith('#collection=')) {
+        const id = hash.replace('#collection=', '');
+        if (id) setSelectedCollectionId(id);
+      } else {
+        setSelectedCollectionId(null);
+      }
+    };
+
+    // Deep link detection on initial mount
+    if (window.location.hash.startsWith('#movie=')) {
+      const id = parseInt(window.location.hash.replace('#movie=', ''), 10);
+      if (!isNaN(id)) setSelectedMovieId(id);
+    } else if (window.location.hash.startsWith('#collection=')) {
+      const id = window.location.hash.replace('#collection=', '');
+      if (id) setSelectedCollectionId(id);
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const openMovieDetail = (movieId: number) => {
     setSelectedMovieId(movieId);
+    try {
+      if (window.location.hash !== `#movie=${movieId}`) {
+        window.history.pushState({ type: 'movie', id: movieId }, '', `#movie=${movieId}`);
+      }
+    } catch {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const closeMovieDetail = () => {
     setSelectedMovieId(null);
     ScrollLockManager.forceUnlockAll();
+    if (window.location.hash.startsWith('#movie=')) {
+      try {
+        window.history.back();
+      } catch {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
   };
 
   const openCollectionDetail = (collectionId: string) => {
     setSelectedCollectionId(collectionId);
+    try {
+      if (window.location.hash !== `#collection=${collectionId}`) {
+        window.history.pushState({ type: 'collection', id: collectionId }, '', `#collection=${collectionId}`);
+      }
+    } catch {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const closeCollectionDetail = () => {
     setSelectedCollectionId(null);
     ScrollLockManager.forceUnlockAll();
+    if (window.location.hash.startsWith('#collection=')) {
+      try {
+        window.history.back();
+      } catch {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
   };
 
   // --- Centralized Movie Actions with Concurrency and Error Guards ---

@@ -6,6 +6,7 @@ import { MoviePoster } from '../components/movie/MoviePoster';
 import { AddMoviesToCollectionModal } from '../components/collection/AddMoviesToCollectionModal';
 import { EditCollectionModal } from '../components/collection/EditCollectionModal';
 import { CollectionShareModal } from '../components/share/CollectionShareModal';
+import { ImportWizard } from '../components/import/ImportWizard';
 import { EmptyState } from '../components/common/EmptyState';
 import {
   ArrowLeft,
@@ -21,6 +22,7 @@ import {
   Layers,
   PlayCircle,
   CheckCircle2,
+  Upload,
 } from 'lucide-react';
 
 interface CollectionDetailProps {
@@ -35,6 +37,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
   const [filter, setFilter] = useState<'all' | 'watched' | 'watching' | 'unwatched'>('all');
   const [activeSort, setActiveSort] = useState<CollectionSortMode | 'releaseDateDesc'>('custom');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
@@ -253,13 +256,22 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
           </div>
 
           {/* Primary Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 flex-wrap">
             <button
               onClick={() => setIsAddOpen(true)}
-              className="cinema-button-primary px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(224,173,82,0.35)] cursor-pointer"
+              className="cinema-button-primary px-4 sm:px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(224,173,82,0.35)] cursor-pointer"
             >
               <Plus size={15} />
               <span>Add Movies</span>
+            </button>
+
+            <button
+              onClick={() => setIsImportOpen(true)}
+              className="cinema-button-secondary px-4 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+              title="Import movies from CSV, XLSX, or Text list directly into this collection"
+            >
+              <Upload size={14} />
+              <span>Import List</span>
             </button>
 
             {movies.length > 1 && (
@@ -524,6 +536,18 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         isOpen={isShareOpen}
         collectionData={collectionData}
         onClose={() => setIsShareOpen(false)}
+      />
+
+      {/* Collection Import Wizard Modal */}
+      <ImportWizard
+        isOpen={isImportOpen}
+        initialCollectionId={collection.id}
+        onClose={() => setIsImportOpen(false)}
+        onComplete={() => {
+          loadData();
+          notifyDataChanged();
+          showToast(`Movies imported into "${collection.name}"`);
+        }}
       />
     </div>
   );

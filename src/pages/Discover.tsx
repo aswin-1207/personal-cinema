@@ -496,7 +496,7 @@ export const Discover: React.FC = () => {
 
       {/* Category Navigation Pills (when not actively searching) */}
       {!query && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar touch-pan-y py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
           {[
             { id: 'all', label: 'All Feeds' },
             { id: 'movies', label: 'Movies' },

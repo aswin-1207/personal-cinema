@@ -48,19 +48,16 @@ export const Modal: React.FC<ModalProps> = ({
 
   const content = (
     <>
-      {/* Mobile Pull Handle Indicator */}
-      <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
       {/* Modal Header (Fixed) */}
       {title && (
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] flex-shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] flex-shrink-0 bg-[#131319]">
           <h3 className="font-semibold text-base sm:text-lg text-[#F5F3EB] line-clamp-1">
             {title}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 min-w-[44px] min-h-[44px] rounded-xl hover:bg-white/[0.08] text-[#9E9DA5] hover:text-white transition-colors flex items-center justify-center cursor-pointer border-none bg-transparent"
+            className="p-2 min-w-[40px] min-h-[40px] rounded-xl hover:bg-white/[0.08] text-[#9E9DA5] hover:text-white transition-colors flex items-center justify-center cursor-pointer border-none bg-transparent"
             title="Close"
             aria-label="Close dialog"
           >
@@ -76,7 +73,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Modal Footer (Fixed, Never Clipped) */}
       {footer && (
-        <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#131319] flex items-center justify-end gap-3 z-10 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-3">
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#131319] flex items-center justify-between sm:justify-end gap-3 z-10">
           {footer}
         </div>
       )}
@@ -85,15 +82,15 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#050508]/85 backdrop-blur-xl animate-cinema-fade"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(env(safe-area-inset-top,0px),0.75rem)] pb-[max(env(safe-area-inset-bottom,0px),0.75rem)] bg-[#050508]/85 backdrop-blur-xl animate-cinema-fade"
       onClick={onClose}
     >
-      {/* Dialog Box: Desktop Centered Glass vs Mobile Bottom Sheet */}
+      {/* Dialog Box: Fully Contained, Elevated, Never trapped at bottom edge */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title || 'Dialog'}
-        className={`w-full bg-[#131319] border border-white/[0.1] shadow-2xl overflow-hidden flex flex-col rounded-t-[24px] sm:rounded-2xl max-h-[85dvh] sm:max-h-[88dvh] animate-cinema-sheet sm:animate-cinema-scale ${
+        className={`w-full bg-[#131319] border border-white/[0.12] shadow-2xl overflow-hidden flex flex-col rounded-2xl max-h-[calc(100dvh-max(env(safe-area-inset-top,0px),0.75rem)-max(env(safe-area-inset-bottom,0px),0.75rem)-1rem)] sm:max-h-[88dvh] my-auto animate-cinema-scale ${
           typeof maxWidth === 'string' && maxWidth.startsWith('max-w-') ? maxWidth : ''
         }`}
         style={{

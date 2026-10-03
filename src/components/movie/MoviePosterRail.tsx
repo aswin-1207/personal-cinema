@@ -88,7 +88,7 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
         {/* Poster Track */}
         <div
           ref={scrollRef}
-          className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 scroll-smooth touch-pan-y"
+          className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 scroll-smooth"
         >
           {items.map((item) => (
             <MoviePoster

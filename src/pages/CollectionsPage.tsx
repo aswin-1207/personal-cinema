@@ -4,15 +4,17 @@ import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { Collection } from '../types/collection';
 import { CollectionCard } from '../components/collection/CollectionCard';
 import { CreateCollectionModal } from '../components/collection/CreateCollectionModal';
+import { ImportWizard } from '../components/import/ImportWizard';
 import { EmptyState } from '../components/common/EmptyState';
 import { CinemaHeader } from '../components/ui/CinemaHeader';
-import { FolderPlus } from 'lucide-react';
+import { FolderPlus, Upload } from 'lucide-react';
 
 export const CollectionsPage: React.FC = () => {
-  const { openCollectionDetail, dataVersion } = useCinema();
+  const { openCollectionDetail, dataVersion, notifyDataChanged } = useCinema();
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadCollections = async () => {
@@ -37,13 +39,23 @@ export const CollectionsPage: React.FC = () => {
         title="Collections"
         subtitle={`${collections.length} ${collections.length === 1 ? 'curated list' : 'curated lists'}`}
         action={
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-md"
-          >
-            <FolderPlus size={13} />
-            <span>+ New Collection</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsImportOpen(true)}
+              className="cinema-button-secondary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+              title="Import movies from CSV, Excel, or Text list"
+            >
+              <Upload size={13} />
+              <span>Import List</span>
+            </button>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <FolderPlus size={13} />
+              <span>+ New Collection</span>
+            </button>
+          </div>
         }
       />
 
@@ -81,6 +93,16 @@ export const CollectionsPage: React.FC = () => {
         onCreated={(col) => {
           setCollections((prev) => [...prev, col]);
           openCollectionDetail(col.id);
+        }}
+      />
+
+      {/* Import Wizard Modal */}
+      <ImportWizard
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        onComplete={() => {
+          loadCollections();
+          notifyDataChanged();
         }}
       />
     </div>
