@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, Compass, Bookmark, Layers, User, LucideIcon, Sparkles, Film } from 'lucide-react';
+import { Home, Compass, Bookmark, Layers, User, LucideIcon, Sparkles } from 'lucide-react';
 import { useCinema, TabType } from '../../context/CinemaContext';
+import { BrandLogo } from './BrandLogo';
 
 interface NavItemDef {
   id: TabType;
@@ -48,16 +49,9 @@ export const CinemaDesktopNav: React.FC = () => {
         {/* MyCinema Brand Mark */}
         <div
           onClick={() => handleTabClick('home')}
-          className="flex items-center gap-3 px-3 py-3 mb-8 cursor-pointer group"
+          className="flex items-center px-2 py-2 mb-8 cursor-pointer group hover:opacity-95 transition-opacity"
         >
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#E0AD52] to-[#D19830] text-[#09090B] shadow-[0_4px_20px_rgba(224,173,82,0.35)] group-hover:scale-105 transition-transform duration-300">
-            <Film size={18} strokeWidth={2.5} />
-          </div>
-          <div>
-            <div className="font-bold text-[17px] tracking-[0.16em] text-[#F5F3EB] leading-none">
-              MYCINEMA
-            </div>
-          </div>
+          <BrandLogo variant="inside" size={34} alt="MYCINEMA" />
         </div>
 
         {/* Navigation Items */}

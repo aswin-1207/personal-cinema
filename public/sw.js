@@ -1,5 +1,5 @@
-// MyCinema Production Service Worker v6 (Resilient Network-First App Shell & TMDB Image Cache)
-const CACHE_NAME = 'mycinema-v6';
+// MyCinema Production Service Worker v7 (New Brand Identity & Resilient App Shell)
+const CACHE_NAME = 'mycinema-v7';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,13 @@ const STATIC_ASSETS = [
   '/icon-512.png',
   '/apple-touch-icon.png',
   '/favicon.png',
-  '/icon.svg'
+  '/icon.svg',
+  '/branding/mycinema-inside-logo.png',
+  '/branding/mycinema-inside-logo@2x.png',
+  '/branding/mycinema-inside-symbol.png',
+  '/branding/mycinema-inside-symbol@2x.png',
+  '/branding/mycinema-outside-icon.png',
+  '/branding/mycinema-wordmark.png',
 ];
 
 self.addEventListener('install', (event) => {

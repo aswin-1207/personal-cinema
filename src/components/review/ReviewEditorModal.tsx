@@ -201,7 +201,7 @@ export const ReviewEditorModal: React.FC<ReviewEditorModalProps> = ({
               {movie.title}
             </h4>
             <p className="text-xs text-[#9E9DA5] font-mono mt-0.5">
-              {releaseYear ? `${releaseYear} • ` : ''}Personal Cinema Journal
+              {releaseYear ? `${releaseYear} • ` : ''}Film Journal
             </p>
           </div>
 

@@ -9,11 +9,11 @@ import {
   Check,
   CheckCircle2,
   Film,
-  Sparkles,
   MessageCircle,
   Send,
   Mail,
 } from 'lucide-react';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface CollectionShareModalProps {
   isOpen: boolean;
@@ -194,9 +194,10 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
           )}
 
           <div className="text-[10px] tracking-wider text-[#9E9DA5] uppercase border-t border-white/5 pt-2 flex justify-between items-center">
-            <span className="font-bold text-[#E0AD52] flex items-center gap-1">
-              <Sparkles size={11} /> MYCINEMA
-            </span>
+            <div className="flex items-center gap-1.5 font-bold text-[#E0AD52]">
+              <BrandLogo variant="symbol" size={13} alt="MYCINEMA" />
+              <span>MYCINEMA</span>
+            </div>
             <span>Curated Journey</span>
           </div>
         </div>

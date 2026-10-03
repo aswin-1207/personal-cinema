@@ -280,11 +280,30 @@ export class ShareService {
       ctx.lineWidth = 4;
       ctx.strokeRect(30, 30, width - 60, height - 60);
 
-      // Header Brand
-      ctx.fillStyle = '#E0AD52';
-      ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('MYCINEMA', width / 2, 80);
+      // Header Brand (Approved Inside Logo)
+      try {
+        const logoImg = new Image();
+        logoImg.src = '/branding/mycinema-inside-logo.png';
+        await new Promise((res) => {
+          logoImg.onload = () => res(null);
+          logoImg.onerror = () => res(null);
+        });
+        if (logoImg.naturalWidth) {
+          const logoHeight = 44;
+          const logoWidth = (logoHeight * 497) / 132;
+          ctx.drawImage(logoImg, width / 2 - logoWidth / 2, 50, logoWidth, logoHeight);
+        } else {
+          ctx.fillStyle = '#E0AD52';
+          ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('MYCINEMA', width / 2, 80);
+        }
+      } catch {
+        ctx.fillStyle = '#E0AD52';
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MYCINEMA', width / 2, 80);
+      }
 
       // Title
       ctx.fillStyle = '#F5F3EB';

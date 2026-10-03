@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ShareService } from '../services/shareService';
 import { MovieSharePayload, CollectionSharePayload } from '../types/share';
-import { Star, ArrowRight, Film, CheckCircle2, Sparkles, X } from 'lucide-react';
+import { Star, ArrowRight, Film, CheckCircle2, X } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { tmdbService } from '../services/tmdbService';
+import { BrandLogo } from '../components/common/BrandLogo';
 
 interface SharedMoviePageProps {
   hash: string;
@@ -117,9 +118,8 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
             <X size={18} />
           </button>
 
-          <div className="text-[11px] uppercase tracking-widest text-[#E0AD52] font-semibold mb-3 flex items-center justify-center gap-1.5">
-            <Sparkles size={12} />
-            <span>Shared via MyCinema</span>
+          <div className="mb-3.5 flex items-center justify-center">
+            <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
           </div>
 
           <div className="aspect-[2/3] w-44 mx-auto rounded-2xl overflow-hidden shadow-2xl border border-white/10 mb-4 bg-black">
@@ -209,9 +209,8 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
             <X size={18} />
           </button>
 
-          <div className="text-[11px] uppercase tracking-widest text-[#E0AD52] font-semibold mb-2 flex items-center justify-center gap-1.5">
-            <Sparkles size={12} />
-            <span>Curated Collection</span>
+          <div className="mb-3 flex items-center justify-center">
+            <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
           </div>
 
           {/* Complete Status Banner */}

@@ -14,9 +14,9 @@ import {
   MessageCircle,
   Send,
   Mail,
-  Sparkles,
   Eye,
 } from 'lucide-react';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -217,8 +217,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                     "{userData.review}"
                   </p>
                 )}
-                <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-center gap-1 text-[9px] tracking-widest text-[#E0AD52] uppercase font-bold">
-                  <Sparkles size={10} />
+                <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-center gap-1.5 text-[9px] tracking-widest text-[#E0AD52] uppercase font-bold">
+                  <BrandLogo variant="symbol" size={12} alt="MYCINEMA" />
                   <span>MYCINEMA</span>
                 </div>
               </div>
@@ -261,7 +261,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   </p>
                 )}
                 <div className="flex items-center justify-between text-[10px] text-[#9E9DA5] pt-1 border-t border-white/5">
-                  <span className="font-bold tracking-wider text-[#E0AD52]">MYCINEMA</span>
+                  <div className="flex items-center gap-1.5 font-bold tracking-wider text-[#E0AD52]">
+                    <BrandLogo variant="symbol" size={12} alt="MYCINEMA" />
+                    <span>MYCINEMA</span>
+                  </div>
                   {includeStatus && userData?.status && (
                     <span className="text-[#E0AD52] font-semibold uppercase">
                       {userData.status.replace('_', ' ')}
@@ -310,6 +313,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   "{userData.review}"
                 </p>
               )}
+              <div className="flex items-center justify-between text-[10px] text-[#9E9DA5] mt-2.5 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-1.5 font-bold tracking-wider text-[#E0AD52]">
+                  <BrandLogo variant="symbol" size={12} alt="MYCINEMA" />
+                  <span>MYCINEMA</span>
+                </div>
+                <span>Personal Vault</span>
+              </div>
             </div>
           )}
         </div>

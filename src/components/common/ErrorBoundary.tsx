@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { Film, RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface Props {
   children: ReactNode;
@@ -54,8 +55,8 @@ export class ErrorBoundary extends Component<Props, State> {
             {/* Ambient Background Glow */}
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#E0AD52]/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#E0AD52]/10 border border-[#E0AD52]/20 flex items-center justify-center text-[#E0AD52]">
-              <Film size={28} />
+            <div className="mx-auto flex items-center justify-center">
+              <BrandLogo variant="symbol" size={54} alt="MYCINEMA" />
             </div>
 
             <div className="space-y-2">

@@ -12,8 +12,8 @@ import { CollectionCard } from '../components/collection/CollectionCard';
 import { WatchedButton } from '../components/movie/WatchedButton';
 import { SEED_MOVIES } from '../data/seedCatalog';
 import { atmosphereService } from '../services/atmosphereService';
+import { BrandLogo } from '../components/common/BrandLogo';
 import {
-  Film,
   ChevronRight,
   TrendingUp,
 } from 'lucide-react';
@@ -179,14 +179,7 @@ export const Home: React.FC = () => {
     <div className="pb-6 space-y-4 sm:space-y-6">
       {/* Compact Top Bar */}
       <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#E0AD52] to-[#D19830] flex items-center justify-center text-[#09090B] font-bold text-xs shadow-[0_2px_10px_rgba(224,173,82,0.35)]">
-            <Film size={13} strokeWidth={2.5} />
-          </div>
-          <span className="font-bold text-sm tracking-[0.16em] text-[#F5F3EB]">
-            MYCINEMA
-          </span>
-        </div>
+        <BrandLogo variant="inside" size={26} alt="MYCINEMA" />
 
         <button
           onClick={() => setActiveTab('discover')}

@@ -5,6 +5,7 @@ import { TMDBService } from '../../services/tmdbService';
 import { ShareService } from '../../services/shareService';
 import { useCinema } from '../../context/CinemaContext';
 import { Share2, Copy, Check, Star } from 'lucide-react';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface ReviewShareModalProps {
   isOpen: boolean;
@@ -129,7 +130,10 @@ export const ReviewShareModal: React.FC<ReviewShareModalProps> = ({ isOpen, onCl
           )}
 
           <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[10px] text-[#63626B] font-mono">
-            <span>MYCINEMA • PRIVATE FILM VAULT</span>
+            <div className="flex items-center gap-1.5">
+              <BrandLogo variant="symbol" size={13} alt="MYCINEMA" />
+              <span>PRIVATE FILM VAULT</span>
+            </div>
             <span>PERSONAL JOURNAL</span>
           </div>
         </div>

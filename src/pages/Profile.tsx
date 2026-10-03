@@ -9,6 +9,7 @@ import { clearAllLocalData } from '../db/database';
 import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { CinemaHeader } from '../components/ui/CinemaHeader';
 import { ReviewRepository } from '../db/repositories/reviewRepository';
+import { BrandLogo } from '../components/common/BrandLogo';
 import {
   Database,
   Upload,
@@ -350,6 +351,14 @@ export const Profile: React.FC = () => {
           Clear Local Cinema
         </CinemaButton>
       </section>
+
+      {/* Brand & Version Info */}
+      <div className="pt-3 pb-2 flex flex-col items-center justify-center text-center gap-1.5 opacity-70">
+        <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
+        <p className="text-[10px] text-[#63626B] font-mono tracking-wider">
+          v1.0.0 • PRIVATE LOCAL-FIRST VAULT
+        </p>
+      </div>
 
       {/* Clear Database Confirmation Modal (Section 29) */}
       <Modal
