@@ -73,7 +73,7 @@ export const WatchlistPage: React.FC = () => {
   }, [movies, statusFilter, searchQuery, sortBy, sortDesc]);
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade">
+    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
         <div className="space-y-1">

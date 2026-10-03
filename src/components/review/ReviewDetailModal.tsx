@@ -81,7 +81,58 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth={640}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={640}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                openMovieDetail(movie.id);
+              }}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/5 border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <Film size={13} />
+              <span className="hidden sm:inline">Movie Details</span>
+            </button>
+
+            {hasReview && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 flex items-center gap-1.5 cursor-pointer transition-colors"
+                title="Delete written review"
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onShare}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#F5F3EB] hover:text-[#E0AD52] hover:bg-white/5 border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="Share review"
+            >
+              <Share2 size={13} />
+              <span>Share</span>
+            </button>
+
+            <button
+              onClick={onEdit}
+              className="cinema-button-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-lg"
+            >
+              <Edit3 size={13} />
+              <span>{hasReview ? 'Edit Journal' : 'Write Journal'}</span>
+            </button>
+          </div>
+        </div>
+      }
+    >
       <div className="space-y-6">
         {/* Cinematic Backdrop Banner */}
         <div className="relative -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 h-36 sm:h-44 bg-[#09090B] overflow-hidden rounded-t-[24px] sm:rounded-t-2xl">
@@ -187,53 +238,6 @@ export const ReviewDetailModal: React.FC<ReviewDetailModalProps> = ({
               <span>Recorded on {reviewedDateStr}</span>
             </div>
           )}
-        </div>
-
-        {/* Action Toolbar */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onClose();
-                openMovieDetail(movie.id);
-              }}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/5 border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              <Film size={13} />
-              <span>Movie Details</span>
-            </button>
-
-            {hasReview && (
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="px-3 py-2 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 flex items-center gap-1.5 cursor-pointer transition-colors"
-                title="Delete written review"
-              >
-                <Trash2 size={13} />
-                <span>Delete</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onShare}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-[#F5F3EB] hover:text-[#E0AD52] hover:bg-white/5 border border-white/10 flex items-center gap-1.5 cursor-pointer transition-colors"
-              title="Share review"
-            >
-              <Share2 size={13} />
-              <span>Share</span>
-            </button>
-
-            <button
-              onClick={onEdit}
-              className="cinema-button-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-lg"
-            >
-              <Edit3 size={13} />
-              <span>{hasReview ? 'Edit Journal' : 'Write Journal'}</span>
-            </button>
-          </div>
         </div>
       </div>
     </Modal>

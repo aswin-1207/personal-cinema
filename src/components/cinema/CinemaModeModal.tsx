@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Movie, UserMovie } from '../../types/movie';
 import { tmdbService } from '../../services/tmdbService';
 import { WatchedButton } from '../movie/WatchedButton';
 import { X, Volume2, VolumeX, Star, Film } from 'lucide-react';
 import { useCinema } from '../../context/CinemaContext';
+import { ScrollLockManager } from '../../services/scrollLockManager';
 
 interface CinemaModeModalProps {
   movie: Movie;
@@ -19,6 +20,26 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
   const { preferences, updatePreference } = useCinema();
   const [controlsVisible, setControlsVisible] = useState(true);
 
+  useEffect(() => {
+    ScrollLockManager.lock();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      ScrollLockManager.unlock();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [onClose]);
+
   const backdropUrl = tmdbService.getBackdropUrl(movie.backdropPath, 'w1280');
   const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
 
@@ -27,7 +48,7 @@ export const CinemaModeModal: React.FC<CinemaModeModalProps> = ({
   return (
     <div
       onClick={() => setControlsVisible(!controlsVisible)}
-      className="fixed inset-0 z-50 bg-[#050508] flex flex-col justify-between select-none cursor-pointer overflow-hidden animate-fade-in"
+      className="fixed inset-0 z-50 bg-[#050508] flex flex-col justify-between cursor-pointer overflow-hidden animate-fade-in"
     >
       {/* Immersive Atmospheric Backdrop */}
       {backdropUrl && (

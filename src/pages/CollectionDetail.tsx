@@ -156,7 +156,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
     : null;
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade">
+    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button

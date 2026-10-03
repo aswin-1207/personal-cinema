@@ -119,16 +119,41 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html {
   background-color: var(--cinema-bg);
   color: var(--cinema-text);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.5;
-  overflow-x: hidden;
-  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: scroll; /* Primary vertical scroll owner, preserves scrollbar gutter */
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cinema-bg);
+  color: var(--cinema-text);
+  min-height: 100dvh;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal Open Scroll Locks */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 /* Custom Scrollbars */

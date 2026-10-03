@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { ScrollLockManager } from '../../services/scrollLockManager';
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,16 +22,25 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = 540,
 }) => {
   useEffect(() => {
+    if (!isOpen) return;
+
+    ScrollLockManager.lock();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
     return () => {
-      document.body.style.overflow = '';
+      ScrollLockManager.unlock();
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, [isOpen, onClose]);
 

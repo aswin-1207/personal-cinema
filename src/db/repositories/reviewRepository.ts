@@ -46,7 +46,7 @@ export class ReviewRepository {
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'watched', // Reviewing or rating marks watched
+      status: existing?.status || 'none', // Reviewing or rating does NOT force watched
       personalRating: data.rating !== undefined ? data.rating : existing?.personalRating ?? null,
       notes: existing?.notes,
       review: hasReviewContent ? cleanReviewText : undefined,
@@ -55,7 +55,7 @@ export class ReviewRepository {
       hasSpoilers: data.hasSpoilers !== undefined ? data.hasSpoilers : existing?.hasSpoilers ?? false,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
-      watchedAt: existing?.watchedAt || now, // preserve original watched date
+      watchedAt: existing?.watchedAt ?? null, // preserve original watched date if already watched
       watchingAt: null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: 0, // Explicitly NO rewatch architecture

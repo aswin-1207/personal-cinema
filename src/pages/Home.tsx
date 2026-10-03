@@ -176,7 +176,7 @@ export const Home: React.FC = () => {
   }, [dataVersion, setAmbientColor]);
 
   return (
-    <div className="pb-6 space-y-4 sm:space-y-6 select-none">
+    <div className="pb-6 space-y-4 sm:space-y-6">
       {/* Compact Top Bar */}
       <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
         <div className="flex items-center gap-2">

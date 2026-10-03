@@ -8,6 +8,7 @@ import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { PreferencesRepository, DEFAULT_PREFERENCES } from '../db/repositories/preferencesRepository';
 import { validateAndRepairDatabase } from '../db/database';
 import { SeedCatalogService } from '../services/seedCatalogService';
+import { ScrollLockManager } from '../services/scrollLockManager';
 import { UserPreferences } from '../types/backup';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
@@ -165,6 +166,11 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Auto-reset any dangling scroll locks on tab transitions
+  useEffect(() => {
+    ScrollLockManager.forceUnlockAll();
+  }, [activeTab]);
+
   const openMovieDetail = (movieId: number) => {
     setSelectedMovieId(movieId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -172,6 +178,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const closeMovieDetail = () => {
     setSelectedMovieId(null);
+    ScrollLockManager.forceUnlockAll();
   };
 
   const openCollectionDetail = (collectionId: string) => {
@@ -181,6 +188,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const closeCollectionDetail = () => {
     setSelectedCollectionId(null);
+    ScrollLockManager.forceUnlockAll();
   };
 
   // --- Centralized Movie Actions with Concurrency and Error Guards ---

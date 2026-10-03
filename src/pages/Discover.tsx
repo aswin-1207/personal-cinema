@@ -360,7 +360,7 @@ export const Discover: React.FC = () => {
   const [viewAllRail, setViewAllRail] = useState<{ title: string; movies: Movie[] } | null>(null);
 
   return (
-    <div className="pb-6 space-y-4 sm:space-y-6 select-none animate-cinema-fade">
+    <div className="pb-6 space-y-4 sm:space-y-6 animate-cinema-fade">
       {/* Streaming Discovery Header */}
       <CinemaHeader
         badge="DISCOVERY"
@@ -404,7 +404,7 @@ export const Discover: React.FC = () => {
 
       {/* Category Switcher Pills (when not searching) */}
       {!query && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar touch-pan-y py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: 'all', label: 'All Feeds' },
             { id: 'regional', label: 'Regional Cinema' },

@@ -98,7 +98,21 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
     : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Share Collection" maxWidth="max-w-xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Share Collection"
+      maxWidth="max-w-xl"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="cinema-button-secondary px-5 py-2 text-xs font-semibold cursor-pointer"
+        >
+          Close
+        </button>
+      }
+    >
       <div className="flex flex-col items-center text-center">
         {/* Collection Card Live Preview */}
         <div className="w-full max-w-sm rounded-2xl bg-[#131319] border border-[#E0AD52]/40 p-5 shadow-2xl relative overflow-hidden mb-5 text-left">

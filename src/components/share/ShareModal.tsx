@@ -153,7 +153,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Share Movie" maxWidth="max-w-2xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Share Movie"
+      maxWidth="max-w-2xl"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="cinema-button-secondary px-5 py-2 text-xs font-semibold cursor-pointer"
+        >
+          Close
+        </button>
+      }
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         {/* Left Column: Live Card Preview */}
         <div className="flex flex-col items-center">

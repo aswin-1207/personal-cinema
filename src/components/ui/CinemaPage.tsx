@@ -13,7 +13,7 @@ export const CinemaPage: React.FC<CinemaPageProps> = ({
 }) => {
   return (
     <div
-      className={`min-h-full w-full max-w-7xl mx-auto space-y-8 select-none animate-cinema-fade ${
+      className={`min-h-full w-full max-w-7xl mx-auto space-y-8 animate-cinema-fade ${
         noBottomPadding ? '' : 'pb-24 sm:pb-16'
       } ${className}`}
     >

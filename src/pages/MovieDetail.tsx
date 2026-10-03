@@ -16,6 +16,7 @@ import { ReviewEditorModal } from '../components/review/ReviewEditorModal';
 import { ReviewShareModal } from '../components/review/ReviewShareModal';
 import { soundService } from '../services/soundService';
 import { hapticsService } from '../services/hapticsService';
+import { ScrollLockManager } from '../services/scrollLockManager';
 import {
   ArrowLeft,
   Share2,
@@ -179,8 +180,30 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     setMemberCollections(colList.filter((c): c is Collection => Boolean(c)));
   };
 
+  // Lock background scroll while MovieDetail is open and support popstate/escape
+  useEffect(() => {
+    ScrollLockManager.lock();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      ScrollLockManager.unlock();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] select-none animate-cinema-fade">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] animate-cinema-fade">
       {/* Dynamic Artwork Atmosphere Ambient Halo (Section 9) */}
       <div
         className="fixed top-0 left-0 right-0 h-[65vh] pointer-events-none z-0 opacity-70 blur-[90px] transition-all duration-700"
@@ -362,7 +385,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                 onClick={async () => {
                   if (userData?.status === 'want_to_watch') {
                     await removeFromWatchlist(movie.id);
-                    setUserData(null);
+                    const updated = await UserMovieRepository.getByMovieId(movie.id);
+                    setUserData(updated || null);
                   } else {
                     const updated = await addToWatchlist(movie);
                     setUserData(updated);

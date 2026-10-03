@@ -861,7 +861,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           </div>
 
           {/* Options & Commit */}
-          <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky -bottom-4 sm:-bottom-6 bg-[#131319] py-3 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6">
             <div className="flex flex-wrap gap-4 text-xs text-cinema-silver">
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input

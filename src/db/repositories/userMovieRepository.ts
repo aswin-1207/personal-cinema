@@ -179,7 +179,7 @@ export class UserMovieRepository {
   }
 
   /**
-   * Remove from Watchlist without affecting canonical Movie or Collections
+   * Remove from Watchlist without affecting canonical Movie, Collections, Review, Rating, or Favorite
    */
   static async removeFromWatchlist(movieId: number): Promise<void> {
     const db = await getDB();
@@ -187,13 +187,26 @@ export class UserMovieRepository {
     const store = tx.objectStore('userMovies');
     const existing = await store.get(movieId);
     if (existing && (existing.status === 'want_to_watch' || existing.status === 'watching')) {
-      await store.delete(movieId);
+      const hasOtherData = Boolean(
+        (existing.personalRating !== null && existing.personalRating !== undefined) ||
+        existing.review ||
+        existing.notes ||
+        existing.isFavorite
+      );
+      if (hasOtherData) {
+        existing.status = 'none';
+        existing.scheduledAt = null;
+        existing.watchingAt = null;
+        await store.put(existing);
+      } else {
+        await store.delete(movieId);
+      }
     }
     await tx.done;
   }
 
   /**
-   * Toggle Favorite
+   * Toggle Favorite (Independent from Watchlist)
    */
   static async toggleFavorite(movieId: number): Promise<UserMovie> {
     const existing = await this.getByMovieId(movieId);
@@ -201,7 +214,7 @@ export class UserMovieRepository {
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'want_to_watch',
+      status: existing?.status || 'none', // Favoriting does not add to watchlist
       personalRating: existing?.personalRating ?? null,
       notes: existing?.notes,
       review: existing?.review,
@@ -218,7 +231,7 @@ export class UserMovieRepository {
   }
 
   /**
-   * Update Rating
+   * Update Rating (Independent from Watched)
    */
   static async setRating(movieId: number, rating: number | null): Promise<UserMovie> {
     const existing = await this.getByMovieId(movieId);
@@ -226,13 +239,13 @@ export class UserMovieRepository {
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'watched', // rating implies watched only if not already tracked
+      status: existing?.status || 'none', // Rating does not force watched
       personalRating: rating,
       notes: existing?.notes,
       review: existing?.review,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
-      watchedAt: existing?.watchedAt || (existing?.status === 'watched' || !existing ? now : null),
+      watchedAt: existing?.watchedAt ?? null,
       watchingAt: existing?.watchingAt ?? null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: existing?.rewatchCount ?? 0,
@@ -243,7 +256,7 @@ export class UserMovieRepository {
   }
 
   /**
-   * Update Review & Notes (Film Journal)
+   * Update Review & Notes (Independent from Watched)
    */
   static async setReviewAndNotes(
     movieId: number,
@@ -255,7 +268,7 @@ export class UserMovieRepository {
 
     const updated: UserMovie = {
       movieId,
-      status: existing?.status || 'watched', // Writing a review implies watched
+      status: existing?.status || 'none', // Writing a review does not force watched
       personalRating: existing?.personalRating ?? null,
       notes: data.notes !== undefined ? data.notes : existing?.notes,
       review: data.review !== undefined ? (data.review.trim() || undefined) : existing?.review,
@@ -264,7 +277,7 @@ export class UserMovieRepository {
       hasSpoilers: data.hasSpoilers !== undefined ? data.hasSpoilers : existing?.hasSpoilers ?? false,
       isFavorite: existing?.isFavorite ?? false,
       addedAt: existing?.addedAt || now,
-      watchedAt: existing?.watchedAt || now,
+      watchedAt: existing?.watchedAt ?? null,
       watchingAt: null,
       scheduledAt: existing?.scheduledAt ?? null,
       rewatchCount: 0,

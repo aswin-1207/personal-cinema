@@ -209,8 +209,32 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
       onClose={onClose}
       title={`Add Movies to "${collectionName}"`}
       maxWidth="max-w-2xl"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="text-xs text-cinema-silver">
+            {selectedMovieIds.size} movie{selectedMovieIds.size === 1 ? '' : 's'} selected
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cinema-button-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAdd}
+              disabled={isSubmitting || selectedMovieIds.size === 0}
+              className="cinema-button-primary px-5 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+            >
+              <Plus size={15} />
+              <span>Add to Collection</span>
+            </button>
+          </div>
+        </div>
+      }
     >
-      <div className="flex flex-col h-[70vh] max-h-[600px]">
+      <div className="flex flex-col">
         {/* Search input with live status indicator */}
         <div className="relative mb-3">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cinema-subtle" />
@@ -344,30 +368,6 @@ export const AddMoviesToCollectionModal: React.FC<AddMoviesToCollectionModalProp
               );
             })
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/[0.08]">
-          <div className="text-xs text-cinema-silver">
-            {selectedMovieIds.size} movie{selectedMovieIds.size === 1 ? '' : 's'} selected
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cinema-button-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAdd}
-              disabled={isSubmitting || selectedMovieIds.size === 0}
-              className="cinema-button-primary px-5 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-40 cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>Add to Collection</span>
-            </button>
-          </div>
         </div>
       </div>
     </Modal>

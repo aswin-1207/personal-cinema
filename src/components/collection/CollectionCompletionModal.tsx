@@ -7,6 +7,7 @@ import { tmdbService } from '../../services/tmdbService';
 import { Check, Share2, X, Film } from 'lucide-react';
 import { soundService } from '../../services/soundService';
 import { hapticsService } from '../../services/hapticsService';
+import { ScrollLockManager } from '../../services/scrollLockManager';
 
 interface CollectionCompletionModalProps {
   collection: Collection;
@@ -65,11 +66,23 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
       });
 
   useEffect(() => {
+    ScrollLockManager.lock();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+    const handlePopState = () => {
+      onClose();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      ScrollLockManager.unlock();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [onClose]);
 
   return (

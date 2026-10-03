@@ -100,7 +100,7 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 select-none animate-cinema-fade max-w-3xl mx-auto">
+    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade max-w-3xl mx-auto">
       {/* Header */}
       <CinemaHeader
         badge="MYCINEMA"
@@ -448,20 +448,8 @@ export const Profile: React.FC = () => {
         onClose={() => setIsConfirmClearOpen(false)}
         title="Clear Local Cinema"
         maxWidth="max-w-md"
-      >
-        <div className="space-y-4 text-left">
-          <div className="p-3.5 rounded-xl bg-[#B81C28]/15 border border-[#B81C28]/30 flex items-start gap-3">
-            <AlertTriangle size={20} className="text-[#D94048] flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-[#F5F2F0] leading-relaxed">
-              This will permanently delete your movies, watched history, custom collections, personal ratings, and notes from IndexedDB.
-            </p>
-          </div>
-
-          <p className="text-xs text-[#9E9DA5]">
-            Consider creating a backup first via <strong>Backup Center</strong> before proceeding.
-          </p>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.08]">
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
             <CinemaButton
               variant="ghost"
               size="md"
@@ -477,6 +465,19 @@ export const Profile: React.FC = () => {
               Clear Everything
             </CinemaButton>
           </div>
+        }
+      >
+        <div className="space-y-4 text-left">
+          <div className="p-3.5 rounded-xl bg-[#B81C28]/15 border border-[#B81C28]/30 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-[#D94048] flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-[#F5F2F0] leading-relaxed">
+              This will permanently delete your movies, watched history, custom collections, personal ratings, and notes from IndexedDB.
+            </p>
+          </div>
+
+          <p className="text-xs text-[#9E9DA5]">
+            Consider creating a backup first via <strong>Backup Center</strong> before proceeding.
+          </p>
         </div>
       </Modal>
 

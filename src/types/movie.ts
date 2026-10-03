@@ -49,7 +49,7 @@ export interface Movie {
   franchiseTags?: string[];
 }
 
-export type MovieStatus = 'want_to_watch' | 'watching' | 'watched';
+export type MovieStatus = 'want_to_watch' | 'watching' | 'watched' | 'none';
 
 export interface UserMovie {
   movieId: number; // Foreign key to Movie.id

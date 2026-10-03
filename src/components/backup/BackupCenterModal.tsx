@@ -144,7 +144,21 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Backup & Restore Center" maxWidth="max-w-3xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Backup & Restore Center"
+      maxWidth="max-w-3xl"
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="cinema-button-secondary px-5 py-2 text-xs font-semibold cursor-pointer"
+        >
+          Close
+        </button>
+      }
+    >
       <div className="space-y-6">
         {/* Health Monitoring Status Banner */}
         {health && (
