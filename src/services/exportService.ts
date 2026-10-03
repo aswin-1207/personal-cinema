@@ -55,6 +55,7 @@ export class ExportService {
     const rows = reviewed.map((item) => ({
       'Movie ID': item.movie.id,
       'Title': item.movie.title,
+      'Type': item.movie.mediaType === 'tv' ? 'Series' : 'Movie',
       'Personal Rating': item.userData?.personalRating ?? '',
       'Review Title': item.userData?.reviewTitle || '',
       'Review': item.userData?.review || '',

@@ -11,18 +11,23 @@ export interface CollectionOverview {
   covers: Movie[];
 }
 
-/** 2×2 poster collage (Figma collection cover). Empty slots show a muted tile. */
-export const CollectionCollage: React.FC<{ covers: Movie[]; className?: string }> = ({ covers, className = '' }) => {
+/** Poster collage: 2×2 grid, or a wide strip of four posters (Figma collection card). Empty slots show a muted tile. */
+export const CollectionCollage: React.FC<{ covers: Movie[]; className?: string; layout?: 'grid' | 'strip' }> = ({
+  covers,
+  className = '',
+  layout = 'grid',
+}) => {
+  const frame = layout === 'strip' ? 'aspect-[8/3] grid grid-cols-4' : 'aspect-[4/3] grid grid-cols-2 grid-rows-2';
   const slots = Array.from({ length: 4 }, (_, i) => covers[i]);
   if (covers.length === 0) {
     return (
-      <div className={`aspect-[4/3] bg-surface-2 flex items-center justify-center text-subtle ${className}`} aria-hidden="true">
+      <div className={`${layout === 'strip' ? 'aspect-[8/3]' : 'aspect-[4/3]'} bg-surface-2 flex items-center justify-center text-subtle ${className}`} aria-hidden="true">
         <Layers size={28} />
       </div>
     );
   }
   return (
-    <div className={`aspect-[4/3] grid grid-cols-2 grid-rows-2 gap-px bg-ink ${className}`} aria-hidden="true">
+    <div className={`${frame} gap-px bg-ink ${className}`} aria-hidden="true">
       {slots.map((m, i) => {
         const url = m ? tmdbService.getPosterUrl(m.posterPath, 'w185') : null;
         return (
@@ -56,7 +61,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ overview, onOpen
       } ${className}`}
     >
       <div className="relative">
-        <CollectionCollage covers={covers} />
+        <CollectionCollage covers={covers} layout="strip" />
         <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent" aria-hidden="true" />
         {complete && (
           <span className="absolute top-2 right-2 inline-flex items-center gap-1 h-6 px-2 rounded-full bg-green text-ink text-[10px] font-bold uppercase tracking-wider">
@@ -65,8 +70,8 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ overview, onOpen
           </span>
         )}
       </div>
-      <div className="p-3 pt-2">
-        <h3 className="text-[14px] font-semibold text-text line-clamp-1">
+      <div className="p-3.5 pt-2.5">
+        <h3 className="text-[16px] font-semibold text-text line-clamp-1">
           <button
             type="button"
             onClick={onOpen}
@@ -76,7 +81,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ overview, onOpen
           </button>
         </h3>
         {collection.description && <p className="text-[12px] text-muted line-clamp-1 mt-0.5">{collection.description}</p>}
-        <div className="mt-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider">
+        <div className="mt-2.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider">
           <span className="text-muted tabular-nums">
             {progress.watched} / {progress.total} watched
           </span>

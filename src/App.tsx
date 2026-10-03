@@ -5,14 +5,36 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Spinner } from './components/ui/States';
 import { Home } from './pages/Home';
 
-const Discover = React.lazy(() => import('./pages/Discover').then((m) => ({ default: m.Discover })));
-const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage').then((m) => ({ default: m.WatchlistPage })));
-const WatchedPage = React.lazy(() => import('./pages/WatchedPage').then((m) => ({ default: m.WatchedPage })));
-const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage').then((m) => ({ default: m.CollectionsPage })));
-const CollectionDetail = React.lazy(() => import('./pages/CollectionDetail').then((m) => ({ default: m.CollectionDetail })));
-const MovieDetail = React.lazy(() => import('./pages/MovieDetail').then((m) => ({ default: m.MovieDetail })));
-const Profile = React.lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
-const ReviewsPage = React.lazy(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })));
+const CHUNK_RELOAD_KEY = 'mycinema_chunk_reload';
+
+// After a new deploy, an open tab can request a page chunk that no longer exists.
+// Reload once to pick up the current build instead of showing the error screen.
+function lazyPage<T extends React.ComponentType<any>>(loader: () => Promise<{ default: T }>) {
+  return React.lazy(() =>
+    loader()
+      .then((mod) => {
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        return mod;
+      })
+      .catch((err) => {
+        if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+          sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+        throw err;
+      })
+  );
+}
+
+const Discover = lazyPage(() => import('./pages/Discover').then((m) => ({ default: m.Discover })));
+const WatchlistPage = lazyPage(() => import('./pages/WatchlistPage').then((m) => ({ default: m.WatchlistPage })));
+const WatchedPage = lazyPage(() => import('./pages/WatchedPage').then((m) => ({ default: m.WatchedPage })));
+const CollectionsPage = lazyPage(() => import('./pages/CollectionsPage').then((m) => ({ default: m.CollectionsPage })));
+const CollectionDetail = lazyPage(() => import('./pages/CollectionDetail').then((m) => ({ default: m.CollectionDetail })));
+const MovieDetail = lazyPage(() => import('./pages/MovieDetail').then((m) => ({ default: m.MovieDetail })));
+const Profile = lazyPage(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const ReviewsPage = lazyPage(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })));
 
 const AppContent: React.FC = () => {
   const { activeTab, activeSub, selectedMovieId, closeMovieDetail, selectedCollectionId, closeCollectionDetail } = useCinema();

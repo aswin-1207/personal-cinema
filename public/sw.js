@@ -1,5 +1,6 @@
-// MyCinema Production Service Worker v7 (New Brand Identity & Resilient App Shell)
-const CACHE_NAME = 'mycinema-v8';
+// MyCinema Production Service Worker
+// v9: purge static entries that may hold an HTML fallback instead of a JS/CSS chunk.
+const CACHE_NAME = 'mycinema-v9';
 // v2: older versions stored opaque responses, which Chrome pads to ~7 MB each.
 const IMAGE_CACHE_NAME = 'tmdb-images-v2';
 const IMAGE_CACHE_MAX_ENTRIES = 400;
@@ -101,19 +102,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static assets (JS, CSS, fonts, icons): Cache first, fallback to network
+  // 4. Static assets (JS, CSS, fonts, icons): Cache first, fallback to network.
+  // SPA hosts answer missing hashed chunks with index.html (200), so an HTML body
+  // is never a valid static asset and must not be cached or served from cache.
   if (event.request.method === 'GET') {
+    const isHtml = (response) => (response.headers.get('content-type') || '').includes('text/html');
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        });
-      })
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached && !isHtml(cached)) return cached;
+          if (cached) cache.delete(event.request);
+          return fetch(event.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic' && !isHtml(networkResponse)) {
+              cache.put(event.request, networkResponse.clone()).catch(() => {});
+            }
+            return networkResponse;
+          });
+        })
+      )
     );
   }
 });

@@ -220,7 +220,7 @@ export const Home: React.FC = () => {
                 key={o.collection.id}
                 overview={o}
                 onOpen={() => openCollectionDetail(o.collection.id)}
-                className="shrink-0 snap-start w-[64vw] max-w-[240px] sm:w-[240px]"
+                className="shrink-0 snap-start w-[80vw] max-w-[300px] sm:w-[300px]"
               />
             ))}
           </div>

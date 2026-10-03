@@ -25,7 +25,7 @@ const fromList = (p: Promise<Movie[]>, page: number): Promise<Paged> =>
 interface CategoryDef {
   id: string;
   title: string;
-  media: 'movie' | 'tv';
+  media: 'movie' | 'tv' | 'all';
   fetch: (page: number) => Promise<Paged>;
 }
 
@@ -50,6 +50,99 @@ export const DISCOVER_CATEGORIES: CategoryDef[] = [
   { id: 'crime-series', title: 'Crime & mystery series', media: 'tv', fetch: (p) => tmdbService.getCrimeThrillerSeries(p) },
   { id: 'anime', title: 'Anime series', media: 'tv', fetch: (p) => tmdbService.getAnimeSeries(p) },
 ];
+
+type DiscoverParams = Parameters<typeof tmdbService.discoverPaged>[0];
+
+interface BrowseDef {
+  id: string;
+  label: string;
+  movie?: DiscoverParams;
+  tv?: DiscoverParams;
+}
+
+/** Figma "Screening moods": each mood is a real TMDB genre query for movies and series. */
+const MOODS: BrowseDef[] = [
+  { id: 'mood-feel-good', label: 'Feel good', movie: { genreIds: [35], withoutGenreIds: [27, 53] }, tv: { genreIds: [35], withoutGenreIds: [80] } },
+  { id: 'mood-dark', label: 'Dark', movie: { genreIds: [53, 80] }, tv: { genreIds: [80, 18] } },
+  { id: 'mood-mind-bending', label: 'Mind-bending', movie: { genreIds: [878, 9648] }, tv: { genreIds: [10765, 9648] } },
+  { id: 'mood-heartfelt', label: 'Heartfelt', movie: { genreIds: [18, 10749] }, tv: { genreIds: [18, 10751] } },
+  { id: 'mood-epic', label: 'Epic adventure', movie: { genreIds: [12, 14] }, tv: { genreIds: [10759] } },
+];
+
+const GENRES: BrowseDef[] = [
+  { id: 'genre-action', label: 'Action', movie: { genreIds: [28] }, tv: { genreIds: [10759] } },
+  { id: 'genre-drama', label: 'Drama', movie: { genreIds: [18] }, tv: { genreIds: [18] } },
+  { id: 'genre-comedy', label: 'Comedy', movie: { genreIds: [35] }, tv: { genreIds: [35] } },
+  { id: 'genre-thriller', label: 'Thriller', movie: { genreIds: [53] } },
+  { id: 'genre-horror', label: 'Horror', movie: { genreIds: [27] } },
+  { id: 'genre-scifi', label: 'Sci-Fi', movie: { genreIds: [878] }, tv: { genreIds: [10765] } },
+  { id: 'genre-romance', label: 'Romance', movie: { genreIds: [10749] } },
+  { id: 'genre-crime', label: 'Crime', movie: { genreIds: [80] }, tv: { genreIds: [80] } },
+  { id: 'genre-animation', label: 'Animation', movie: { genreIds: [16] }, tv: { genreIds: [16] } },
+  { id: 'genre-documentary', label: 'Documentary', movie: { genreIds: [99] }, tv: { genreIds: [99] } },
+];
+
+const browseSupports = (b: BrowseDef, scope: Scope) => (scope === 'all' ? true : Boolean(b[scope]));
+
+/** Builds a View-all category for a mood/genre, limited to the active Movies/Series scope. */
+const toBrowseCategory = (b: BrowseDef, scope: Scope): CategoryDef => {
+  const useMovie = Boolean(b.movie) && scope !== 'tv';
+  const useTv = Boolean(b.tv) && scope !== 'movie';
+  const media: CategoryDef['media'] = useMovie && useTv ? 'all' : useTv ? 'tv' : 'movie';
+  return {
+    id: b.id,
+    title: b.label,
+    media,
+    fetch: async (page) => {
+      const requests: Promise<Paged>[] = [];
+      if (useMovie) requests.push(tmdbService.discoverPaged({ ...b.movie, mediaType: 'movie', voteCountGte: 200, page }));
+      if (useTv) requests.push(tmdbService.discoverPaged({ ...b.tv, mediaType: 'tv', voteCountGte: 100, page }));
+      const settled = await Promise.allSettled(requests);
+      const ok = settled.filter((r): r is PromiseFulfilledResult<Paged> => r.status === 'fulfilled').map((r) => r.value);
+      if (ok.length === 0) throw (settled[0] as PromiseRejectedResult).reason;
+      const merged: Movie[] = [];
+      const longest = Math.max(...ok.map((r) => r.results.length));
+      for (let i = 0; i < longest; i++) ok.forEach((r) => r.results[i] && merged.push(r.results[i]));
+      return { results: merged, totalPages: Math.max(...ok.map((r) => r.totalPages)) };
+    },
+  };
+};
+
+const BrowseChips: React.FC<{ label: string; items: BrowseDef[]; scope: Scope; size: 'lg' | 'sm'; onPick: (id: string) => void }> = ({
+  label,
+  items,
+  scope,
+  size,
+  onPick,
+}) => {
+  const id = `discover-${label.toLowerCase().replace(/\s+/g, '-')}`;
+  return (
+    <section aria-labelledby={id} className="space-y-2.5">
+      <h2 id={id} className="font-section-title">
+        {label}
+      </h2>
+      <ul className="flex gap-2 overflow-x-auto no-scrollbar bleed-x rail-x pb-0.5">
+        {items
+          .filter((b) => browseSupports(b, scope))
+          .map((b) => (
+            <li key={b.id} className="shrink-0">
+              <button
+                type="button"
+                onClick={() => onPick(b.id)}
+                className={
+                  size === 'lg'
+                    ? 'min-h-11 px-4 rounded-full bg-surface-2 border border-line text-[12px] font-bold uppercase tracking-wider text-text hover:border-gold/60 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold'
+                    : 'min-h-9 px-3.5 rounded-full border border-line text-[11px] font-semibold uppercase tracking-wider text-muted hover:text-text hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold'
+                }
+              >
+                {b.label}
+              </button>
+            </li>
+          ))}
+      </ul>
+    </section>
+  );
+};
 
 const MIN_RAIL = 8;
 
@@ -174,7 +267,12 @@ const CategoryPage: React.FC<{ def: CategoryDef }> = ({ def }) => {
 
   return (
     <div className="space-y-4 pb-4">
-      <PageHeader title={def.title} subtitle={def.media === 'tv' ? 'Series' : 'Movies'} onBack={goBack} backLabel="Back to Discover" />
+      <PageHeader
+        title={def.title}
+        subtitle={def.media === 'tv' ? 'Series' : def.media === 'all' ? 'Movies & series' : 'Movies'}
+        onBack={goBack}
+        backLabel="Back to Discover"
+      />
       {items.length === 0 && loading ? (
         <MediaGridSkeleton />
       ) : items.length === 0 && error ? (
@@ -203,7 +301,7 @@ const CategoryPage: React.FC<{ def: CategoryDef }> = ({ def }) => {
 };
 
 export const Discover: React.FC = () => {
-  const { isOnline, dataVersion, activeSub } = useCinema();
+  const { isOnline, dataVersion, activeSub, setActiveSub } = useCinema();
   const userDataMap = useUserDataMap(dataVersion);
 
   const [query, setQuery] = useState('');
@@ -326,14 +424,20 @@ export const Discover: React.FC = () => {
   // A fresh registry per scope so dedupe follows the visible rail order.
   const registry = useMemo(() => new Map<number, number>(), [scope]);
 
-  const category = activeSub ? DISCOVER_CATEGORIES.find((c) => c.id === activeSub) : undefined;
+  const category = useMemo(() => {
+    if (!activeSub) return undefined;
+    const rail = DISCOVER_CATEGORIES.find((c) => c.id === activeSub);
+    if (rail) return rail;
+    const browse = [...MOODS, ...GENRES].find((b) => b.id === activeSub);
+    return browse ? toBrowseCategory(browse, browseSupports(browse, scope) ? scope : 'all') : undefined;
+  }, [activeSub, scope]);
   if (category) return <CategoryPage def={category} />;
 
   const isSearchMode = query.trim().length > 0;
 
   return (
     <div className="space-y-5 pb-4">
-      <PageHeader title="Discover" />
+      <PageHeader title="Discover" subtitle="Find your next movie or series." />
 
       <SearchBar
         size="lg"
@@ -385,6 +489,13 @@ export const Discover: React.FC = () => {
             <X size={14} aria-hidden="true" />
           </button>
         </div>
+      )}
+
+      {!isSearchMode && (
+        <>
+          <BrowseChips label="Screening moods" items={MOODS} scope={scope} size="lg" onPick={setActiveSub} />
+          <BrowseChips label="Genres" items={GENRES} scope={scope} size="sm" onPick={setActiveSub} />
+        </>
       )}
 
       {isSearchMode ? (

@@ -430,18 +430,18 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
             <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
               <div>
                 <span className="font-medium text-cinema-white text-xs block">All titles</span>
-                <span className="text-[11px] text-cinema-subtle">All movies & statuses</span>
+                <span className="text-[11px] text-cinema-subtle">Movies, series & statuses</span>
               </div>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => ExportService.exportLibrary('csv')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   CSV
                 </button>
                 <button
                   onClick={() => ExportService.exportLibrary('json')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   JSON
                 </button>
@@ -450,19 +450,40 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
 
             <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
               <div>
-                <span className="font-medium text-cinema-white text-xs block">Watched History</span>
+                <span className="font-medium text-cinema-white text-xs block">Watched</span>
                 <span className="text-[11px] text-cinema-subtle">Ratings, dates, reviews</span>
               </div>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => ExportService.exportWatchHistory('csv')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   CSV
                 </button>
                 <button
                   onClick={() => ExportService.exportWatchHistory('json')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
+              <div>
+                <span className="font-medium text-cinema-white text-xs block">Reviews</span>
+                <span className="text-[11px] text-cinema-subtle">Ratings, reviews & notes</span>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => ExportService.exportReviews('csv')}
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                >
+                  CSV
+                </button>
+                <button
+                  onClick={() => ExportService.exportReviews('json')}
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   JSON
                 </button>

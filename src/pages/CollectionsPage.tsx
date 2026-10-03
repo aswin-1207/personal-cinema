@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FolderPlus, Layers, Upload } from 'lucide-react';
+import { Layers, Plus, Upload } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { CreateCollectionModal } from '../components/collection/CreateCollectionModal';
 import { ImportWizard } from '../components/import/ImportWizard';
@@ -45,17 +45,23 @@ export const CollectionsPage: React.FC = () => {
     <div className="space-y-4 pb-4">
       <PageHeader
         title="Collections"
+        subtitle="Organize movies and series your way."
         actions={
-          <>
-            <IconButton label="Import a list" variant="ghost" onClick={() => setIsImportOpen(true)}>
-              <Upload size={18} aria-hidden="true" />
-            </IconButton>
-            <Button size="sm" icon={<FolderPlus size={15} aria-hidden="true" />} onClick={() => setIsCreateOpen(true)}>
-              New
-            </Button>
-          </>
+          <IconButton label="Import a list" variant="ghost" onClick={() => setIsImportOpen(true)}>
+            <Upload size={18} aria-hidden="true" />
+          </IconButton>
         }
       />
+
+      <Button
+        variant="primary"
+        size="lg"
+        icon={<Plus size={18} aria-hidden="true" />}
+        onClick={() => setIsCreateOpen(true)}
+        className="w-full sm:w-auto uppercase tracking-wider text-[14px]"
+      >
+        Create collection
+      </Button>
 
       {overviews.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -83,9 +89,9 @@ export const CollectionsPage: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4" aria-hidden="true">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="aspect-[4/4.4] rounded-2xl cinema-skeleton" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4" aria-hidden="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-[220px] rounded-2xl cinema-skeleton" />
           ))}
         </div>
       ) : error ? (
@@ -100,11 +106,14 @@ export const CollectionsPage: React.FC = () => {
       ) : visible.length === 0 ? (
         <EmptyState compact title={filter === 'complete' ? 'No completed collections yet' : 'Every collection is complete'} />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <section aria-label="Your collections" className="space-y-3">
+          <h2 className="font-section-title">Your collections</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {visible.map((o) => (
             <CollectionCard key={o.collection.id} overview={o} onOpen={() => openCollectionDetail(o.collection.id)} />
           ))}
-        </div>
+          </div>
+        </section>
       )}
 
       <CreateCollectionModal
