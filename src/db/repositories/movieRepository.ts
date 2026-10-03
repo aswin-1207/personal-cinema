@@ -25,7 +25,17 @@ export class MovieRepository {
       const merged: Movie = {
         ...existing,
         ...movie,
-        runtime: movie.runtime || existing.runtime || null,
+        mediaType: movie.mediaType || existing.mediaType || 'movie',
+        tmdbId: movie.tmdbId || existing.tmdbId || movie.id,
+        runtime: movie.runtime ?? existing.runtime ?? null,
+        numberOfSeasons: movie.numberOfSeasons ?? existing.numberOfSeasons,
+        numberOfEpisodes: movie.numberOfEpisodes ?? existing.numberOfEpisodes,
+        networks: movie.networks && movie.networks.length > 0 ? movie.networks : existing.networks,
+        createdByName: movie.createdByName || existing.createdByName,
+        productionCompanies:
+          movie.productionCompanies && movie.productionCompanies.length > 0
+            ? movie.productionCompanies
+            : existing.productionCompanies,
         overview: movie.overview || existing.overview || '',
         credits: movie.credits || existing.credits,
         franchiseTags:
@@ -52,7 +62,17 @@ export class MovieRepository {
         const merged: Movie = {
           ...existing,
           ...m,
-          runtime: m.runtime || existing.runtime || null,
+          mediaType: m.mediaType || existing.mediaType || 'movie',
+          tmdbId: m.tmdbId || existing.tmdbId || m.id,
+          runtime: m.runtime ?? existing.runtime ?? null,
+          numberOfSeasons: m.numberOfSeasons ?? existing.numberOfSeasons,
+          numberOfEpisodes: m.numberOfEpisodes ?? existing.numberOfEpisodes,
+          networks: m.networks && m.networks.length > 0 ? m.networks : existing.networks,
+          createdByName: m.createdByName || existing.createdByName,
+          productionCompanies:
+            m.productionCompanies && m.productionCompanies.length > 0
+              ? m.productionCompanies
+              : existing.productionCompanies,
           overview: m.overview || existing.overview || '',
           credits: m.credits || existing.credits,
           franchiseTags: m.franchiseTags && m.franchiseTags.length > 0 ? m.franchiseTags : existing.franchiseTags,

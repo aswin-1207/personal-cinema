@@ -1,4 +1,4 @@
-import { Movie, Genre } from '../types/movie';
+import { Movie, Genre, MediaType, toCanonicalId, parseCanonicalId } from '../types/movie';
 import { MovieRepository } from '../db/repositories/movieRepository';
 import { PreferencesRepository } from '../db/repositories/preferencesRepository';
 import { getDB, TMDBCacheEntry } from '../db/database';
@@ -16,6 +16,7 @@ const TTL_MAP: Record<string, number> = {
   discover: 30 * 60 * 1000, // 30 minutes
   similar: 60 * 60 * 1000, // 1 hour
   credits: 24 * 60 * 60 * 1000, // 24 hours
+  tv: 24 * 60 * 60 * 1000, // 24 hours
 };
 
 export type TMDBErrorCode =
@@ -136,7 +137,7 @@ export class TMDBService {
     if (endpoint.includes('/genre')) return TTL_MAP.genres;
     if (endpoint.includes('/credits')) return TTL_MAP.credits;
     if (endpoint.includes('/similar')) return TTL_MAP.similar;
-    if (endpoint.startsWith('/movie/')) return TTL_MAP.details;
+    if (endpoint.startsWith('/movie/') || endpoint.startsWith('/tv/')) return TTL_MAP.details;
     return 10 * 60 * 1000;
   }
 
@@ -442,50 +443,80 @@ export class TMDBService {
 
     const data = await this.fetchWithCache<any>('/search/movie', params, { signal });
     const rawResults = data.results || [];
+    const results = rawResults.map((raw: any) => this.mapRawToMovie(raw, 'movie'));
+    return { results, totalPages: data.total_pages || 1 };
+  }
+
+  /**
+   * Unified multi-search across Movies and TV Series
+   */
+  static async searchMulti(
+    query: string,
+    page: number = 1,
+    signal?: AbortSignal
+  ): Promise<{ results: Movie[]; totalPages: number }> {
+    if (!query.trim()) return { results: [], totalPages: 0 };
+    const params: Record<string, string> = {
+      query: query.trim(),
+      page: page.toString(),
+      include_adult: 'false',
+    };
+
+    const data = await this.fetchWithCache<any>('/search/multi', params, { signal });
+    const rawResults = (data.results || []).filter(
+      (r: any) => r.media_type === 'movie' || r.media_type === 'tv'
+    );
     const results = rawResults.map((raw: any) => this.mapRawToMovie(raw));
     return { results, totalPages: data.total_pages || 1 };
   }
 
   /**
-   * Get full movie details with credits
+   * Get full details for Movie or TV Series with credits
    */
-  static async getDetails(tmdbId: number): Promise<Movie> {
-    const local = await MovieRepository.getById(tmdbId);
+  static async getDetails(id: number): Promise<Movie> {
+    const local = await MovieRepository.getById(id);
     if (local && local.overview && local.credits) {
       return local;
     }
 
+    const { mediaType, tmdbId } = parseCanonicalId(id);
+
     try {
-      const data = await this.fetchWithCache<any>(`/movie/${tmdbId}`, {
+      const endpoint = mediaType === 'tv' ? `/tv/${tmdbId}` : `/movie/${tmdbId}`;
+      const data = await this.fetchWithCache<any>(endpoint, {
         append_to_response: 'credits',
       });
-      const movie = this.mapRawToMovie(data);
+      const movie = this.mapRawToMovie(data, mediaType);
       await MovieRepository.save(movie);
       return movie;
     } catch (err) {
       if (local) return local;
-      const seed = SEED_MOVIES.find((m) => m.id === tmdbId);
+      const seed = SEED_MOVIES.find((m) => m.id === id);
       if (seed) return seed;
       throw err;
     }
   }
 
-  static async getById(tmdbId: number): Promise<Movie> {
-    return this.getDetails(tmdbId);
+  static async getById(id: number): Promise<Movie> {
+    return this.getDetails(id);
   }
 
-  static async getSimilar(tmdbId: number): Promise<Movie[]> {
+  static async getSimilar(id: number): Promise<Movie[]> {
+    const { mediaType, tmdbId } = parseCanonicalId(id);
     try {
-      const data = await this.fetchWithCache<any>(`/movie/${tmdbId}/similar`);
-      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+      const endpoint = mediaType === 'tv' ? `/tv/${tmdbId}/similar` : `/movie/${tmdbId}/similar`;
+      const data = await this.fetchWithCache<any>(endpoint);
+      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
     } catch {
-      return SEED_MOVIES.filter((m) => m.id !== tmdbId).slice(0, 8);
+      return SEED_MOVIES.filter((m) => m.id !== id).slice(0, 8);
     }
   }
 
-  static async getCredits(tmdbId: number): Promise<{ cast: any[]; crew: any[]; director?: string }> {
+  static async getCredits(id: number): Promise<{ cast: any[]; crew: any[]; director?: string }> {
+    const { mediaType, tmdbId } = parseCanonicalId(id);
     try {
-      const data = await this.fetchWithCache<any>(`/movie/${tmdbId}/credits`);
+      const endpoint = mediaType === 'tv' ? `/tv/${tmdbId}/credits` : `/movie/${tmdbId}/credits`;
+      const data = await this.fetchWithCache<any>(endpoint);
       const cast = data.cast || [];
       const crew = data.crew || [];
       const directorObj = crew.find((c: any) => c.job === 'Director');
@@ -500,19 +531,35 @@ export class TMDBService {
   }
 
   /**
-   * Get trending movies with SWR support
+   * Get trending movies or TV series with SWR support
    */
   static async getTrending(
     timeWindow: 'day' | 'week' = 'week',
-    onRevalidate?: (movies: Movie[]) => void
+    onRevalidate?: (movies: Movie[]) => void,
+    mediaType: 'all' | 'movie' | 'tv' = 'movie',
+    page: number = 1
   ): Promise<Movie[]> {
+    const endpoint = `/trending/${mediaType}/${timeWindow}`;
     try {
       const res = await this.fetchWithSWR<any>(
-        `/trending/movie/${timeWindow}`,
-        {},
-        onRevalidate ? (fresh) => onRevalidate((fresh.results || []).map((r: any) => this.mapRawToMovie(r))) : undefined
+        endpoint,
+        { page: page.toString() },
+        onRevalidate
+          ? (fresh) =>
+              onRevalidate(
+                (fresh.results || [])
+                  .filter((r: any) => r.media_type !== 'person')
+                  .map((r: any) =>
+                    this.mapRawToMovie(r, mediaType === 'all' ? undefined : (mediaType as MediaType))
+                  )
+              )
+          : undefined
       );
-      return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+      return (res.data.results || [])
+        .filter((r: any) => r.media_type !== 'person')
+        .map((raw: any) =>
+          this.mapRawToMovie(raw, mediaType === 'all' ? undefined : (mediaType as MediaType))
+        );
     } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
@@ -521,16 +568,24 @@ export class TMDBService {
   }
 
   /**
-   * Get popular movies with SWR support
+   * Get popular movies or series with SWR support
    */
-  static async getPopular(page: number = 1, onRevalidate?: (movies: Movie[]) => void): Promise<Movie[]> {
+  static async getPopular(
+    page: number = 1,
+    onRevalidate?: (movies: Movie[]) => void,
+    mediaType: 'movie' | 'tv' = 'movie'
+  ): Promise<Movie[]> {
+    const endpoint = mediaType === 'tv' ? '/tv/popular' : '/movie/popular';
     try {
       const res = await this.fetchWithSWR<any>(
-        '/movie/popular',
+        endpoint,
         { page: page.toString() },
-        onRevalidate ? (fresh) => onRevalidate((fresh.results || []).map((r: any) => this.mapRawToMovie(r))) : undefined
+        onRevalidate
+          ? (fresh) =>
+              onRevalidate((fresh.results || []).map((r: any) => this.mapRawToMovie(r, mediaType)))
+          : undefined
       );
-      return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+      return (res.data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
     } catch (err: any) {
       const local = await MovieRepository.getAll();
       if (local.length >= 6) return local.slice(0, 20);
@@ -539,11 +594,28 @@ export class TMDBService {
   }
 
   /**
+   * Get top rated movies or series
+   */
+  static async getTopRated(
+    mediaType: 'movie' | 'tv' = 'movie',
+    page: number = 1
+  ): Promise<Movie[]> {
+    const endpoint = mediaType === 'tv' ? '/tv/top_rated' : '/movie/top_rated';
+    try {
+      const data = await this.fetchWithCache<any>(endpoint, { page: page.toString() });
+      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
+    } catch {
+      return [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 20);
+    }
+  }
+
+  /**
    * Get genre list
    */
-  static async getGenres(): Promise<Genre[]> {
+  static async getGenres(mediaType: 'movie' | 'tv' = 'movie'): Promise<Genre[]> {
+    const endpoint = mediaType === 'tv' ? '/genre/tv/list' : '/genre/movie/list';
     try {
-      const data = await this.fetchWithCache<any>('/genre/movie/list');
+      const data = await this.fetchWithCache<any>(endpoint);
       return data.genres || [];
     } catch {
       return [
@@ -565,10 +637,13 @@ export class TMDBService {
   }
 
   /**
-   * Discover movies by genre IDs, languages, countries, or custom filters
+   * Core Discover query with full parameter and mediaType support
    */
-  static async discover(params: {
+  static async discoverPaged(params: {
+    mediaType?: 'movie' | 'tv';
     genreIds?: number[];
+    withoutGenreIds?: number[];
+    withCompanies?: string;
     withOriginalLanguage?: string;
     withOriginCountry?: string;
     withKeywords?: string;
@@ -579,7 +654,11 @@ export class TMDBService {
     voteAverageGte?: number;
     voteCountGte?: number;
     primaryReleaseYear?: number;
-  }): Promise<Movie[]> {
+    firstAirDateYear?: number;
+  }): Promise<{ results: Movie[]; totalPages: number }> {
+    const mediaType: MediaType = params.mediaType || 'movie';
+    const endpoint = mediaType === 'tv' ? '/discover/tv' : '/discover/movie';
+
     const queryParams: Record<string, string> = {
       page: (params.page || 1).toString(),
       sort_by: params.sortBy || 'popularity.desc',
@@ -587,6 +666,12 @@ export class TMDBService {
     };
     if (params.genreIds && params.genreIds.length > 0) {
       queryParams.with_genres = params.genreIds.join(',');
+    }
+    if (params.withoutGenreIds && params.withoutGenreIds.length > 0) {
+      queryParams.without_genres = params.withoutGenreIds.join(',');
+    }
+    if (params.withCompanies) {
+      queryParams.with_companies = params.withCompanies;
     }
     if (params.withOriginalLanguage) {
       queryParams.with_original_language = params.withOriginalLanguage;
@@ -612,25 +697,194 @@ export class TMDBService {
     if (params.primaryReleaseYear) {
       queryParams.primary_release_year = params.primaryReleaseYear.toString();
     }
+    if (params.firstAirDateYear) {
+      queryParams.first_air_date_year = params.firstAirDateYear.toString();
+    }
 
     try {
-      const data = await this.fetchWithCache<any>('/discover/movie', queryParams);
-      return (data.results || []).map((raw: any) => this.mapRawToMovie(raw));
+      const data = await this.fetchWithCache<any>(endpoint, queryParams);
+      const results = (data.results || []).map((raw: any) => this.mapRawToMovie(raw, mediaType));
+      return { results, totalPages: data.total_pages || 1 };
     } catch {
-      // Offline fallback from seed catalog
-      if (params.withOriginalLanguage === 'ta') {
-        const tamil = SEED_MOVIES.filter((m) => m.originalLanguage === 'ta');
-        if (tamil.length > 0) return tamil;
-      }
-      if (params.genreIds && params.genreIds.length > 0) {
-        const targetIds = new Set(params.genreIds);
-        const matches = SEED_MOVIES.filter((m) =>
-          m.genres.some((g) => targetIds.has(g.id))
-        );
-        return matches.length > 0 ? matches : SEED_MOVIES.slice(0, 8);
-      }
-      return SEED_MOVIES.slice(0, 10);
+      return { results: SEED_MOVIES.slice(0, 10), totalPages: 1 };
     }
+  }
+
+  /**
+   * Discover movies or TV series returning Movie[] directly (for simple rail usage)
+   */
+  static async discover(params: Parameters<typeof TMDBService.discoverPaged>[0]): Promise<Movie[]> {
+    const res = await this.discoverPaged(params);
+    return res.results;
+  }
+
+  // =========================================================================
+  // DEDICATED CATEGORY QUERIES (Prompt Sections 6, 7, 8, 9, 10)
+  // =========================================================================
+
+  /**
+   * Section 6: HOLLYWOOD — Major Category (Broad movie discovery pool)
+   */
+  static async getHollywoodMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withOriginCountry: 'US',
+      withOriginalLanguage: 'en',
+      voteCountGte: 150,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Section 7: HOLLYWOOD SERIES — Major Requirement (Broad TV discovery pool)
+   */
+  static async getHollywoodSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withOriginalLanguage: 'en',
+      withoutGenreIds: [10763, 10767], // Filter out talk shows / news
+      voteCountGte: 80,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Section 8: MARVEL — Movies (MCU, Sony Spider-Man, Legacy Marvel)
+   */
+  static async getMarvelMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withCompanies: '420|7505|13252', // Marvel Studios, Marvel Entertainment, Marvel Animation
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Section 9: MARVEL SERIES — Real TV Category
+   */
+  static async getMarvelSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withCompanies: '420|7505|13252',
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Section 10: SONY — Movies (Columbia Pictures, Sony Pictures, TriStar)
+   */
+  static async getSonyMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withCompanies: '5|34|2251|559|3287', // Columbia, Sony, Sony Animation, TriStar, Screen Gems
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * SONY SERIES / Animation
+   */
+  static async getSonySeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withCompanies: '5|34|2251|559|3287',
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * DC Universe Movies
+   */
+  static async getDCMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withCompanies: '9993|429', // DC Entertainment, DC Comics
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * DC Universe Series
+   */
+  static async getDCSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withCompanies: '9993|429',
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Sci-Fi Landmarks Movies
+   */
+  static async getSciFiMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      genreIds: [878],
+      voteCountGte: 200,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Crime & Thriller Series
+   */
+  static async getCrimeThrillerSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      genreIds: [80, 9648], // Crime & Mystery
+      voteCountGte: 80,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Anime & Animation Series
+   */
+  static async getAnimeSeries(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'tv',
+      withOriginalLanguage: 'ja',
+      genreIds: [16],
+      voteCountGte: 50,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Regional Indian Blockbuster Cinema
+   */
+  static async getRegionalIndianMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withOriginalLanguage: 'ta|hi|te|ml',
+      voteCountGte: 25,
+      sortBy: 'popularity.desc',
+      page,
+    });
+  }
+
+  /**
+   * Tamil Cinema
+   */
+  static async getTamilMovies(page: number = 1): Promise<{ results: Movie[]; totalPages: number }> {
+    return this.discoverPaged({
+      mediaType: 'movie',
+      withOriginalLanguage: 'ta',
+      sortBy: 'popularity.desc',
+      page,
+    });
   }
 
   /**
@@ -668,9 +922,23 @@ export class TMDBService {
   }
 
   /**
-   * Canonical Movie Model Mapper (Section 5)
+   * Canonical Movie & TV Series Model Mapper (Prompt Sections 2, 3, 4)
    */
-  private static mapRawToMovie(raw: any): Movie {
+  public static mapRawToMovie(raw: any, explicitMediaType?: MediaType): Movie {
+    const rawType = raw.media_type;
+    const mediaType: MediaType =
+      rawType === 'tv'
+        ? 'tv'
+        : rawType === 'movie'
+        ? 'movie'
+        : explicitMediaType ||
+          (raw.first_air_date !== undefined || raw.name !== undefined || raw.number_of_seasons !== undefined
+            ? 'tv'
+            : 'movie');
+
+    const rawId = typeof raw.id === 'number' ? raw.id : parseInt(raw.id, 10);
+    const canonicalId = toCanonicalId(mediaType, rawId);
+
     const credits = raw.credits
       ? {
           cast: (raw.credits.cast || []).slice(0, 15).map((c: any) => ({
@@ -689,17 +957,52 @@ export class TMDBService {
         }
       : undefined;
 
+    const networks = Array.isArray(raw.networks)
+      ? raw.networks.map((n: any) => ({
+          id: n.id,
+          name: n.name,
+          logoPath: n.logo_path || null,
+          originCountry: n.origin_country,
+        }))
+      : undefined;
+
+    const productionCompanies = Array.isArray(raw.production_companies)
+      ? raw.production_companies.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          logoPath: p.logo_path || null,
+          originCountry: p.origin_country,
+        }))
+      : undefined;
+
+    const createdByName =
+      Array.isArray(raw.created_by) && raw.created_by.length > 0
+        ? raw.created_by.map((c: any) => c.name).join(', ')
+        : undefined;
+
     return {
-      id: raw.id,
+      id: canonicalId,
+      tmdbId: rawId,
+      mediaType,
       title: raw.title || raw.name || 'Untitled',
-      originalTitle: raw.original_title || undefined,
+      name: raw.name || raw.title,
+      originalTitle: raw.original_title || raw.original_name || undefined,
+      originalName: raw.original_name || raw.original_title || undefined,
+      originalLanguage: raw.original_language || undefined,
       overview: raw.overview || '',
-      releaseDate: raw.release_date || undefined,
-      runtime: typeof raw.runtime === 'number' ? raw.runtime : null,
+      releaseDate: raw.release_date || raw.first_air_date || undefined,
+      firstAirDate: raw.first_air_date || (mediaType === 'tv' ? raw.release_date : undefined),
+      runtime: mediaType === 'movie' && typeof raw.runtime === 'number' ? raw.runtime : null,
+      numberOfSeasons: typeof raw.number_of_seasons === 'number' ? raw.number_of_seasons : undefined,
+      numberOfEpisodes: typeof raw.number_of_episodes === 'number' ? raw.number_of_episodes : undefined,
+      networks,
+      createdByName,
+      productionCompanies,
       posterPath: raw.poster_path || null,
       backdropPath: raw.backdrop_path || null,
       voteAverage: typeof raw.vote_average === 'number' ? Math.round(raw.vote_average * 10) / 10 : 0,
       voteCount: typeof raw.vote_count === 'number' ? raw.vote_count : 0,
+      popularity: typeof raw.popularity === 'number' ? raw.popularity : undefined,
       genres: raw.genres || (raw.genre_ids ? raw.genre_ids.map((id: number) => ({ id, name: '' })) : []),
       credits,
       status: raw.status || undefined,
@@ -767,20 +1070,46 @@ export class TMDBService {
 export const tmdbService = {
   searchMovies: (query: string, year?: number, page?: number, signal?: AbortSignal) =>
     TMDBService.search(query, year, page, signal),
+  searchMulti: (query: string, page?: number, signal?: AbortSignal) =>
+    TMDBService.searchMulti(query, page, signal),
   getMovieDetails: (id: number) => TMDBService.getById(id),
-  getTrending: (window: 'day' | 'week' = 'week', onRevalidate?: (movies: Movie[]) => void) =>
-    TMDBService.getTrending(window, onRevalidate),
-  getPopular: (page: number = 1, onRevalidate?: (movies: Movie[]) => void) =>
-    TMDBService.getPopular(page, onRevalidate),
+  getTrending: (
+    window: 'day' | 'week' = 'week',
+    onRevalidate?: (movies: Movie[]) => void,
+    mediaType: 'all' | 'movie' | 'tv' = 'movie',
+    page: number = 1
+  ) => TMDBService.getTrending(window, onRevalidate, mediaType, page),
+  getPopular: (
+    page: number = 1,
+    onRevalidate?: (movies: Movie[]) => void,
+    mediaType: 'movie' | 'tv' = 'movie'
+  ) => TMDBService.getPopular(page, onRevalidate, mediaType),
+  getTopRated: (mediaType: 'movie' | 'tv' = 'movie', page: number = 1) =>
+    TMDBService.getTopRated(mediaType, page),
   getSimilar: (id: number) => TMDBService.getSimilar(id),
   getCredits: (id: number) => TMDBService.getCredits(id),
-  getGenres: () => TMDBService.getGenres(),
-  discover: (params: Parameters<typeof TMDBService.discover>[0]) => TMDBService.discover(params),
+  getGenres: (mediaType: 'movie' | 'tv' = 'movie') => TMDBService.getGenres(mediaType),
+  discoverPaged: (params: Parameters<typeof TMDBService.discoverPaged>[0]) =>
+    TMDBService.discoverPaged(params),
+  discover: (params: Parameters<typeof TMDBService.discoverPaged>[0]) => TMDBService.discover(params),
   discoverMovies: (params: { with_genres?: string; sort_by?: string }) =>
     TMDBService.discover({
       genreIds: params.with_genres ? params.with_genres.split(',').map((g) => parseInt(g, 10)) : undefined,
       sortBy: params.sort_by,
     }),
+  getHollywoodMovies: (page: number = 1) => TMDBService.getHollywoodMovies(page),
+  getHollywoodSeries: (page: number = 1) => TMDBService.getHollywoodSeries(page),
+  getMarvelMovies: (page: number = 1) => TMDBService.getMarvelMovies(page),
+  getMarvelSeries: (page: number = 1) => TMDBService.getMarvelSeries(page),
+  getSonyMovies: (page: number = 1) => TMDBService.getSonyMovies(page),
+  getSonySeries: (page: number = 1) => TMDBService.getSonySeries(page),
+  getDCMovies: (page: number = 1) => TMDBService.getDCMovies(page),
+  getDCSeries: (page: number = 1) => TMDBService.getDCSeries(page),
+  getSciFiMovies: (page: number = 1) => TMDBService.getSciFiMovies(page),
+  getCrimeThrillerSeries: (page: number = 1) => TMDBService.getCrimeThrillerSeries(page),
+  getAnimeSeries: (page: number = 1) => TMDBService.getAnimeSeries(page),
+  getRegionalIndianMovies: (page: number = 1) => TMDBService.getRegionalIndianMovies(page),
+  getTamilMovies: (page: number = 1) => TMDBService.getTamilMovies(page),
   getTMDBImageUrl: (path?: string | null, size?: any) => TMDBService.getTMDBImageUrl(path, size),
   getImageUrl: (path?: string | null, size?: any) => TMDBService.getImageUrl(path, size),
   getPosterUrl: (path?: string | null, size?: any) => TMDBService.getPosterUrl(path, size),

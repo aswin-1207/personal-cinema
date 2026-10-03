@@ -25,18 +25,58 @@ export interface MovieCredits {
   crew: CrewMember[];
 }
 
+export type MediaType = 'movie' | 'tv';
+
+export const TV_ID_OFFSET = 10_000_000;
+
+export function toCanonicalId(mediaType: MediaType, tmdbId: number): number {
+  return mediaType === 'tv' ? TV_ID_OFFSET + tmdbId : tmdbId;
+}
+
+export function parseCanonicalId(id: number): { mediaType: MediaType; tmdbId: number } {
+  if (id >= TV_ID_OFFSET) {
+    return { mediaType: 'tv', tmdbId: id - TV_ID_OFFSET };
+  }
+  return { mediaType: 'movie', tmdbId: id };
+}
+
+export interface ProductionCompany {
+  id: number;
+  name: string;
+  logoPath?: string | null;
+  originCountry?: string;
+}
+
+export interface Network {
+  id: number;
+  name: string;
+  logoPath?: string | null;
+  originCountry?: string;
+}
+
 export interface Movie {
-  id: number; // TMDB ID
-  title: string;
+  id: number; // Canonical internal integer ID for DB storage & relations (toCanonicalId)
+  tmdbId?: number; // Raw TMDB ID
+  mediaType?: MediaType; // 'movie' | 'tv' (defaults to 'movie' for legacy records)
+  title: string; // Movie title or TV series name
+  name?: string; // TV series name alias
   originalTitle?: string;
+  originalName?: string;
   originalLanguage?: string;
   overview?: string;
-  releaseDate?: string;
-  runtime?: number | null; // minutes
+  releaseDate?: string; // YYYY-MM-DD
+  firstAirDate?: string; // YYYY-MM-DD (for TV)
+  runtime?: number | null; // minutes (for movies)
+  numberOfSeasons?: number; // For TV series
+  numberOfEpisodes?: number; // For TV series
+  networks?: Network[]; // For TV series
+  createdByName?: string; // For TV series creator
+  productionCompanies?: ProductionCompany[];
   posterPath?: string | null;
   backdropPath?: string | null;
   voteAverage: number;
   voteCount?: number;
+  popularity?: number;
   genres: Genre[];
   credits?: MovieCredits;
   status?: string;

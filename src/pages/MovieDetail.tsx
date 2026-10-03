@@ -109,8 +109,12 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
         setMovie(m);
       }
 
-      // 2. If missing or partial metadata (no runtime or credits), fetch full TMDB details
-      const isPartial = !m || !m.overview || !m.runtime || !m.credits;
+      // 2. If missing or partial metadata, fetch full TMDB details
+      const isPartial =
+        !m ||
+        !m.overview ||
+        (m.mediaType === 'tv' ? !m.numberOfSeasons : !m.runtime) ||
+        !m.credits;
       if (isPartial) {
         try {
           const fresh = await tmdbService.getMovieDetails(movieId);
@@ -175,7 +179,11 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const posterUrl = tmdbService.getPosterUrl(movie.posterPath, 'w500');
   const ambientGlow = atmosphereService.getArtworkAtmosphere(movie.backdropPath || movie.posterPath);
 
-  const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const year = movie.releaseDate
+    ? movie.releaseDate.substring(0, 4)
+    : movie.firstAirDate
+    ? movie.firstAirDate.substring(0, 4)
+    : '';
 
   const handleSaveReviewAndNotes = async () => {
     setIsSavingReview(true);
@@ -308,9 +316,16 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           {/* Details & Actions with Strict Boundary Containment */}
           <div className="flex-grow space-y-4 min-w-0 w-full">
             <div>
-              <h1 className="font-hero-title break-words leading-tight" title={movie.title}>
-                {movie.title}
-              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-hero-title break-words leading-tight" title={movie.title}>
+                  {movie.title}
+                </h1>
+                {(movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons)) && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30 uppercase tracking-wider">
+                    TV SERIES
+                  </span>
+                )}
+              </div>
               {movie.tagline && (
                 <p className="text-xs sm:text-sm text-[#E0AD52]/90 italic mt-1 break-words font-normal">
                   "{movie.tagline}"
@@ -321,8 +336,23 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             {/* Metadata Badges */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-[#9E9DA5]">
               {year && <span>{year}</span>}
-              {movie.runtime && <span>• {movie.runtime} min</span>}
-              {credits.director && <span>• Dir: {credits.director}</span>}
+              {movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons) ? (
+                <>
+                  {movie.numberOfSeasons && (
+                    <span>• {movie.numberOfSeasons} {movie.numberOfSeasons === 1 ? 'Season' : 'Seasons'}</span>
+                  )}
+                  {movie.numberOfEpisodes && <span>• {movie.numberOfEpisodes} Episodes</span>}
+                  {movie.createdByName && <span>• Creator: {movie.createdByName}</span>}
+                  {movie.networks && movie.networks.length > 0 && (
+                    <span>• {movie.networks.map((n) => n.name).join(', ')}</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  {movie.runtime && <span>• {movie.runtime} min</span>}
+                  {credits.director && <span>• Dir: {credits.director}</span>}
+                </>
+              )}
               {movie.voteAverage > 0 && (
                 <span className="flex items-center gap-1 text-[#E0AD52] font-semibold bg-[#E0AD52]/10 px-2 py-0.5 rounded-full border border-[#E0AD52]/20">
                   <Star size={11} className="fill-[#E0AD52]" />

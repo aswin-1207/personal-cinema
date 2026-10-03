@@ -147,8 +147,8 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
         {/* Ambient Dark Bottom Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090D] via-transparent to-transparent opacity-65 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
 
-        {/* Discreet Corner Status Indicator */}
-        <div className="absolute top-2 left-2 flex items-center gap-1 z-10 pointer-events-none">
+        {/* Discreet Corner Status Indicator & Series Tag */}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10 pointer-events-none">
           {isWatched && (
             <span className="w-5 h-5 rounded-full bg-[#E0AD52] text-[#09090B] flex items-center justify-center shadow-[0_2px_10px_rgba(224,173,82,0.4)] backdrop-blur-md">
               <CheckCircle2 size={12} strokeWidth={3} />
@@ -163,6 +163,11 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
           {isWatchlist && !isWatched && !isWatching && (
             <span className="w-5 h-5 rounded-full bg-white/15 text-[#E0AD52] flex items-center justify-center backdrop-blur-md">
               <Bookmark size={11} className="fill-[#E0AD52]" />
+            </span>
+          )}
+          {(movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons)) && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#09090B]/85 text-[#E0AD52] border border-[#E0AD52]/40 uppercase tracking-wider backdrop-blur-md shadow-sm">
+              TV
             </span>
           )}
         </div>
@@ -204,7 +209,16 @@ export const MoviePoster: React.FC<MoviePosterProps> = ({
               {watchedDateStr ? <span className="hidden xs:inline">· {watchedDateStr}</span> : null}
             </span>
           ) : (
-            <span className="truncate">{year || '—'}{movie.runtime ? ` · ${movie.runtime}m` : ''}</span>
+            <span className="truncate">
+              {year || '—'}
+              {movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons)
+                ? movie.numberOfSeasons
+                  ? ` · ${movie.numberOfSeasons}S`
+                  : ' · Series'
+                : movie.runtime
+                ? ` · ${movie.runtime}m`
+                : ''}
+            </span>
           )}
           {movie.voteAverage > 0 && !isWatched && (
             <span className="text-[#E0AD52] font-medium flex-shrink-0 ml-1.5 flex items-center gap-0.5">

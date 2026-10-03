@@ -150,9 +150,8 @@ export class UnifiedSearchService {
     const page = options?.page || 1;
 
     try {
-      const response = await tmdbService.searchMovies(
+      const response = await tmdbService.searchMulti(
         rawQuery,
-        undefined,
         page,
         options?.signal
       );

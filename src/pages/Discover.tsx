@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useCinema } from '../context/CinemaContext';
 import { tmdbService } from '../services/tmdbService';
 import { Movie, UserMovie } from '../types/movie';
@@ -19,6 +19,17 @@ import { Film, RefreshCw, KeyRound, WifiOff, Clock } from 'lucide-react';
 
 const RECENT_SEARCHES_KEY = 'mycinema_recent_searches';
 
+type CategoryTab = 'all' | 'movies' | 'series' | 'hollywood' | 'marvel_dc' | 'studios' | 'genres';
+
+interface ViewAllState {
+  title: string;
+  badge?: string;
+  movies: Movie[];
+  page: number;
+  totalPages: number;
+  fetcher: (page: number) => Promise<{ results: Movie[]; totalPages: number }>;
+}
+
 export const Discover: React.FC = () => {
   const { openMovieDetail, isOnline, dataVersion, setActiveTab } = useCinema();
 
@@ -33,8 +44,8 @@ export const Discover: React.FC = () => {
   const [searchErrorCode, setSearchErrorCode] = useState<string | null>(null);
   const [searchPage, setSearchPage] = useState<number>(1);
   const [searchTotalPages, setSearchTotalPages] = useState<number>(1);
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const latestSequenceRef = React.useRef<number>(0);
+  const [isLoadingMoreSearch, setIsLoadingMoreSearch] = useState<boolean>(false);
+  const latestSequenceRef = useRef<number>(0);
 
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
@@ -45,20 +56,58 @@ export const Discover: React.FC = () => {
     }
   });
 
-  // Discovery feeds
+  // User movie tracking map for library status
+  const [userMovieMap, setUserMovieMap] = useState<Map<number, UserMovie>>(new Map());
+
+  // Navigation Filter Pill Tab
+  const [categoryTab, setCategoryTab] = useState<CategoryTab>('all');
+
+  // View All Modal State
+  const [viewAllRail, setViewAllRail] = useState<ViewAllState | null>(null);
+  const [isLoadingMoreViewAll, setIsLoadingMoreViewAll] = useState(false);
+
+  // Discovery Feeds State
   const [trendingTime, setTrendingTime] = useState<'day' | 'week'>('week');
+  const [trendingMedia, setTrendingMedia] = useState<'movie' | 'tv'>('movie');
   const [trendingMovies, setTrendingMovies] = useState<Movie[]>(() =>
     SEED_MOVIES.filter((m) => m.seedCategory === 'trending').slice(0, 20)
   );
+  const [trendingSeries, setTrendingSeries] = useState<Movie[]>([]);
   const [popularMovies, setPopularMovies] = useState<Movie[]>(() =>
     SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').slice(0, 20)
   );
 
-  const [isLoadingTrending, setIsLoadingTrending] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  // Category Feed States
+  const [hollywoodMovies, setHollywoodMovies] = useState<Movie[]>([]);
+  const [hollywoodSeries, setHollywoodSeries] = useState<Movie[]>([]);
+  const [marvelMovies, setMarvelMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => ['marvel', 'fox_marvel', 'sony_spiderman'].includes(m.seedCategory || '')).slice(0, 20)
+  );
+  const [marvelSeries, setMarvelSeries] = useState<Movie[]>([]);
+  const [sonyMovies, setSonyMovies] = useState<Movie[]>([]);
+  const [sonySeries, setSonySeries] = useState<Movie[]>([]);
+  const [dcMovies, setDCMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.seedCategory === 'dc').slice(0, 20)
+  );
+  const [dcSeries, setDCSeries] = useState<Movie[]>([]);
+  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>(() =>
+    [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 20)
+  );
+  const [topRatedSeries, setTopRatedSeries] = useState<Movie[]>([]);
+  const [scifiMovies, setScifiMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.genres?.some((g) => g.id === 878)).slice(0, 20)
+  );
+  const [crimeSeries, setCrimeSeries] = useState<Movie[]>([]);
+  const [animeSeries, setAnimeSeries] = useState<Movie[]>([]);
+  const [regionalMovies, setRegionalMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.seedCategory === 'indian_cinema').slice(0, 20)
+  );
+  const [tamilMovies, setTamilMovies] = useState<Movie[]>(() =>
+    SEED_MOVIES.filter((m) => m.franchiseTags?.some((t) => t.toLowerCase() === 'tamil')).slice(0, 20)
+  );
 
-  // User movie tracking map for library status
-  const [userMovieMap, setUserMovieMap] = useState<Map<number, UserMovie>>(new Map());
+  const [isLoadingPrimary, setIsLoadingPrimary] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Debounce search query
   useEffect(() => {
@@ -76,49 +125,111 @@ export const Discover: React.FC = () => {
     });
   }, [dataVersion]);
 
-  // Load live Trending and Popular data with SWR
-  const loadDiscoveryData = async () => {
+  // Progressive Feed Loading
+  const loadDiscoveryFeeds = useCallback(async () => {
     setFetchError(null);
-    setIsLoadingTrending(true);
+    setIsLoadingPrimary(true);
 
-    // SWR Trending
-    tmdbService
-      .getTrending(trendingTime, (fresh) => {
-        if (fresh && fresh.length > 0) {
-          setTrendingMovies(fresh);
-        }
-        setIsLoadingTrending(false);
-      })
-      .then((cachedOrFresh) => {
-        if (cachedOrFresh && cachedOrFresh.length > 0) {
-          setTrendingMovies(cachedOrFresh);
-        }
-        setIsLoadingTrending(false);
-      })
-      .catch((err: any) => {
-        console.warn('Trending fetch warning:', err);
-        setFetchError('Unable to sync live TMDB feeds. Showing cached vault.');
-        setIsLoadingTrending(false);
-      });
+    try {
+      // 1. Trending Movies / Series
+      if (trendingMedia === 'movie') {
+        tmdbService.getTrending(trendingTime, (fresh) => {
+          if (fresh && fresh.length > 0) setTrendingMovies(fresh);
+        }, 'movie').then((list) => {
+          if (list && list.length > 0) setTrendingMovies(list);
+        }).catch(() => {});
+      } else {
+        tmdbService.getTrending(trendingTime, (fresh) => {
+          if (fresh && fresh.length > 0) setTrendingSeries(fresh);
+        }, 'tv').then((list) => {
+          if (list && list.length > 0) setTrendingSeries(list);
+        }).catch(() => {});
+      }
 
-    // SWR Popular
-    tmdbService
-      .getPopular(1, (fresh) => {
-        if (fresh && fresh.length > 0) {
-          setPopularMovies(fresh);
-        }
-      })
-      .then((cachedOrFresh) => {
-        if (cachedOrFresh && cachedOrFresh.length > 0) {
-          setPopularMovies(cachedOrFresh);
-        }
-      })
-      .catch(() => {});
-  };
+      // 2. Primary Hollywood Movies & Series (Sections 6 & 7)
+      tmdbService.getHollywoodMovies(1).then((res) => {
+        if (res.results.length > 0) setHollywoodMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getHollywoodSeries(1).then((res) => {
+        if (res.results.length > 0) setHollywoodSeries(res.results);
+      }).catch(() => {});
+
+      // 3. Marvel Movies & Marvel Series (Sections 8 & 9)
+      tmdbService.getMarvelMovies(1).then((res) => {
+        if (res.results.length > 0) setMarvelMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getMarvelSeries(1).then((res) => {
+        if (res.results.length > 0) setMarvelSeries(res.results);
+      }).catch(() => {});
+
+      // 4. Sony Movies & Series (Section 10)
+      tmdbService.getSonyMovies(1).then((res) => {
+        if (res.results.length > 0) setSonyMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getSonySeries(1).then((res) => {
+        if (res.results.length > 0) setSonySeries(res.results);
+      }).catch(() => {});
+
+      // 5. Popular Movies
+      tmdbService.getPopular(1, (fresh) => {
+        if (fresh && fresh.length > 0) setPopularMovies(fresh);
+      }, 'movie').then((list) => {
+        if (list && list.length > 0) setPopularMovies(list);
+      }).catch(() => {});
+
+      // 6. DC Universe Movies & Series
+      tmdbService.getDCMovies(1).then((res) => {
+        if (res.results.length > 0) setDCMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getDCSeries(1).then((res) => {
+        if (res.results.length > 0) setDCSeries(res.results);
+      }).catch(() => {});
+
+      // 7. Top Rated Masterpieces (Movies & Series)
+      tmdbService.getTopRated('movie', 1).then((list) => {
+        if (list.length > 0) setTopRatedMovies(list);
+      }).catch(() => {});
+
+      tmdbService.getTopRated('tv', 1).then((list) => {
+        if (list.length > 0) setTopRatedSeries(list);
+      }).catch(() => {});
+
+      // 8. Specialized Rails: Crime, Anime, Sci-Fi, Regional
+      tmdbService.getCrimeThrillerSeries(1).then((res) => {
+        if (res.results.length > 0) setCrimeSeries(res.results);
+      }).catch(() => {});
+
+      tmdbService.getAnimeSeries(1).then((res) => {
+        if (res.results.length > 0) setAnimeSeries(res.results);
+      }).catch(() => {});
+
+      tmdbService.getSciFiMovies(1).then((res) => {
+        if (res.results.length > 0) setScifiMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getRegionalIndianMovies(1).then((res) => {
+        if (res.results.length > 0) setRegionalMovies(res.results);
+      }).catch(() => {});
+
+      tmdbService.getTamilMovies(1).then((res) => {
+        if (res.results.length > 0) setTamilMovies(res.results);
+      }).catch(() => {});
+
+    } catch (err) {
+      console.warn('Discovery feeds background sync notice:', err);
+      setFetchError('Unable to sync live TMDB feeds. Showing cached vault.');
+    } finally {
+      setIsLoadingPrimary(false);
+    }
+  }, [trendingTime, trendingMedia]);
 
   useEffect(() => {
-    loadDiscoveryData();
-  }, [trendingTime, isOnline]);
+    loadDiscoveryFeeds();
+  }, [loadDiscoveryFeeds, isOnline]);
 
   // Save query to recent searches
   const recordRecentSearch = (term: string) => {
@@ -140,7 +251,7 @@ export const Discover: React.FC = () => {
     } catch {}
   };
 
-  // Perform search (Local Catalog + TMDB fallback with race protection)
+  // Perform multi-search (Both Movies and TV Series with canonical deduplication)
   useEffect(() => {
     const controller = new AbortController();
     let isCancelled = false;
@@ -160,11 +271,10 @@ export const Discover: React.FC = () => {
         }
       });
 
-      // 2. Full unified search (Layer 1 + Layer 2)
+      // 2. Full unified search (Both Movies & TV Series)
       UnifiedSearchService.searchUnified(debouncedQuery, { signal: controller.signal })
         .then((res) => {
           if (isCancelled || controller.signal.aborted) return;
-          // Discard response if a newer query was issued
           if (res.sequenceId < latestSequenceRef.current) return;
           latestSequenceRef.current = res.sequenceId;
 
@@ -205,10 +315,10 @@ export const Discover: React.FC = () => {
     };
   }, [debouncedQuery]);
 
-  // Pagination: Load next page of TMDB results
-  const handleLoadMore = async () => {
-    if (isLoadingMore || searchPage >= searchTotalPages || !debouncedQuery) return;
-    setIsLoadingMore(true);
+  // Pagination for search results
+  const handleLoadMoreSearch = async () => {
+    if (isLoadingMoreSearch || searchPage >= searchTotalPages || !debouncedQuery) return;
+    setIsLoadingMoreSearch(true);
 
     try {
       const nextPage = searchPage + 1;
@@ -228,7 +338,38 @@ export const Discover: React.FC = () => {
     } catch (err: any) {
       console.warn('Load more search failed:', err);
     } finally {
-      setIsLoadingMore(false);
+      setIsLoadingMoreSearch(false);
+    }
+  };
+
+  // Pagination for "View All" modal
+  const handleLoadMoreViewAll = async () => {
+    if (!viewAllRail || isLoadingMoreViewAll || viewAllRail.page >= viewAllRail.totalPages) return;
+    setIsLoadingMoreViewAll(true);
+
+    try {
+      const nextPage = viewAllRail.page + 1;
+      const res = await viewAllRail.fetcher(nextPage);
+      if (res.results.length > 0) {
+        setViewAllRail((prev) => {
+          if (!prev) return null;
+          const map = new Map<number, Movie>();
+          prev.movies.forEach((m) => map.set(m.id, m));
+          res.results.forEach((m) => {
+            if (!map.has(m.id)) map.set(m.id, m);
+          });
+          return {
+            ...prev,
+            movies: Array.from(map.values()),
+            page: nextPage,
+            totalPages: res.totalPages,
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('View all pagination failed:', err);
+    } finally {
+      setIsLoadingMoreViewAll(false);
     }
   };
 
@@ -241,123 +382,74 @@ export const Discover: React.FC = () => {
     setQuery(term);
   };
 
-  // =========================================================================
-  // PRE-FILTERED STREAMING RAILS (Derived from SEED_MOVIES - Instant Render)
-  // =========================================================================
+  // Helper to open View All with full pagination capability
+  const openViewAll = (
+    title: string,
+    badge: string,
+    initialItems: Movie[],
+    fetcher: (page: number) => Promise<{ results: Movie[]; totalPages: number }>
+  ) => {
+    setViewAllRail({
+      title,
+      badge,
+      movies: initialItems,
+      page: 1,
+      totalPages: 10,
+      fetcher,
+    });
+  };
 
-  // 3. SUPERHERO UNIVERSES (133 movies)
-  const superheroMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      [
-        'marvel',
-        'fox_marvel',
-        'sony_spiderman',
-        'marvel_legacy',
-        'dc',
-        'disney_superhero',
-        'other_superhero',
-      ].includes(m.seedCategory || '')
-    ).sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0));
-  }, []);
+  // Deduping filter across consecutive rails to eliminate repeat movies
+  const dedupeRails = useMemo(() => {
+    const seen = new Set<number>();
+    const filterSeen = (items: Movie[]) => {
+      return items.filter((m) => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      });
+    };
 
-  // 4. MARVEL CINEMATIC & LEGACY (75 movies)
-  const marvelMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      ['marvel', 'fox_marvel', 'sony_spiderman', 'marvel_legacy'].includes(m.seedCategory || '')
-    ).sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
-  }, []);
-
-  // 5. DC EXTENDED UNIVERSE (32 movies)
-  const dcMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.seedCategory === 'dc').sort(
-      (a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)
-    );
-  }, []);
-
-  // 6. SCI-FI LANDMARKS (104 movies)
-  const scifiMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.genres?.some((g) => g.id === 878)).sort(
-      (a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)
-    );
-  }, []);
-
-  // 7. HIGH-OCTANE ACTION (177 movies)
-  const actionMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.genres?.some((g) => g.id === 28)).sort(
-      (a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)
-    );
-  }, []);
-
-  // 8. ATMOSPHERIC HORROR (24 movies)
-  const horrorMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.genres?.some((g) => g.id === 27)).sort(
-      (a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)
-    );
-  }, []);
-
-  // 9. TAMIL CINEMA (16 blockbusters)
-  const tamilMovies = useMemo(() => {
-    return SEED_MOVIES.filter(
-      (m) =>
-        m.seedCategory === 'indian_cinema' &&
-        m.franchiseTags?.some((t) => t.toLowerCase() === 'tamil') &&
-        m.title !== 'Drunken Master Su Qier'
-    ).sort((a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
-  }, []);
-
-  // 10. INDIAN CINEMA (49 movies)
-  const indianMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.seedCategory === 'indian_cinema').sort(
-      (a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || '')
-    );
-  }, []);
-
-  // 11. RECENT BLOCKBUSTERS (28 movies)
-  const recentBlockbusters = useMemo(() => {
-    return SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').sort(
-      (a, b) => (b.releaseDate || '').localeCompare(a.releaseDate || '')
-    );
-  }, []);
-
-  const topRatedMovies = useMemo(() => {
-    return [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0));
-  }, []);
-
-  const nolanMovies = useMemo(() => {
-    const titles = ['Oppenheimer', 'Interstellar', 'Inception', 'The Dark Knight', 'Tenet', 'Dunkirk', 'Memento', 'The Prestige', 'Batman Begins', 'The Dark Knight Rises'];
-    return SEED_MOVIES.filter((m) => titles.includes(m.title));
-  }, []);
-
-  const vijayMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      ['Leo', 'Master', 'Varisu', 'Beast', 'Mersal', 'Sarkar', 'Theri', 'Ghilli', 'Pokkiri'].some((t) => m.title.includes(t)) ||
-      m.credits?.cast?.some((c: any) => c.name?.toLowerCase().includes('vijay'))
-    );
-  }, []);
-
-  const rajiniMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      ['Jailer', 'Kabali', 'Petta', 'Darbar', 'Enthiran', 'Sivaji', 'Baashha', 'Vettaiyan'].some((t) => m.title.includes(t)) ||
-      m.credits?.cast?.some((c: any) => c.name?.toLowerCase().includes('rajinikanth'))
-    );
-  }, []);
-
-  const kamalMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      ['Vikram', 'Indian', 'Nayagan', 'Anbe Sivam', 'Hey Ram', 'Kalki'].some((t) => m.title.includes(t)) ||
-      m.credits?.cast?.some((c: any) => c.name?.toLowerCase().includes('kamal haasan'))
-    );
-  }, []);
-
-  const ajithMovies = useMemo(() => {
-    return SEED_MOVIES.filter((m) =>
-      ['Thunivu', 'Valimai', 'Viswasam', 'Mankatha', 'Billa', 'Vedalam', 'Vivegam'].some((t) => m.title.includes(t)) ||
-      m.credits?.cast?.some((c: any) => c.name?.toLowerCase().includes('ajith'))
-    );
-  }, []);
-
-  const [categoryTab, setCategoryTab] = useState<'all' | 'regional' | 'genres' | 'franchises' | 'stars'>('all');
-  const [viewAllRail, setViewAllRail] = useState<{ title: string; movies: Movie[] } | null>(null);
+    return {
+      trending: filterSeen(trendingMedia === 'movie' ? trendingMovies : trendingSeries),
+      hollywoodMovies: filterSeen(hollywoodMovies),
+      hollywoodSeries: filterSeen(hollywoodSeries),
+      marvelMovies: filterSeen(marvelMovies),
+      marvelSeries: filterSeen(marvelSeries),
+      sonyMovies: filterSeen(sonyMovies),
+      sonySeries: filterSeen(sonySeries),
+      dcMovies: filterSeen(dcMovies),
+      dcSeries: filterSeen(dcSeries),
+      topRatedMovies: filterSeen(topRatedMovies),
+      topRatedSeries: filterSeen(topRatedSeries),
+      popularMovies: filterSeen(popularMovies),
+      crimeSeries: filterSeen(crimeSeries),
+      animeSeries: filterSeen(animeSeries),
+      scifiMovies: filterSeen(scifiMovies),
+      regionalMovies: filterSeen(regionalMovies),
+      tamilMovies: filterSeen(tamilMovies),
+    };
+  }, [
+    trendingMedia,
+    trendingMovies,
+    trendingSeries,
+    hollywoodMovies,
+    hollywoodSeries,
+    marvelMovies,
+    marvelSeries,
+    sonyMovies,
+    sonySeries,
+    dcMovies,
+    dcSeries,
+    topRatedMovies,
+    topRatedSeries,
+    popularMovies,
+    crimeSeries,
+    animeSeries,
+    scifiMovies,
+    regionalMovies,
+    tamilMovies,
+  ]);
 
   return (
     <div className="pb-6 space-y-4 sm:space-y-6 animate-cinema-fade">
@@ -373,10 +465,10 @@ export const Discover: React.FC = () => {
           value={query}
           onChange={setQuery}
           onClear={() => setQuery('')}
-          placeholder="Search movies, directors, characters, or universes..."
+          placeholder="Search movies, TV series, Marvel, anime, directors..."
         />
 
-        {/* Recent Search Chips (when query is empty) */}
+        {/* Recent Search Chips */}
         {!query && recentSearches.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-xs text-[#9E9DA5]">
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#63626B]">
@@ -402,19 +494,21 @@ export const Discover: React.FC = () => {
         )}
       </div>
 
-      {/* Category Switcher Pills (when not searching) */}
+      {/* Category Navigation Pills (when not actively searching) */}
       {!query && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar touch-pan-y py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {[
             { id: 'all', label: 'All Feeds' },
-            { id: 'regional', label: 'Regional Cinema' },
+            { id: 'movies', label: 'Movies' },
+            { id: 'series', label: 'TV Series' },
+            { id: 'hollywood', label: 'Hollywood' },
+            { id: 'marvel_dc', label: 'Marvel & DC' },
+            { id: 'studios', label: 'Studios' },
             { id: 'genres', label: 'Genres' },
-            { id: 'franchises', label: 'Franchises' },
-            { id: 'stars', label: 'Stars & Auteurs' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setCategoryTab(tab.id as any)}
+              onClick={() => setCategoryTab(tab.id as CategoryTab)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border min-h-[36px] ${
                 categoryTab === tab.id
                   ? 'bg-[#E0AD52] text-[#09090B] border-[#E0AD52] shadow-[0_2px_12px_rgba(224,173,82,0.3)] font-bold'
@@ -427,7 +521,7 @@ export const Discover: React.FC = () => {
         </div>
       )}
 
-      {/* Network Alert (if sync error occurs) */}
+      {/* Network Notice */}
       {fetchError && !query && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
           <div>
@@ -439,7 +533,7 @@ export const Discover: React.FC = () => {
               variant="secondary"
               size="sm"
               icon={<RefreshCw size={12} />}
-              onClick={loadDiscoveryData}
+              onClick={loadDiscoveryFeeds}
             >
               Retry
             </CinemaButton>
@@ -455,7 +549,9 @@ export const Discover: React.FC = () => {
         </div>
       )}
 
+      {/* ===================================================================== */}
       {/* ACTIVE SEARCH RESULTS VIEW */}
+      {/* ===================================================================== */}
       {query ? (
         <section className="space-y-4 pt-1">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.06] pb-3">
@@ -465,12 +561,12 @@ export const Discover: React.FC = () => {
               </h2>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
                 {isSearching
-                  ? 'Searching curated local vault & TMDB global archive...'
+                  ? 'Searching movies and TV series across archive...'
                   : searchError && searchResults.length === 0
-                  ? 'Connection error reaching movie archive'
-                  : `${searchResults.length} films found ${
+                  ? 'Connection error reaching catalog'
+                  : `${searchResults.length} titles found ${
                       localMatchCount > 0
-                        ? `(${localMatchCount} local vault · ${Math.max(0, searchResults.length - localMatchCount)} TMDB)`
+                        ? `(${localMatchCount} local · ${Math.max(0, searchResults.length - localMatchCount)} TMDB)`
                         : ''
                     }`}
               </p>
@@ -518,8 +614,8 @@ export const Discover: React.FC = () => {
               <EmptyState
                 icon={Film}
                 badge="CONNECTION NOTICE"
-                title="Unable to Reach Movie Archive"
-                description={`We could not connect to the global movie archive to search for "${query}". Please verify your network connection or tap retry.`}
+                title="Unable to Reach Archive"
+                description={`We could not connect to search for "${query}". Please verify your network connection or tap retry.`}
                 actionText="Retry Search"
                 onAction={() => setDebouncedQuery(query.trim())}
               />
@@ -527,8 +623,8 @@ export const Discover: React.FC = () => {
               <EmptyState
                 icon={Film}
                 badge="SEARCH ARCHIVE"
-                title="No Films Found"
-                description={`We couldn't locate any movies matching "${query}". Try searching by title, franchise, or character.`}
+                title="No Titles Found"
+                description={`We couldn't locate any movies or series matching "${query}". Try searching by title, actor, or creator.`}
                 actionText="Reset Search"
                 onAction={() => setQuery('')}
               />
@@ -552,10 +648,10 @@ export const Discover: React.FC = () => {
                   <CinemaButton
                     variant="secondary"
                     size="md"
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
+                    onClick={handleLoadMoreSearch}
+                    disabled={isLoadingMoreSearch}
                   >
-                    {isLoadingMore ? 'Loading More Films...' : 'Load More Films'}
+                    {isLoadingMoreSearch ? 'Loading More Titles...' : 'Load More Titles'}
                   </CinemaButton>
                 </div>
               )}
@@ -563,29 +659,36 @@ export const Discover: React.FC = () => {
           )}
         </section>
       ) : (
+        /* ===================================================================== */
+        /* CATEGORY RAILS BROWSING VIEW */
+        /* ===================================================================== */
         <div className="space-y-8 sm:space-y-10">
-          {/* ALL FEEDS TAB */}
+          {/* TAB 1: ALL FEEDS */}
           {categoryTab === 'all' && (
             <>
-              {/* 1. TRENDING NOW */}
+              {/* TRENDING NOW (Movies or TV Series Switcher) */}
               <section className="space-y-3 relative group/rail">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-section-title text-[#F5F3EB]">TRENDING NOW</h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 uppercase tracking-wider">
-                        LIVE
-                      </span>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-section-title text-[#F5F3EB]">TRENDING NOW</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 uppercase tracking-wider">
+                      LIVE
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setViewAllRail({ title: 'Trending Films', movies: trendingMovies })}
-                      className="text-xs text-[#E0AD52] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0"
-                    >
-                      View All
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Media Type Switcher: Movies vs TV */}
+                    <CinemaSegmentedControl
+                      size="sm"
+                      options={[
+                        { id: 'movie', label: 'Movies' },
+                        { id: 'tv', label: 'Series' },
+                      ]}
+                      value={trendingMedia}
+                      onChange={(val) => setTrendingMedia(val as 'movie' | 'tv')}
+                    />
+
+                    {/* Time Window Switcher: Today vs Week */}
                     <CinemaSegmentedControl
                       size="sm"
                       options={[
@@ -595,15 +698,32 @@ export const Discover: React.FC = () => {
                       value={trendingTime}
                       onChange={(val) => setTrendingTime(val as 'day' | 'week')}
                     />
+
+                    <button
+                      onClick={() =>
+                        openViewAll(
+                          `Trending ${trendingMedia === 'movie' ? 'Movies' : 'Series'} (${trendingTime === 'day' ? 'Today' : 'This Week'})`,
+                          'TRENDING',
+                          trendingMedia === 'movie' ? trendingMovies : trendingSeries,
+                          (p) =>
+                            tmdbService
+                              .getTrending(trendingTime, undefined, trendingMedia, p)
+                              .then((r) => ({ results: r, totalPages: 10 }))
+                        )
+                      }
+                      className="text-xs text-[#E0AD52] font-semibold hover:underline cursor-pointer bg-transparent border-none p-0 ml-1"
+                    >
+                      View All
+                    </button>
                   </div>
                 </div>
 
-                {isLoadingTrending ? (
+                {isLoadingPrimary && (trendingMedia === 'movie' ? trendingMovies.length === 0 : trendingSeries.length === 0) ? (
                   <LoadingState count={5} layout="rail" />
                 ) : (
                   <MoviePosterRail
                     title=""
-                    items={trendingMovies.map((m) => ({
+                    items={(trendingMedia === 'movie' ? dedupeRails.trending : trendingSeries).map((m) => ({
                       movie: m,
                       userData: userMovieMap.get(m.id),
                     }))}
@@ -612,130 +732,262 @@ export const Discover: React.FC = () => {
                 )}
               </section>
 
-              {/* 2. POPULAR RIGHT NOW */}
+              {/* HOLLYWOOD MOVIES (Section 6) */}
+              <MoviePosterRail
+                title="HOLLYWOOD MOVIES"
+                badge="HOLLYWOOD"
+                subtitle="Top releases & iconic cinematic features"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Hollywood Movies',
+                    'HOLLYWOOD',
+                    hollywoodMovies,
+                    (p) => tmdbService.getHollywoodMovies(p)
+                  )
+                }
+                items={dedupeRails.hollywoodMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* HOLLYWOOD SERIES (Section 7) */}
+              <MoviePosterRail
+                title="HOLLYWOOD SERIES"
+                badge="SERIES"
+                subtitle="Acclaimed television & streaming productions"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Hollywood Series',
+                    'SERIES',
+                    hollywoodSeries,
+                    (p) => tmdbService.getHollywoodSeries(p)
+                  )
+                }
+                items={dedupeRails.hollywoodSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* MARVEL MOVIES (Section 8) */}
+              <MoviePosterRail
+                title="MARVEL MOVIES"
+                badge="MARVEL"
+                subtitle="Marvel Cinematic Universe, Sony, & legacy comic adaptations"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Marvel Movies',
+                    'MARVEL',
+                    marvelMovies,
+                    (p) => tmdbService.getMarvelMovies(p)
+                  )
+                }
+                items={dedupeRails.marvelMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* MARVEL SERIES (Section 9) */}
+              <MoviePosterRail
+                title="MARVEL SERIES"
+                badge="SERIES"
+                subtitle="Disney+, Netflix Marvel, animation & television sagas"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Marvel Series',
+                    'MARVEL SERIES',
+                    marvelSeries,
+                    (p) => tmdbService.getMarvelSeries(p)
+                  )
+                }
+                items={dedupeRails.marvelSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* SONY MOVIES (Section 10) */}
+              <MoviePosterRail
+                title="SONY PICTURES & COLUMBIA"
+                badge="SONY"
+                subtitle="Sony Pictures, Columbia, TriStar, & animation"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Sony Pictures Movies',
+                    'SONY',
+                    sonyMovies,
+                    (p) => tmdbService.getSonyMovies(p)
+                  )
+                }
+                items={dedupeRails.sonyMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* TOP RATED SERIES */}
+              <MoviePosterRail
+                title="TOP RATED TV SERIES"
+                badge="CRITICS CHOICE"
+                subtitle="Highest rated television & mini-series masterpieces"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Top Rated Series',
+                    'CRITICS CHOICE',
+                    topRatedSeries,
+                    (p) => tmdbService.getTopRated('tv', p).then((r) => ({ results: r, totalPages: 10 }))
+                  )
+                }
+                items={dedupeRails.topRatedSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              {/* REGIONAL INDIAN PAN-CINEMA */}
+              <MoviePosterRail
+                title="INDIAN PAN-CINEMA"
+                badge="INDIAN"
+                subtitle="Blockbusters across Hindi, Tamil, Telugu, and Malayalam"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll(
+                    'Indian Pan-Cinema',
+                    'INDIAN',
+                    regionalMovies,
+                    (p) => tmdbService.getRegionalIndianMovies(p)
+                  )
+                }
+                items={dedupeRails.regionalMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+            </>
+          )}
+
+          {/* TAB 2: MOVIES */}
+          {categoryTab === 'movies' && (
+            <>
+              <MoviePosterRail
+                title="HOLLYWOOD MOVIES"
+                badge="HOLLYWOOD"
+                subtitle="Broad cinematic releases from major American studios"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Hollywood Movies', 'HOLLYWOOD', hollywoodMovies, (p) =>
+                    tmdbService.getHollywoodMovies(p)
+                  )
+                }
+                items={dedupeRails.hollywoodMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
               <MoviePosterRail
                 title="POPULAR RIGHT NOW"
                 badge="POPULAR"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Popular Right Now', movies: popularMovies })}
-                items={popularMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Popular Right Now', 'POPULAR', popularMovies, (p) =>
+                    tmdbService.getPopular(p, undefined, 'movie').then((r) => ({ results: r, totalPages: 10 }))
+                  )
+                }
+                items={dedupeRails.popularMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 3. HOLLYWOOD & GLOBAL BLOCKBUSTERS */}
               <MoviePosterRail
-                title="HOLLYWOOD BLOCKBUSTERS"
-                badge="HOLLYWOOD"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Hollywood Hits', movies: recentBlockbusters })}
-                items={recentBlockbusters.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              {/* 4. TAMIL CINEMA */}
-              <MoviePosterRail
-                title="TAMIL CINEMA"
-                badge="KOLLYWOOD"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Tamil Cinema Spotlight', movies: tamilMovies })}
-                items={tamilMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              {/* 5. INDIAN PAN-CINEMA */}
-              <MoviePosterRail
-                title="INDIAN PAN-CINEMA"
-                badge="INDIAN"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Indian Pan-Cinema', movies: indianMovies })}
-                items={indianMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              {/* 6. MARVEL CINEMATIC & LEGACY */}
-              <MoviePosterRail
-                title="MARVEL CINEMATIC & LEGACY"
+                title="MARVEL MOVIES"
                 badge="MARVEL"
+                subtitle="MCU, Spider-Verse, & Marvel superhero features"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Marvel Cinematic & Legacy', movies: marvelMovies })}
-                items={marvelMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Marvel Movies', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
+                }
+                items={dedupeRails.marvelMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 7. DC EXTENDED UNIVERSE */}
+              <MoviePosterRail
+                title="SONY PICTURES"
+                badge="SONY"
+                subtitle="Columbia Pictures & Sony Pictures films"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Sony Pictures', 'SONY', sonyMovies, (p) => tmdbService.getSonyMovies(p))
+                }
+                items={dedupeRails.sonyMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
               <MoviePosterRail
                 title="DC EXTENDED UNIVERSE"
                 badge="DC"
+                subtitle="Batman, Superman, and DC Comics features"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'DC Extended Universe', movies: dcMovies })}
-                items={dcMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('DC Universe Movies', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
+                }
+                items={dedupeRails.dcMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 8. HIGH-OCTANE ACTION */}
-              <MoviePosterRail
-                title="HIGH-OCTANE ACTION"
-                badge="ACTION"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Action Cinema', movies: actionMovies })}
-                items={actionMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              {/* 9. ATMOSPHERIC HORROR */}
-              <MoviePosterRail
-                title="ATMOSPHERIC HORROR"
-                badge="HORROR"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Atmospheric Horror', movies: horrorMovies })}
-                items={horrorMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              {/* 10. SCI-FI LANDMARKS */}
               <MoviePosterRail
                 title="SCI-FI LANDMARKS"
                 badge="SCI-FI"
+                subtitle="Mind-bending science fiction milestones"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Sci-Fi Landmarks', movies: scifiMovies })}
-                items={scifiMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Sci-Fi Landmarks', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
+                }
+                items={dedupeRails.scifiMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
 
-              {/* 11. CRITICALLY ACCLAIMED */}
               <MoviePosterRail
                 title="CRITICALLY ACCLAIMED"
                 badge="TOP RATED"
+                subtitle="Highest rated films of all time"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Critically Acclaimed Masterpieces', movies: topRatedMovies })}
-                items={topRatedMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Critically Acclaimed', 'TOP RATED', topRatedMovies, (p) =>
+                    tmdbService.getTopRated('movie', p).then((r) => ({ results: r, totalPages: 10 }))
+                  )
+                }
+                items={dedupeRails.topRatedMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
@@ -744,15 +996,318 @@ export const Discover: React.FC = () => {
             </>
           )}
 
-          {/* REGIONAL TAB */}
-          {categoryTab === 'regional' && (
+          {/* TAB 3: TV SERIES */}
+          {categoryTab === 'series' && (
             <>
               <MoviePosterRail
-                title="TAMIL CINEMA (KOLLYWOOD)"
-                badge="TAMIL"
+                title="HOLLYWOOD SERIES"
+                badge="SERIES"
+                subtitle="Drama, crime, thriller & flagship television series"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Tamil Cinema', movies: tamilMovies })}
-                items={tamilMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Hollywood Series', 'SERIES', hollywoodSeries, (p) =>
+                    tmdbService.getHollywoodSeries(p)
+                  )
+                }
+                items={dedupeRails.hollywoodSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="MARVEL SERIES"
+                badge="SERIES"
+                subtitle="Marvel Studios television & animated shows"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Marvel Series', 'SERIES', marvelSeries, (p) => tmdbService.getMarvelSeries(p))
+                }
+                items={dedupeRails.marvelSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="CRIME & MYSTERY THRILLERS"
+                badge="CRIME"
+                subtitle="Gripping investigative police procedurals & whodunits"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Crime & Mystery Series', 'CRIME', crimeSeries, (p) =>
+                    tmdbService.getCrimeThrillerSeries(p)
+                  )
+                }
+                items={dedupeRails.crimeSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="ANIME & ANIMATION SERIES"
+                badge="ANIME"
+                subtitle="Acclaimed Japanese anime and international animation"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Anime Series', 'ANIME', animeSeries, (p) => tmdbService.getAnimeSeries(p))
+                }
+                items={dedupeRails.animeSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="DC UNIVERSE SERIES"
+                badge="DC SERIES"
+                subtitle="DC television adaptations & animated universes"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('DC Series', 'DC SERIES', dcSeries, (p) => tmdbService.getDCSeries(p))
+                }
+                items={dedupeRails.dcSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="TOP RATED TV SERIES"
+                badge="TOP RATED"
+                subtitle="Critically celebrated television sagas"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Top Rated Series', 'TOP RATED', topRatedSeries, (p) =>
+                    tmdbService.getTopRated('tv', p).then((r) => ({ results: r, totalPages: 10 }))
+                  )
+                }
+                items={dedupeRails.topRatedSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+            </>
+          )}
+
+          {/* TAB 4: HOLLYWOOD */}
+          {categoryTab === 'hollywood' && (
+            <>
+              <MoviePosterRail
+                title="HOLLYWOOD MOVIES"
+                badge="HOLLYWOOD"
+                subtitle="The broad world of American cinema across all genres"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Hollywood Movies', 'HOLLYWOOD', hollywoodMovies, (p) =>
+                    tmdbService.getHollywoodMovies(p)
+                  )
+                }
+                items={dedupeRails.hollywoodMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="HOLLYWOOD TV SERIES"
+                badge="HOLLYWOOD SERIES"
+                subtitle="Premier drama, comedy, and streaming sagas"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Hollywood Series', 'HOLLYWOOD SERIES', hollywoodSeries, (p) =>
+                    tmdbService.getHollywoodSeries(p)
+                  )
+                }
+                items={dedupeRails.hollywoodSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="SCI-FI LANDMARKS"
+                badge="SCI-FI"
+                subtitle="Hollywood science-fiction spectacles"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Sci-Fi Movies', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
+                }
+                items={dedupeRails.scifiMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+            </>
+          )}
+
+          {/* TAB 5: MARVEL & DC */}
+          {categoryTab === 'marvel_dc' && (
+            <>
+              <MoviePosterRail
+                title="MARVEL MOVIES"
+                badge="MARVEL"
+                subtitle="MCU, Spider-Man, Avengers, and legacy adaptations"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Marvel Movies', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
+                }
+                items={dedupeRails.marvelMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="MARVEL SERIES"
+                badge="MARVEL SERIES"
+                subtitle="Loki, WandaVision, Daredevil, and animated Marvel sagas"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Marvel Series', 'MARVEL SERIES', marvelSeries, (p) => tmdbService.getMarvelSeries(p))
+                }
+                items={dedupeRails.marvelSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="DC MOVIES"
+                badge="DC"
+                subtitle="The Dark Knight, Man of Steel, and DC cinematic universe"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('DC Movies', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
+                }
+                items={dedupeRails.dcMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="DC SERIES"
+                badge="DC SERIES"
+                subtitle="DC television universes and animated shows"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('DC Series', 'DC SERIES', dcSeries, (p) => tmdbService.getDCSeries(p))
+                }
+                items={dedupeRails.dcSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+            </>
+          )}
+
+          {/* TAB 6: STUDIOS */}
+          {categoryTab === 'studios' && (
+            <>
+              <MoviePosterRail
+                title="SONY PICTURES & COLUMBIA"
+                badge="SONY"
+                subtitle="Columbia Pictures, TriStar, and Sony Animation"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Sony Pictures Movies', 'SONY', sonyMovies, (p) => tmdbService.getSonyMovies(p))
+                }
+                items={dedupeRails.sonyMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="MARVEL STUDIOS"
+                badge="MARVEL"
+                subtitle="Marvel comic adaptations & cinematic universe"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Marvel Studios', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
+                }
+                items={dedupeRails.marvelMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="DC ENTERTAINMENT"
+                badge="DC"
+                subtitle="DC Universe productions"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('DC Entertainment', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
+                }
+                items={dedupeRails.dcMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+            </>
+          )}
+
+          {/* TAB 7: GENRES */}
+          {categoryTab === 'genres' && (
+            <>
+              <MoviePosterRail
+                title="SCI-FI LANDMARKS"
+                badge="SCI-FI"
+                subtitle="Interstellar, Dune, The Matrix, and speculative futures"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Sci-Fi Movies', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
+                }
+                items={dedupeRails.scifiMovies.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="CRIME & MYSTERY SERIES"
+                badge="CRIME"
+                subtitle="Dark thrillers, detectives, and suspense sagas"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Crime Series', 'CRIME', crimeSeries, (p) => tmdbService.getCrimeThrillerSeries(p))
+                }
+                items={dedupeRails.crimeSeries.map((m) => ({
+                  movie: m,
+                  userData: userMovieMap.get(m.id),
+                }))}
+                onMovieClick={(m) => handleMovieClick(m)}
+              />
+
+              <MoviePosterRail
+                title="ANIME & ANIMATION"
+                badge="ANIME"
+                subtitle="Epic Japanese series and stylized animation"
+                actionLabel="View All"
+                onAction={() =>
+                  openViewAll('Anime Series', 'ANIME', animeSeries, (p) => tmdbService.getAnimeSeries(p))
+                }
+                items={dedupeRails.animeSeries.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
@@ -761,202 +1316,28 @@ export const Discover: React.FC = () => {
 
               <MoviePosterRail
                 title="INDIAN PAN-CINEMA"
-                badge="INDIAN"
+                badge="REGIONAL"
+                subtitle="Action spectacles and cinematic epics from India"
                 actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Indian Pan-Cinema', movies: indianMovies })}
-                items={indianMovies.map((m) => ({
+                onAction={() =>
+                  openViewAll('Indian Cinema', 'REGIONAL', regionalMovies, (p) =>
+                    tmdbService.getRegionalIndianMovies(p)
+                  )
+                }
+                items={dedupeRails.regionalMovies.map((m) => ({
                   movie: m,
                   userData: userMovieMap.get(m.id),
                 }))}
                 onMovieClick={(m) => handleMovieClick(m)}
               />
-
-              <MoviePosterRail
-                title="HOLLYWOOD & GLOBAL BLOCKBUSTERS"
-                badge="HOLLYWOOD"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Hollywood Hits', movies: recentBlockbusters })}
-                items={recentBlockbusters.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-            </>
-          )}
-
-          {/* GENRES TAB */}
-          {categoryTab === 'genres' && (
-            <>
-              <MoviePosterRail
-                title="HIGH-OCTANE ACTION"
-                badge="ACTION"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Action Cinema', movies: actionMovies })}
-                items={actionMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              <MoviePosterRail
-                title="SCI-FI & SPECULATIVE"
-                badge="SCI-FI"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Sci-Fi Landmarks', movies: scifiMovies })}
-                items={scifiMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              <MoviePosterRail
-                title="ATMOSPHERIC HORROR"
-                badge="HORROR"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Atmospheric Horror', movies: horrorMovies })}
-                items={horrorMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              <MoviePosterRail
-                title="TOP RATED MASTERPIECES"
-                badge="CLASSICS"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Top Rated Masterpieces', movies: topRatedMovies })}
-                items={topRatedMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-            </>
-          )}
-
-          {/* FRANCHISES TAB */}
-          {categoryTab === 'franchises' && (
-            <>
-              <MoviePosterRail
-                title="MARVEL CINEMATIC & LEGACY"
-                badge="MARVEL"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Marvel Cinematic & Legacy', movies: marvelMovies })}
-                items={marvelMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              <MoviePosterRail
-                title="DC EXTENDED UNIVERSE"
-                badge="DC"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'DC Extended Universe', movies: dcMovies })}
-                items={dcMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-
-              <MoviePosterRail
-                title="SUPERHERO UNIVERSES"
-                badge="SUPERHERO"
-                actionLabel="View All"
-                onAction={() => setViewAllRail({ title: 'Superhero Universes', movies: superheroMovies })}
-                items={superheroMovies.map((m) => ({
-                  movie: m,
-                  userData: userMovieMap.get(m.id),
-                }))}
-                onMovieClick={(m) => handleMovieClick(m)}
-              />
-            </>
-          )}
-
-          {/* STARS & AUTEURS TAB */}
-          {categoryTab === 'stars' && (
-            <>
-              {nolanMovies.length > 0 && (
-                <MoviePosterRail
-                  title="CHRISTOPHER NOLAN"
-                  badge="AUTEUR"
-                  actionLabel="View All"
-                  onAction={() => setViewAllRail({ title: 'Christopher Nolan Filmography', movies: nolanMovies })}
-                  items={nolanMovies.map((m) => ({
-                    movie: m,
-                    userData: userMovieMap.get(m.id),
-                  }))}
-                  onMovieClick={(m) => handleMovieClick(m)}
-                />
-              )}
-
-              {vijayMovies.length > 0 && (
-                <MoviePosterRail
-                  title="THALAPATHY VIJAY"
-                  badge="STAR"
-                  actionLabel="View All"
-                  onAction={() => setViewAllRail({ title: 'Thalapathy Vijay Spotlight', movies: vijayMovies })}
-                  items={vijayMovies.map((m) => ({
-                    movie: m,
-                    userData: userMovieMap.get(m.id),
-                  }))}
-                  onMovieClick={(m) => handleMovieClick(m)}
-                />
-              )}
-
-              {rajiniMovies.length > 0 && (
-                <MoviePosterRail
-                  title="SUPERSTAR RAJINIKANTH"
-                  badge="ICON"
-                  actionLabel="View All"
-                  onAction={() => setViewAllRail({ title: 'Superstar Rajinikanth Highlights', movies: rajiniMovies })}
-                  items={rajiniMovies.map((m) => ({
-                    movie: m,
-                    userData: userMovieMap.get(m.id),
-                  }))}
-                  onMovieClick={(m) => handleMovieClick(m)}
-                />
-              )}
-
-              {kamalMovies.length > 0 && (
-                <MoviePosterRail
-                  title="ULAGANAYAGAN KAMAL HAASAN"
-                  badge="LEGEND"
-                  actionLabel="View All"
-                  onAction={() => setViewAllRail({ title: 'Kamal Haasan Classics', movies: kamalMovies })}
-                  items={kamalMovies.map((m) => ({
-                    movie: m,
-                    userData: userMovieMap.get(m.id),
-                  }))}
-                  onMovieClick={(m) => handleMovieClick(m)}
-                />
-              )}
-
-              {ajithMovies.length > 0 && (
-                <MoviePosterRail
-                  title="THALA AJITH KUMAR"
-                  badge="ACTION"
-                  actionLabel="View All"
-                  onAction={() => setViewAllRail({ title: 'Ajith Kumar Action Films', movies: ajithMovies })}
-                  items={ajithMovies.map((m) => ({
-                    movie: m,
-                    userData: userMovieMap.get(m.id),
-                  }))}
-                  onMovieClick={(m) => handleMovieClick(m)}
-                />
-              )}
             </>
           )}
         </div>
       )}
 
-      {/* View All Category Modal */}
+      {/* ===================================================================== */}
+      {/* VIEW ALL CATEGORY MODAL WITH PROGRESSIVE LOAD MORE PAGINATION */}
+      {/* ===================================================================== */}
       {viewAllRail && (
         <Modal
           isOpen={Boolean(viewAllRail)}
@@ -964,10 +1345,18 @@ export const Discover: React.FC = () => {
           title={viewAllRail.title}
           maxWidth="max-w-4xl"
         >
-          <div className="space-y-3.5">
-            <div className="text-xs text-[#9E9DA5]">
-              {viewAllRail.movies.length} {viewAllRail.movies.length === 1 ? 'film' : 'films'} in this collection
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs text-[#9E9DA5] pb-1 border-b border-white/[0.06]">
+              <span>
+                {viewAllRail.movies.length} {viewAllRail.movies.length === 1 ? 'title' : 'titles'} discovered
+              </span>
+              {viewAllRail.badge && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30 uppercase tracking-wider">
+                  {viewAllRail.badge}
+                </span>
+              )}
             </div>
+
             <MovieGrid>
               {viewAllRail.movies.map((movie) => (
                 <MoviePoster
@@ -982,6 +1371,19 @@ export const Discover: React.FC = () => {
                 />
               ))}
             </MovieGrid>
+
+            {viewAllRail.page < viewAllRail.totalPages && (
+              <div className="flex justify-center pt-3 pb-2">
+                <CinemaButton
+                  variant="secondary"
+                  size="md"
+                  onClick={handleLoadMoreViewAll}
+                  disabled={isLoadingMoreViewAll}
+                >
+                  {isLoadingMoreViewAll ? 'Discovering More Titles...' : 'Discover More Titles'}
+                </CinemaButton>
+              </div>
+            )}
           </div>
         </Modal>
       )}
