@@ -499,9 +499,9 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
         {/* Overview & Synopsis */}
         {movie.overview && (
-          <div className="space-y-2">
-            <h3 className="text-xs uppercase tracking-widest text-[#E0AD52] font-bold">
-              SYNOPSIS
+          <div className="space-y-1.5">
+            <h3 className="font-section-title text-[#F5F3EB]">
+              Synopsis
             </h3>
             <p className="text-sm text-[#F5F2F0]/85 leading-relaxed max-w-3xl">
               {movie.overview}
@@ -517,15 +517,15 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                 <BookOpen size={18} className="text-[#E0AD52]" />
                 <span>Personal Screening Record</span>
               </h3>
-              <p className="text-xs text-[#9E9DA5]">
-                {userData?.watchedAt
-                  ? `Watched on ${new Date(userData.watchedAt).toLocaleDateString(undefined, {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}`
-                  : 'Track your personal thoughts and score for this film.'}
-              </p>
+              {userData?.watchedAt && (
+                <p className="text-xs text-[#9E9DA5] mt-0.5">
+                  Watched on {new Date(userData.watchedAt).toLocaleDateString(undefined, {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+              )}
             </div>
 
             {/* Personal Rating */}
@@ -643,24 +643,20 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
                   </div>
                 )}
               </div>
-            ) : (
-              <p className="text-xs text-[#5C5B64] italic">
-                No written reflection added yet. Click &ldquo;Write Reflection&rdquo; to record your thoughts.
-              </p>
-            )}
+            ) : null}
           </div>
 
-          {/* Private Notes (Where watched, with whom, edition, etc.) */}
+          {/* Private Notes */}
           <div className="space-y-2 pt-2 border-t border-white/[0.04]">
             <label className="block text-xs uppercase tracking-wider text-[#9E9DA5] font-semibold">
-              Private Notes (Screen format, theater, companions)
+              Private Notes
             </label>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. 4K Blu-ray with Sara, IMAX 70mm screening"
+                placeholder="Screen format, theater, companions..."
                 className="cinema-input flex-1 text-xs"
               />
               <button
@@ -676,9 +672,9 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
 
         {/* Cast Section */}
         {credits.cast && credits.cast.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-xs uppercase tracking-widest text-[#E0AD52] font-bold">
-              PRINCIPAL CAST
+          <div className="space-y-3">
+            <h3 className="font-section-title text-[#F5F3EB]">
+              Cast
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {credits.cast.slice(0, 6).map((actor: any) => (

@@ -15,15 +15,12 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
 }) => {
   if (!movieWithData) {
     return (
-      <div className="relative w-full h-[32vh] min-h-[240px] max-h-[360px] bg-[#09090B] rounded-2xl sm:rounded-3xl overflow-hidden flex items-center justify-center p-6 text-center border border-white/5 shadow-2xl">
-        <div className="max-w-md space-y-3">
-          <div className="w-10 h-10 mx-auto rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/20 flex items-center justify-center text-[#E0AD52]">
-            <Sparkles size={20} />
+      <div className="relative w-full h-[28vh] min-h-[200px] max-h-[300px] bg-[#09090B] rounded-2xl sm:rounded-3xl overflow-hidden flex items-center justify-center p-6 text-center border border-white/5 shadow-2xl">
+        <div className="max-w-md space-y-2">
+          <div className="w-9 h-9 mx-auto rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/20 flex items-center justify-center text-[#E0AD52]">
+            <Sparkles size={18} />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-[#F5F3EB]">Featured Screening</h2>
-          <p className="text-xs text-[#9E9DA5] leading-relaxed">
-            Discover extraordinary films and build your personal collection to activate the hero stage.
-          </p>
+          <h2 className="text-lg sm:text-xl font-bold text-[#F5F3EB]">Featured Screening</h2>
         </div>
       </div>
     );
@@ -63,12 +60,6 @@ export const CinemaHero: React.FC<CinemaHeroProps> = ({
 
       {/* LAYER 4: Hero Content with Guaranteed Boundary Containment */}
       <div className="relative z-10 w-full px-4 sm:px-6 md:px-8 pb-3.5 sm:pb-5 max-w-2xl min-w-0">
-        
-        {/* Subtle Category Tag */}
-        <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase mb-1">
-          <Sparkles size={12} className="text-[#E0AD52]" />
-          <span>FEATURED SPOTLIGHT</span>
-        </div>
 
         {/* Hero Title with Clamp Typography & Overflow Protection */}
         <h1

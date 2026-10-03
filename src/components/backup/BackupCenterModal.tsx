@@ -201,13 +201,7 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
 
         {/* Section 1: Full Export */}
         <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-cinema-white text-sm">Full Library JSON Backup</h4>
-            <p className="text-xs text-cinema-subtle mt-0.5">
-              Includes complete canonical movies, watch statuses, custom collections, personal
-              ratings, and notes. Sanitized of private API tokens.
-            </p>
-          </div>
+          <h4 className="font-semibold text-cinema-white text-sm">Full Library JSON Backup</h4>
           <button
             onClick={handleDownloadFullBackup}
             className="cinema-button-secondary px-4 py-2 text-xs flex items-center gap-1.5 flex-shrink-0 ml-4"
@@ -218,14 +212,8 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
         </div>
 
         {/* Section 2: Restore from Backup */}
-        <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 space-y-4">
-          <div>
-            <h4 className="font-semibold text-cinema-white text-sm">Restore from Backup</h4>
-            <p className="text-xs text-cinema-subtle mt-0.5">
-              Upload a valid <code className="text-cinema-gold">PersonalCinema_Backup_*.json</code> file to
-              restore your library.
-            </p>
-          </div>
+        <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 space-y-3">
+          <h4 className="font-semibold text-cinema-white text-sm">Restore from Backup</h4>
 
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -438,9 +426,6 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
         {/* Section 3: Partial Exports */}
         <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 space-y-3">
           <h4 className="font-semibold text-cinema-white text-sm">Partial Table Exports</h4>
-          <p className="text-xs text-cinema-subtle">
-            Quickly export specific slices of your cinema data to CSV spreadsheets or JSON files.
-          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
               <div>

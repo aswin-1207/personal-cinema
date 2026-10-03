@@ -204,24 +204,10 @@ export const Home: React.FC = () => {
         onOpenDetails={(id) => openMovieDetail(id)}
       />
 
-      {/* Compact New User Hint (Non-intrusive, no giant box) */}
-      {watchlist.length === 0 && recentlyWatched.length === 0 && continueWatching.length === 0 && (
-        <div className="px-4 py-2.5 rounded-xl bg-[#131319] border border-white/[0.08] text-xs text-[#9E9DA5] flex items-center justify-between gap-3">
-          <span>Tap any film below to track in your personal cinema vault.</span>
-          <button
-            onClick={() => setActiveTab('discover')}
-            className="text-[#E0AD52] font-semibold hover:underline flex-shrink-0 cursor-pointer bg-transparent border-none p-0 text-xs"
-          >
-            Explore ›
-          </button>
-        </div>
-      )}
-
       {/* Rail: Currently Watching (Only when items exist) */}
       {continueWatching.length > 0 && (
         <MoviePosterRail
           title="Currently Watching"
-          subtitle="Films in active screening"
           items={continueWatching}
           onMovieClick={(m) => openMovieDetail(m.id)}
         />
@@ -311,7 +297,6 @@ export const Home: React.FC = () => {
       {watchlist.length > 0 && (
         <MoviePosterRail
           title="On Your Watchlist"
-          subtitle="Films queued up for your next screening"
           actionLabel="View All"
           onAction={() => setActiveTab('watchlist')}
           items={watchlist}
@@ -322,7 +307,6 @@ export const Home: React.FC = () => {
       {/* Rail: Trending Now */}
       <MoviePosterRail
         title="Trending Now"
-        subtitle="Most popular films worldwide right now"
         actionLabel="Explore"
         onAction={() => setActiveTab('discover')}
         items={trendingMovies.map((m) => ({ movie: m }))}
@@ -332,7 +316,6 @@ export const Home: React.FC = () => {
       {/* Rail: Popular Films */}
       <MoviePosterRail
         title="Popular Films"
-        subtitle="Audience favorites with strong engagement"
         items={popularMovies.map((m) => ({ movie: m }))}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
@@ -341,7 +324,6 @@ export const Home: React.FC = () => {
       {tamilMovies.length > 0 && (
         <MoviePosterRail
           title="Tamil Cinema"
-          subtitle="Kollywood blockbusters, classics & thrillers"
           badge="Kollywood"
           items={tamilMovies.map((m) => ({ movie: m }))}
           onMovieClick={(m) => openMovieDetail(m.id)}
@@ -352,7 +334,6 @@ export const Home: React.FC = () => {
       {hollywoodMovies.length > 0 && (
         <MoviePosterRail
           title="Hollywood Hits"
-          subtitle="Top American cinematic releases"
           badge="Hollywood"
           items={hollywoodMovies.map((m) => ({ movie: m }))}
           onMovieClick={(m) => openMovieDetail(m.id)}
@@ -362,21 +343,15 @@ export const Home: React.FC = () => {
       {/* Rail: Critically Acclaimed */}
       <MoviePosterRail
         title="Critically Acclaimed"
-        subtitle="Highest-rated masterpieces"
         items={topRatedMovies.map((m) => ({ movie: m }))}
         onMovieClick={(m) => openMovieDetail(m.id)}
       />
 
       {/* Curated Collections Rail */}
       {collections.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-2.5">
           <div className="flex items-end justify-between gap-4">
-            <div>
-              <h3 className="font-section-title text-[#F5F3EB]">Curated Collections</h3>
-              <p className="text-xs text-[#9E9DA5] mt-0.5">
-                Thematic universes and marathons
-              </p>
-            </div>
+            <h3 className="font-section-title text-[#F5F3EB]">Curated Collections</h3>
             <button
               onClick={() => setActiveTab('collections')}
               className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#E0AD52] hover:text-[#D49B35] p-0 cursor-pointer"
@@ -386,7 +361,7 @@ export const Home: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2 pt-0.5 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8">
             {collections.map((col) => (
               <div key={col.id} className="w-56 sm:w-64 md:w-72 flex-shrink-0">
                 <CollectionCard
@@ -403,7 +378,6 @@ export const Home: React.FC = () => {
       {recentlyWatched.length > 0 && (
         <MoviePosterRail
           title="Recently Watched"
-          subtitle="Your logged screening history"
           actionLabel="View Archive"
           onAction={() => setActiveTab('watched')}
           items={recentlyWatched}

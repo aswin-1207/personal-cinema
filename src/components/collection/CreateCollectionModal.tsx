@@ -119,7 +119,7 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             <button
               type="button"
               onClick={() => setCoverType('collage')}
-              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 text-xs text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 text-xs transition-all cursor-pointer ${
                 coverType === 'collage'
                   ? 'border-cinema-gold bg-cinema-gold/10 text-cinema-gold shadow-gold'
                   : 'border-white/10 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
@@ -127,13 +127,12 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             >
               <Layers size={18} />
               <div className="font-semibold text-center">Poster Collage</div>
-              <div className="text-[10px] text-[#9E9DA5] text-center">2x2 grid of top movies</div>
             </button>
 
             <button
               type="button"
               onClick={() => setCoverType('hero')}
-              className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 text-xs text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 text-xs transition-all cursor-pointer ${
                 coverType === 'hero'
                   ? 'border-cinema-gold bg-cinema-gold/10 text-cinema-gold shadow-gold'
                   : 'border-white/10 bg-cinema-charcoal/50 text-cinema-silver hover:border-white/20'
@@ -141,7 +140,6 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
             >
               <ImageIcon size={18} />
               <div className="font-semibold text-center">Hero Backdrop</div>
-              <div className="text-[10px] text-[#9E9DA5] text-center">Lead movie banner</div>
             </button>
           </div>
         </div>

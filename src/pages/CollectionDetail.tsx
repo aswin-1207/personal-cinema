@@ -19,7 +19,6 @@ import {
   MoveUp,
   MoveDown,
   X,
-  Layers,
   PlayCircle,
   CheckCircle2,
   Upload,
@@ -206,12 +205,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
         )}
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="max-w-2xl space-y-3">
-            <div className="flex items-center gap-2 text-[#E0AD52] text-[11px] font-bold tracking-[0.18em] uppercase">
-              <Layers size={14} />
-              <span>COLLECTION</span>
-            </div>
-
+          <div className="max-w-2xl space-y-2.5">
             {progress.isComplete && (
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E0AD52]/10 border border-[#E0AD52]/30 text-[#E0AD52] text-xs font-semibold tracking-wide">
                 <CheckCircle2 size={13} className="text-[#E0AD52]" />
@@ -351,21 +345,10 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             </div>
             <div>
               <div className="text-[10px] uppercase font-semibold tracking-wider text-[#E0AD52]">
-                THE FINAL FILM
+                FINAL FILM
               </div>
               <div className="font-semibold text-base text-[#F5F3EB] mt-0.5">
                 {finalMovieItem.movie.title}
-              </div>
-              <div className="text-xs text-[#9E9DA5] mt-0.5">
-                Concluded this cinematic journey
-                {collection.completedAt
-                  ? ` on ${new Date(collection.completedAt).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}`
-                  : ''}
-                .
               </div>
             </div>
           </div>
@@ -373,7 +356,7 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
             onClick={() => openMovieDetail(finalMovieItem.movie.id)}
             className="cinema-button-secondary text-xs px-3.5 py-1.5 self-end sm:self-center flex items-center gap-1.5 text-[#E0AD52] hover:text-[#D49B35] cursor-pointer"
           >
-            <span>Screening Record</span>
+            <span>Details</span>
             <span>→</span>
           </button>
         </div>
@@ -439,9 +422,6 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
       ) : reorderMode ? (
         /* Reorder Sequence Mode */
         <div className="space-y-2 max-w-2xl">
-          <p className="text-xs text-[#9E9DA5] mb-3">
-            Use the arrows to adjust the screening order. Changes are saved automatically.
-          </p>
           {movies.map((item, index) => (
             <div
               key={item.movie.id}

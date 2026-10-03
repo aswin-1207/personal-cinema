@@ -38,7 +38,6 @@ export const Discover: React.FC = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
-  const [localMatchCount, setLocalMatchCount] = useState(0);
   const [isSearchOffline, setIsSearchOffline] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchErrorCode, setSearchErrorCode] = useState<string | null>(null);
@@ -267,7 +266,6 @@ export const Discover: React.FC = () => {
       UnifiedSearchService.searchLocal(debouncedQuery).then((localMatches) => {
         if (!isCancelled && !controller.signal.aborted) {
           setSearchResults(localMatches);
-          setLocalMatchCount(localMatches.length);
         }
       });
 
@@ -279,7 +277,6 @@ export const Discover: React.FC = () => {
           latestSequenceRef.current = res.sequenceId;
 
           setSearchResults(res.merged);
-          setLocalMatchCount(res.localResults.length);
           setIsSearchOffline(res.isOffline);
           setSearchTotalPages(res.totalPages);
           if (res.tmdbError) {
@@ -300,7 +297,6 @@ export const Discover: React.FC = () => {
         });
     } else {
       setSearchResults([]);
-      setLocalMatchCount(0);
       setIsSearching(false);
       setIsSearchOffline(false);
       setSearchError(null);
@@ -455,7 +451,6 @@ export const Discover: React.FC = () => {
     <div className="pb-6 space-y-4 sm:space-y-6 animate-cinema-fade">
       {/* Streaming Discovery Header */}
       <CinemaHeader
-        badge="DISCOVERY"
         title="Discover"
       />
 
@@ -561,14 +556,8 @@ export const Discover: React.FC = () => {
               </h2>
               <p className="text-xs text-[#9E9DA5] mt-0.5">
                 {isSearching
-                  ? 'Searching movies and TV series across archive...'
-                  : searchError && searchResults.length === 0
-                  ? 'Connection error reaching catalog'
-                  : `${searchResults.length} titles found ${
-                      localMatchCount > 0
-                        ? `(${localMatchCount} local · ${Math.max(0, searchResults.length - localMatchCount)} TMDB)`
-                        : ''
-                    }`}
+                  ? 'Searching...'
+                  : `${searchResults.length} ${searchResults.length === 1 ? 'title' : 'titles'} found`}
               </p>
             </div>
 
@@ -662,7 +651,7 @@ export const Discover: React.FC = () => {
         /* ===================================================================== */
         /* CATEGORY RAILS BROWSING VIEW */
         /* ===================================================================== */
-        <div className="space-y-8 sm:space-y-10">
+        <div className="space-y-5 sm:space-y-6">
           {/* TAB 1: ALL FEEDS */}
           {categoryTab === 'all' && (
             <>
@@ -736,7 +725,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD MOVIES"
                 badge="HOLLYWOOD"
-                subtitle="Top releases & iconic cinematic features"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -757,7 +745,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD SERIES"
                 badge="SERIES"
-                subtitle="Acclaimed television & streaming productions"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -778,7 +765,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL MOVIES"
                 badge="MARVEL"
-                subtitle="Marvel Cinematic Universe, Sony, & legacy comic adaptations"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -799,7 +785,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL SERIES"
                 badge="SERIES"
-                subtitle="Disney+, Netflix Marvel, animation & television sagas"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -820,7 +805,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SONY PICTURES & COLUMBIA"
                 badge="SONY"
-                subtitle="Sony Pictures, Columbia, TriStar, & animation"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -841,7 +825,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="TOP RATED TV SERIES"
                 badge="CRITICS CHOICE"
-                subtitle="Highest rated television & mini-series masterpieces"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -862,7 +845,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="INDIAN PAN-CINEMA"
                 badge="INDIAN"
-                subtitle="Blockbusters across Hindi, Tamil, Telugu, and Malayalam"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll(
@@ -887,7 +869,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD MOVIES"
                 badge="HOLLYWOOD"
-                subtitle="Broad cinematic releases from major American studios"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Hollywood Movies', 'HOLLYWOOD', hollywoodMovies, (p) =>
@@ -920,7 +901,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL MOVIES"
                 badge="MARVEL"
-                subtitle="MCU, Spider-Verse, & Marvel superhero features"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Marvel Movies', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
@@ -935,7 +915,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SONY PICTURES"
                 badge="SONY"
-                subtitle="Columbia Pictures & Sony Pictures films"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Sony Pictures', 'SONY', sonyMovies, (p) => tmdbService.getSonyMovies(p))
@@ -950,7 +929,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="DC EXTENDED UNIVERSE"
                 badge="DC"
-                subtitle="Batman, Superman, and DC Comics features"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('DC Universe Movies', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
@@ -965,7 +943,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SCI-FI LANDMARKS"
                 badge="SCI-FI"
-                subtitle="Mind-bending science fiction milestones"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Sci-Fi Landmarks', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
@@ -980,7 +957,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="CRITICALLY ACCLAIMED"
                 badge="TOP RATED"
-                subtitle="Highest rated films of all time"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Critically Acclaimed', 'TOP RATED', topRatedMovies, (p) =>
@@ -1002,7 +978,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD SERIES"
                 badge="SERIES"
-                subtitle="Drama, crime, thriller & flagship television series"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Hollywood Series', 'SERIES', hollywoodSeries, (p) =>
@@ -1019,7 +994,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL SERIES"
                 badge="SERIES"
-                subtitle="Marvel Studios television & animated shows"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Marvel Series', 'SERIES', marvelSeries, (p) => tmdbService.getMarvelSeries(p))
@@ -1034,7 +1008,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="CRIME & MYSTERY THRILLERS"
                 badge="CRIME"
-                subtitle="Gripping investigative police procedurals & whodunits"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Crime & Mystery Series', 'CRIME', crimeSeries, (p) =>
@@ -1051,7 +1024,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="ANIME & ANIMATION SERIES"
                 badge="ANIME"
-                subtitle="Acclaimed Japanese anime and international animation"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Anime Series', 'ANIME', animeSeries, (p) => tmdbService.getAnimeSeries(p))
@@ -1066,7 +1038,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="DC UNIVERSE SERIES"
                 badge="DC SERIES"
-                subtitle="DC television adaptations & animated universes"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('DC Series', 'DC SERIES', dcSeries, (p) => tmdbService.getDCSeries(p))
@@ -1081,7 +1052,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="TOP RATED TV SERIES"
                 badge="TOP RATED"
-                subtitle="Critically celebrated television sagas"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Top Rated Series', 'TOP RATED', topRatedSeries, (p) =>
@@ -1103,7 +1073,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD MOVIES"
                 badge="HOLLYWOOD"
-                subtitle="The broad world of American cinema across all genres"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Hollywood Movies', 'HOLLYWOOD', hollywoodMovies, (p) =>
@@ -1120,7 +1089,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="HOLLYWOOD TV SERIES"
                 badge="HOLLYWOOD SERIES"
-                subtitle="Premier drama, comedy, and streaming sagas"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Hollywood Series', 'HOLLYWOOD SERIES', hollywoodSeries, (p) =>
@@ -1137,7 +1105,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SCI-FI LANDMARKS"
                 badge="SCI-FI"
-                subtitle="Hollywood science-fiction spectacles"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Sci-Fi Movies', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
@@ -1157,7 +1124,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL MOVIES"
                 badge="MARVEL"
-                subtitle="MCU, Spider-Man, Avengers, and legacy adaptations"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Marvel Movies', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
@@ -1172,7 +1138,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL SERIES"
                 badge="MARVEL SERIES"
-                subtitle="Loki, WandaVision, Daredevil, and animated Marvel sagas"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Marvel Series', 'MARVEL SERIES', marvelSeries, (p) => tmdbService.getMarvelSeries(p))
@@ -1187,7 +1152,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="DC MOVIES"
                 badge="DC"
-                subtitle="The Dark Knight, Man of Steel, and DC cinematic universe"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('DC Movies', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
@@ -1202,7 +1166,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="DC SERIES"
                 badge="DC SERIES"
-                subtitle="DC television universes and animated shows"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('DC Series', 'DC SERIES', dcSeries, (p) => tmdbService.getDCSeries(p))
@@ -1222,7 +1185,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SONY PICTURES & COLUMBIA"
                 badge="SONY"
-                subtitle="Columbia Pictures, TriStar, and Sony Animation"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Sony Pictures Movies', 'SONY', sonyMovies, (p) => tmdbService.getSonyMovies(p))
@@ -1237,7 +1199,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="MARVEL STUDIOS"
                 badge="MARVEL"
-                subtitle="Marvel comic adaptations & cinematic universe"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Marvel Studios', 'MARVEL', marvelMovies, (p) => tmdbService.getMarvelMovies(p))
@@ -1252,7 +1213,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="DC ENTERTAINMENT"
                 badge="DC"
-                subtitle="DC Universe productions"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('DC Entertainment', 'DC', dcMovies, (p) => tmdbService.getDCMovies(p))
@@ -1272,7 +1232,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="SCI-FI LANDMARKS"
                 badge="SCI-FI"
-                subtitle="Interstellar, Dune, The Matrix, and speculative futures"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Sci-Fi Movies', 'SCI-FI', scifiMovies, (p) => tmdbService.getSciFiMovies(p))
@@ -1287,7 +1246,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="CRIME & MYSTERY SERIES"
                 badge="CRIME"
-                subtitle="Dark thrillers, detectives, and suspense sagas"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Crime Series', 'CRIME', crimeSeries, (p) => tmdbService.getCrimeThrillerSeries(p))
@@ -1302,7 +1260,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="ANIME & ANIMATION"
                 badge="ANIME"
-                subtitle="Epic Japanese series and stylized animation"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Anime Series', 'ANIME', animeSeries, (p) => tmdbService.getAnimeSeries(p))
@@ -1317,7 +1274,6 @@ export const Discover: React.FC = () => {
               <MoviePosterRail
                 title="INDIAN PAN-CINEMA"
                 badge="REGIONAL"
-                subtitle="Action spectacles and cinematic epics from India"
                 actionLabel="View All"
                 onAction={() =>
                   openViewAll('Indian Cinema', 'REGIONAL', regionalMovies, (p) =>

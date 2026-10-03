@@ -83,6 +83,8 @@
   --cinema-nav-height-mobile: 60px;
   --cinema-sidebar-width: 240px;
   --cinema-max-content-width: 1380px;
+  --cinema-bottom-clearance: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  --cinema-top-clearance: env(safe-area-inset-top, 0px);
 
   /* Layering Hierarchy (Z-Index System) */
   --z-base: 0;
@@ -629,7 +631,7 @@ input, select, textarea {
   position: fixed;
   inset: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   pointer-events: none;
   z-index: 1;
   opacity: 0.026;

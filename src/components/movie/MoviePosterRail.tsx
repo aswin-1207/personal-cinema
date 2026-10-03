@@ -39,7 +39,7 @@ export const MoviePosterRail: React.FC<MoviePosterRailProps> = ({
   };
 
   return (
-    <section className="space-y-3.5 relative group/rail">
+    <section className="space-y-2.5 relative group/rail">
       {/* Section Header */}
       <div className="flex items-end justify-between gap-4">
         <div>

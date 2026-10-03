@@ -5,7 +5,7 @@ interface EmptyStateProps {
   icon?: LucideIcon;
   badge?: string;
   title: string;
-  description: string;
+  description?: string;
   actionText?: string;
   actionLabel?: string;
   onAction?: () => void;
@@ -44,13 +44,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <Icon size={20} />
       </div>
 
-      <h3 className="font-semibold text-sm sm:text-base text-[#F5F3EB] mb-1 tracking-tight">
+      <h3 className={`font-semibold text-sm sm:text-base text-[#F5F3EB] tracking-tight ${description ? 'mb-1' : 'mb-3'}`}>
         {title}
       </h3>
 
-      <p className="text-xs text-[#9E9DA5] max-w-xs mb-4 leading-relaxed">
-        {description}
-      </p>
+      {description && (
+        <p className="text-xs text-[#9E9DA5] max-w-xs mb-3.5 leading-relaxed">
+          {description}
+        </p>
+      )}
 
       <div className="flex gap-2.5 flex-wrap justify-center">
         {primaryText && onAction && (

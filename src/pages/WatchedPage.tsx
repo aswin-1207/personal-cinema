@@ -75,16 +75,12 @@ export const WatchedPage: React.FC = () => {
     <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase">
-            <CheckCircle2 size={12} />
-            <span>ARCHIVE</span>
-          </div>
+        <div className="space-y-0.5">
           <h1 className="font-hero-title text-xl sm:text-2xl md:text-3xl text-[#F5F3EB]">
             Watched Movies
           </h1>
           <p className="text-xs text-[#9E9DA5]">
-            {movies.length} {movies.length === 1 ? 'film' : 'films'} screened in your cinema history
+            {movies.length} {movies.length === 1 ? 'film' : 'films'}
           </p>
         </div>
 
@@ -183,8 +179,8 @@ export const WatchedPage: React.FC = () => {
           ) : (
             <EmptyState
               icon={CheckCircle2}
-              title="YOUR SCREENING HISTORY IS WAITING"
-              description="Begin your cinematic journey by marking your first film as watched."
+              title="No watched movies yet"
+              description="Mark movies as watched to record your screening history."
               actionLabel="Browse Movies"
               onAction={() => setActiveTab('discover')}
             />

@@ -35,9 +35,7 @@ export const CollectionsPage: React.FC = () => {
     <div className="space-y-5 pb-4">
       {/* Header matching compact cinema layout */}
       <CinemaHeader
-        badge="VAULT"
         title="Collections"
-        subtitle={`${collections.length} ${collections.length === 1 ? 'curated list' : 'curated lists'}`}
         action={
           <div className="flex items-center gap-2">
             <button

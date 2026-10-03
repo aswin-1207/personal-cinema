@@ -76,17 +76,13 @@ export const WatchlistPage: React.FC = () => {
     <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase">
-            <Bookmark size={12} />
-            <span>QUEUE</span>
-          </div>
+        <div className="space-y-0.5">
           <h1 className="font-hero-title text-xl sm:text-2xl md:text-3xl text-[#F5F3EB]">
-            Your Watchlist
+            Watchlist
           </h1>
           <p className="text-xs text-[#9E9DA5]">
-            {counts.all} {counts.all === 1 ? 'film' : 'films'} in your watch stream
-            {counts.watching > 0 ? ` (${counts.watching} currently in progress)` : ''}
+            {counts.all} {counts.all === 1 ? 'film' : 'films'}
+            {counts.watching > 0 ? ` · ${counts.watching} watching` : ''}
           </p>
         </div>
 
@@ -223,17 +219,17 @@ export const WatchlistPage: React.FC = () => {
           ) : statusFilter === 'watching' ? (
             <EmptyState
               icon={PlayCircle}
-              title="NO FILMS CURRENTLY IN PROGRESS"
-              description="Mark a movie as 'Watching' to track what you are actively viewing."
-              actionLabel="View Want to Watch"
+              title="No movies currently watching"
+              description="Mark a movie as watching to track active screenings."
+              actionLabel="View Watchlist"
               onAction={() => setStatusFilter('want_to_watch')}
             />
           ) : (
             <EmptyState
               icon={Bookmark}
-              title="YOUR WATCHLIST IS WAITING"
-              description="Discover extraordinary films and queue them for your upcoming screenings."
-              actionLabel="Explore Discover"
+              title="Your watchlist is empty"
+              description="Add movies from Discover to track what you want to watch."
+              actionLabel="Explore Movies"
               onAction={() => setActiveTab('discover')}
             />
           )}

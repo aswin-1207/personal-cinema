@@ -96,8 +96,8 @@ export const CinemaShell: React.FC<CinemaShellProps> = ({
         <CinemaMobileNav />
 
         {/* Main Cinema Content Area (Single Primary Vertical Scroll Container) */}
-        <main className="flex-1 min-w-0 md:pl-[240px] w-full relative z-10 pb-[calc(env(safe-area-inset-bottom,0px)+100px)] md:pb-16">
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 w-full">
+        <main className="flex-1 min-w-0 md:pl-[var(--cinema-sidebar-width)] w-full relative z-10 pb-[var(--cinema-bottom-clearance)] md:pb-16">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 md:px-8 pt-[max(var(--cinema-top-clearance),1rem)] sm:pt-[max(var(--cinema-top-clearance),1.5rem)] md:pt-8 w-full">
             {selectedCollectionId ? (
               renderCollectionDetail(selectedCollectionId)
             ) : (

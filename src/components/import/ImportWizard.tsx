@@ -527,9 +527,8 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
               <h4 className="text-[#F5F3EB] font-semibold text-sm sm:text-base mb-1">
                 {selectedFile ? selectedFile.name : 'Select or drop your movie file here'}
               </h4>
-              <p className="text-[11px] sm:text-xs text-[#9E9DA5] max-w-sm">
-                Supports CSV spreadsheets, Excel workbooks (.xlsx), and plain text lists (.txt).
-                Automatically detects titles, release years, watch states, and ratings.
+              <p className="text-[11px] text-[#9E9DA5]">
+                CSV, XLSX, or TXT
               </p>
               {selectedFile && (
                 <div className="mt-2.5 px-3 py-1 rounded-full bg-[#E0AD52]/20 text-[#E0AD52] text-xs font-semibold border border-[#E0AD52]/30">
@@ -540,7 +539,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           ) : (
             <div>
               <label className="block text-[11px] uppercase tracking-wider text-[#9E9DA5] mb-1.5 font-semibold">
-                Paste movie titles (one per line, e.g. "Inception (2010) - Watched [9/10]")
+                Movie Titles (one per line)
               </label>
               <textarea
                 value={clipboardText}
@@ -599,10 +598,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           <div className="flex items-center gap-3">
             <Layers size={22} className="text-[#E0AD52]" />
             <div>
-              <h3 className="font-semibold text-[#F5F3EB] text-sm sm:text-base">Select Sheet to Import</h3>
-              <p className="text-xs text-[#9E9DA5]">
-                This workbook contains multiple sheets. Choose which sheet to scan.
-              </p>
+              <h3 className="font-semibold text-[#F5F3EB] text-sm sm:text-base">Select Sheet</h3>
             </div>
           </div>
 
@@ -618,7 +614,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
                 }`}
               >
                 <div className="font-bold text-[#F5F3EB] text-sm">{sh.name}</div>
-                <div className="text-xs text-[#9E9DA5] mt-1">Approx. {sh.rowCount} rows</div>
+                <div className="text-xs text-[#9E9DA5] mt-1">{sh.rowCount} rows</div>
               </div>
             ))}
           </div>
@@ -631,10 +627,7 @@ export const ImportWizard: React.FC<ImportWizardProps> = ({
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={20} className="text-[#E0AD52]" />
             <div>
-              <h3 className="font-semibold text-[#F5F3EB] text-sm sm:text-base">Configure Column Mapping</h3>
-              <p className="text-xs text-[#9E9DA5]">
-                Verify or assign columns to MyCinema fields. Exactly one column must map to Movie Title.
-              </p>
+              <h3 className="font-semibold text-[#F5F3EB] text-sm sm:text-base">Column Mapping</h3>
             </div>
           </div>
 
