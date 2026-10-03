@@ -77,6 +77,28 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
   const [isReviewShareOpen, setIsReviewShareOpen] = useState(false);
   const [revealSpoilers, setRevealSpoilers] = useState(false);
 
+  // Lock background scroll while MovieDetail is open and support popstate/escape
+  useEffect(() => {
+    ScrollLockManager.lock();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    const handlePopState = () => {
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      ScrollLockManager.unlock();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -179,28 +201,6 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     const colList = await Promise.all(colIds.map((id) => CollectionRepository.getById(id)));
     setMemberCollections(colList.filter((c): c is Collection => Boolean(c)));
   };
-
-  // Lock background scroll while MovieDetail is open and support popstate/escape
-  useEffect(() => {
-    ScrollLockManager.lock();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-
-    const handlePopState = () => {
-      onClose();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      ScrollLockManager.unlock();
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#09090B] animate-cinema-fade">
