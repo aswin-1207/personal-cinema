@@ -38,6 +38,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
 
   const canNative = ShareService.canNativeShare();
 
+  // Private fields are opt-in per share: reset them every time the sheet opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    setIncludeStatus(false);
+    setIncludeRating(false);
+    setIncludeReview(false);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
