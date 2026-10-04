@@ -42,9 +42,9 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
 
   const getShareText = () => {
     const isComp = collectionData.progress.isComplete;
-    let text = `Check out "${collectionData.collection.name}" on MyCinema.`;
+    let text = `Check out the collection "${collectionData.collection.name}" on MyCinema.`;
     if (isComp) {
-      text += ` Completed 100% (${collectionData.progress.total}/${collectionData.progress.total} films)!`;
+      text += ` Completed 100% (${collectionData.progress.total}/${collectionData.progress.total} titles)!`;
     } else {
       text += ` Progress: ${collectionData.progress.watched}/${collectionData.progress.total} watched (${collectionData.progress.percent}%).`;
     }

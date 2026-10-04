@@ -52,7 +52,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   }, [isOpen, movie, userData, style, includeStatus, includeRating, includeReview]);
 
   const getShareText = () => {
-    let text = `Check out "${movie.title}" on MyCinema.`;
+    const typeLabel = movie.mediaType === 'tv' ? 'series' : 'movie';
+    let text = `Check out the ${typeLabel} "${movie.title}" on MyCinema.`;
     if (includeRating && userData?.personalRating) {
       text += ` I rated it ${userData.personalRating.toFixed(1)} / 5 stars.`;
     } else if (includeStatus && userData?.status) {
