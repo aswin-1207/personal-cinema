@@ -9,8 +9,6 @@ import {
   Check,
   CheckCircle2,
   Film,
-  MessageCircle,
-  Send,
   Mail,
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
@@ -44,9 +42,9 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
 
   const getShareText = () => {
     const isComp = collectionData.progress.isComplete;
-    let text = `Check out "${collectionData.collection.name}" on MyCinema.`;
+    let text = `Check out the collection "${collectionData.collection.name}" on MyCinema.`;
     if (isComp) {
-      text += ` Completed 100% (${collectionData.progress.total}/${collectionData.progress.total} films)!`;
+      text += ` Completed 100% (${collectionData.progress.total}/${collectionData.progress.total} titles)!`;
     } else {
       text += ` Progress: ${collectionData.progress.watched}/${collectionData.progress.total} watched (${collectionData.progress.percent}%).`;
     }
@@ -198,7 +196,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
               <BrandLogo variant="symbol" size={13} alt="MYCINEMA" />
               <span>MYCINEMA</span>
             </div>
-            <span>Curated Journey</span>
+            <span>Collection</span>
           </div>
         </div>
 
@@ -232,27 +230,7 @@ export const CollectionShareModal: React.FC<CollectionShareModalProps> = ({
 
           {/* Direct Fallback Links */}
           <div className="flex items-center justify-center gap-2 pt-1">
-            <a
-              href={ShareService.getWhatsAppUrl(getShareText(), shareUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-emerald-950/40 hover:text-emerald-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-              title="Share via WhatsApp"
-            >
-              <MessageCircle size={14} />
-              <span>WhatsApp</span>
-            </a>
 
-            <a
-              href={ShareService.getTelegramUrl(getShareText(), shareUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-sky-950/40 hover:text-sky-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-              title="Share via Telegram"
-            >
-              <Send size={14} />
-              <span>Telegram</span>
-            </a>
 
             <a
               href={ShareService.getEmailUrl(

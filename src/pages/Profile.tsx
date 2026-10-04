@@ -1,414 +1,238 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ChevronRight, DatabaseBackup, FileUp, Heart, Layers, PenLine, Trash2, Volume2, Vibrate, Sparkles } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { BackupCenterModal } from '../components/backup/BackupCenterModal';
 import { ImportWizard } from '../components/import/ImportWizard';
 import { Modal } from '../components/common/Modal';
-import { CinemaButton } from '../components/common/CinemaButton';
-import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
-import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
-import { CinemaHeader } from '../components/ui/CinemaHeader';
-import { ReviewRepository } from '../db/repositories/reviewRepository';
-import { BrandLogo } from '../components/common/BrandLogo';
-import {
-  Database,
-  Upload,
-  Volume2,
-  Vibrate,
-  Sliders,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  EyeOff,
-  KeyRound,
-  AlertTriangle,
-  BookOpen,
-} from 'lucide-react';
+import { UserMovieRepository } from '../db/repositories/userMovieRepository';
+import { CollectionRepository } from '../db/repositories/collectionRepository';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Button } from '../components/ui/Button';
+import { getInitials } from '../components/ui/ProfileButton';
+import { UserPreferences } from '../types/backup';
+
+const Toggle: React.FC<{
+  label: string;
+  description?: string;
+  icon: React.ReactNode;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}> = ({ label, description, icon, checked, onChange }) => (
+  <label className="flex items-center gap-3 min-h-[60px] px-4 cursor-pointer">
+    <span className="w-9 h-9 rounded-xl bg-surface-2 flex items-center justify-center text-muted shrink-0" aria-hidden="true">
+      {icon}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block text-[14px] font-semibold text-text">{label}</span>
+      {description && <span className="block text-[12px] text-muted">{description}</span>}
+    </span>
+    <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
+    <span
+      className="relative w-11 h-6 rounded-full bg-line-strong transition-colors peer-checked:bg-gold peer-focus-visible:ring-2 peer-focus-visible:ring-gold peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:rounded-full after:bg-text after:transition-transform peer-checked:after:translate-x-5"
+      aria-hidden="true"
+    />
+  </label>
+);
+
+const RowButton: React.FC<{ icon: React.ReactNode; label: string; description?: string; onClick: () => void; danger?: boolean }> = ({
+  icon,
+  label,
+  description,
+  onClick,
+  danger,
+}) => (
+  <button type="button" onClick={onClick} className="w-full flex items-center gap-3 min-h-[60px] px-4 text-left hover:bg-white/[0.03]">
+    <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${danger ? 'bg-[#F0848A]/10 text-[#F0848A]' : 'bg-surface-2 text-gold'}`} aria-hidden="true">
+      {icon}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className={`block text-[14px] font-semibold ${danger ? 'text-[#F0848A]' : 'text-text'}`}>{label}</span>
+      {description && <span className="block text-[12px] text-muted">{description}</span>}
+    </span>
+    <ChevronRight size={16} className="text-subtle" aria-hidden="true" />
+  </button>
+);
+
+const Group: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <section className="space-y-2" aria-label={title}>
+    <h2 className="font-caps-label text-muted px-1">{title}</h2>
+    <div className="rounded-2xl bg-surface border border-line divide-y divide-line overflow-hidden">{children}</div>
+  </section>
+);
 
 export const Profile: React.FC = () => {
   const { preferences, updatePreference, notifyDataChanged, showToast, setActiveTab, dataVersion } = useCinema();
-
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
-
-  // Settings form states
+  const [isClearOpen, setIsClearOpen] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [displayName, setDisplayName] = useState(preferences.displayName || '');
-  const [isSavingName, setIsSavingName] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+  const [summary, setSummary] = useState({ titles: 0, favorites: 0, reviews: 0, collections: 0 });
 
-  // TMDB advanced states
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [tmdbApiKey, setTmdbApiKey] = useState(preferences.tmdbApiKey || '');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [diagnostics, setDiagnostics] = useState<TMDBDiagnostics | null>(null);
-  const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
-
-  const handleRunDiagnostics = async () => {
-    setIsRunningDiagnostics(true);
-    try {
-      const res = await tmdbService.runDiagnostics();
-      setDiagnostics(res);
-      if (res.isConnected) {
-        showToast('TMDB Connection: OK (200)');
-      } else {
-        showToast(`TMDB Connection: ${res.lastError}`);
-      }
-    } finally {
-      setIsRunningDiagnostics(false);
-    }
-  };
+  useEffect(() => setDisplayName(preferences.displayName || ''), [preferences.displayName]);
 
   useEffect(() => {
-    setDisplayName(preferences.displayName || '');
-    setTmdbApiKey(preferences.tmdbApiKey || '');
-  }, [preferences]);
-
-  const [journalCount, setJournalCount] = useState<number>(0);
-
-  useEffect(() => {
-    ReviewRepository.getAllJournalEntries()
-      .then((entries) => setJournalCount(entries.length))
-      .catch((err) => console.error('Failed to load journal count:', err));
+    let alive = true;
+    Promise.all([UserMovieRepository.getAll(), CollectionRepository.getAll()])
+      .then(([rows, cols]) => {
+        if (!alive) return;
+        const tracked = rows.filter((r) => r.status && r.status !== 'none');
+        setSummary({
+          titles: tracked.length,
+          favorites: rows.filter((r) => r.isFavorite).length,
+          reviews: rows.filter((r) => r.review?.trim()).length,
+          collections: cols.length,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, [dataVersion]);
 
-  const handleSaveDisplayName = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (displayName.trim()) {
-      setIsSavingName(true);
+  const nameDirty = displayName.trim() !== (preferences.displayName || '').trim();
+
+  const saveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nameDirty) return;
+    setSavingName(true);
+    try {
       await updatePreference('displayName', displayName.trim());
-      setIsSavingName(false);
-      showToast('Display name updated.');
+      showToast('Name saved');
+    } finally {
+      setSavingName(false);
     }
   };
 
-  const handleSaveTmdbKey = async () => {
-    await updatePreference('tmdbApiKey', tmdbApiKey.trim());
-    showToast(tmdbApiKey.trim() ? 'Personal TMDB key updated.' : 'Using default built-in TMDB key.');
+  const setPref = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => updatePreference(key, value);
+
+  const clearAll = async () => {
+    setClearing(true);
+    try {
+      await clearAllLocalData();
+      notifyDataChanged();
+      setIsClearOpen(false);
+      showToast('All data on this device was erased');
+    } catch {
+      showToast("Couldn't erase data. Please try again.");
+    } finally {
+      setClearing(false);
+    }
   };
 
-  const handleResetTmdbKey = async () => {
-    setTmdbApiKey('');
-    await updatePreference('tmdbApiKey', '');
-    showToast('Reset to default TMDB configuration.');
-  };
-
-  const handleConfirmClear = async () => {
-    setIsConfirmClearOpen(false);
-    await clearAllLocalData();
-    notifyDataChanged();
-    showToast('All local cinema data wiped.');
-  };
+  const lastBackup = preferences.lastBackupDate
+    ? new Date(preferences.lastBackupDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade max-w-3xl mx-auto">
-      {/* Header */}
-      <CinemaHeader
-        title="Profile"
-      />
+    <div className="space-y-6 pb-6 max-w-2xl">
+      <PageHeader title="My Cinema" showProfile={false} />
 
-      {/* Account / User Identity Area */}
-      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#1B1B22] border border-[#E0AD52]/30 flex items-center justify-center font-bold text-sm text-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.15)] flex-shrink-0">
-            {displayName ? displayName.substring(0, 2).toUpperCase() : 'MC'}
-          </div>
-          <div className="min-w-0">
-            <div className="font-bold text-sm sm:text-base text-[#F5F3EB] tracking-wide uppercase truncate">
-              {displayName || 'Film Collector'}
-            </div>
-          </div>
-        </div>
-
-        <form onSubmit={handleSaveDisplayName} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Display name"
-            className="cinema-input text-xs py-1.5 px-2.5 max-w-[130px] sm:max-w-[160px] bg-[#1B1B22]"
-          />
-          <CinemaButton
-            type="submit"
-            variant="secondary"
-            size="sm"
-            isLoading={isSavingName}
+      <section className="rounded-[20px] bg-surface border border-line p-4 sm:p-5">
+        <div className="flex items-center gap-4">
+          <span
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-gold to-[#9B6B1E] text-ink text-[22px] font-bold flex items-center justify-center shrink-0"
+            aria-hidden="true"
           >
-            Save
-          </CinemaButton>
-        </form>
-      </div>
-
-      {/* FILM JOURNEY */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Film Journey
-        </h2>
-        <div className="rounded-2xl bg-[#131319] border border-[#E0AD52]/20 hover:border-[#E0AD52]/40 transition-colors overflow-hidden">
-          <button
-            onClick={() => {
-              setActiveTab('reviews');
-              window.location.hash = '#reviews';
-            }}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/20 transition-colors">
-                <BookOpen size={17} className="text-[#E0AD52]" />
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors flex items-center gap-2">
-                <span>Film Journal & Reflections</span>
-                {journalCount > 0 && (
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30">
-                    {journalCount} {journalCount === 1 ? 'Film' : 'Films'}
-                  </span>
-                )}
-              </div>
+            {getInitials(preferences.displayName)}
+          </span>
+          <form onSubmit={saveName} className="min-w-0 flex-1 flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <label htmlFor="display-name" className="block text-[12px] text-muted mb-1">
+                Display name
+              </label>
+              <input
+                id="display-name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={40}
+                autoComplete="nickname"
+                placeholder="Your name"
+                className="cinema-input w-full"
+              />
             </div>
-            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
-              ›
-            </span>
-          </button>
+            {nameDirty && (
+              <Button type="submit" size="sm" isLoading={savingName} className="min-h-11">
+                Save
+              </Button>
+            )}
+          </form>
         </div>
+        <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
+          {[
+            ['Titles', summary.titles],
+            ['Favorites', summary.favorites],
+            ['Reviews', summary.reviews],
+            ['Collections', summary.collections],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-xl bg-surface-2 py-2">
+              <dd className="text-[17px] font-bold text-text tabular-nums">{value}</dd>
+              <dt className="text-[10.5px] text-muted">{label}</dt>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      {/* COLLECTIONS SHORTCUT */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Collections
-        </h2>
-        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] hover:border-white/20 transition-colors overflow-hidden">
-          <button
-            onClick={() => setActiveTab('collections')}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-white/10 transition-colors">
-                <Database size={17} className="text-[#E0AD52]" />
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
-                <span>Curated Universes & Lists</span>
-              </div>
-            </div>
-            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
-              ›
-            </span>
-          </button>
-        </div>
-      </section>
+      <Group title="Your cinema">
+        <RowButton icon={<PenLine size={17} />} label="Reviews" description="Everything you have written" onClick={() => setActiveTab('reviews')} />
+        <RowButton icon={<Heart size={17} />} label="Favorites" onClick={() => setActiveTab('watched', 'favorites')} />
+        <RowButton icon={<Layers size={17} />} label="Collections" onClick={() => setActiveTab('collections')} />
+      </Group>
 
-      {/* PREFERENCES */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Preferences
-        </h2>
-        <div className="p-1 sm:p-1.5 rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04]">
-          <CinemaToggle
-            icon={<Volume2 size={16} className="text-[#E0AD52]" />}
-            label="Sound Effects"
-            checked={preferences.soundEnabled}
-            onChange={(checked) => updatePreference('soundEnabled', checked)}
-          />
+      <Group title="Data & backup">
+        <RowButton
+          icon={<DatabaseBackup size={17} />}
+          label="Backup & restore"
+          description={lastBackup ? `Last backup ${lastBackup}` : 'No backup yet'}
+          onClick={() => setIsBackupOpen(true)}
+        />
+        <RowButton icon={<FileUp size={17} />} label="Import a list" description="CSV, Excel or text file" onClick={() => setIsImportOpen(true)} />
+      </Group>
 
-          <CinemaToggle
-            icon={<Vibrate size={16} className="text-[#E0AD52]" />}
-            label="Haptic Feedback"
-            checked={preferences.hapticsEnabled}
-            onChange={(checked) => updatePreference('hapticsEnabled', checked)}
-          />
+      <Group title="Preferences">
+        <Toggle icon={<Volume2 size={17} />} label="Sound" checked={preferences.soundEnabled} onChange={(v) => setPref('soundEnabled', v)} />
+        <Toggle icon={<Vibrate size={17} />} label="Haptics" description="On supported phones" checked={preferences.hapticsEnabled} onChange={(v) => setPref('hapticsEnabled', v)} />
+        <Toggle icon={<Sparkles size={17} />} label="Reduce motion" checked={preferences.motionReduced} onChange={(v) => setPref('motionReduced', v)} />
+      </Group>
 
-          <CinemaToggle
-            icon={<Sliders size={16} className="text-[#E0AD52]" />}
-            label="Reduced Motion"
-            checked={preferences.motionReduced}
-            onChange={(checked) => updatePreference('motionReduced', checked)}
-          />
-        </div>
-      </section>
+      <Group title="Device">
+        <RowButton icon={<Trash2 size={17} />} label="Erase all data" description="Removes everything saved on this device" onClick={() => setIsClearOpen(true)} danger />
+      </Group>
 
-      {/* DATA & BACKUP */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Data & Backup
-        </h2>
-        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
-          <button
-            onClick={() => setIsBackupOpen(true)}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
-          >
-            <div className="flex items-center gap-3">
-              <Database size={16} className="text-[#E0AD52]" />
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Backup Center</div>
-            </div>
-            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
-          </button>
+      <p className="text-[11px] text-subtle text-center">Title data and images provided by TMDB.</p>
 
-          <button
-            onClick={() => setIsImportOpen(true)}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
-          >
-            <div className="flex items-center gap-3">
-              <Upload size={16} className="text-[#E0AD52]" />
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Import / Export</div>
-            </div>
-            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Advanced TMDB Configuration */}
-      <section className="rounded-2xl bg-[#131319]/70 border border-white/[0.06] overflow-hidden">
-        <button
-          onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-          className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left text-xs text-[#9E9DA5] hover:text-[#F5F3EB] hover:bg-white/[0.02] cursor-pointer transition-colors border-none bg-transparent"
-        >
-          <div className="flex items-center gap-2 font-semibold">
-            <KeyRound size={15} className="text-[#E0AD52]" />
-            <span>TMDB Key Configuration</span>
-          </div>
-          {isAdvancedOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-
-        {isAdvancedOpen && (
-          <div className="p-4 pt-0 border-t border-white/[0.04] space-y-3 mt-3 animate-cinema-fade">
-            <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg">
-              <div className="relative flex-1">
-                <input
-                  type={showApiKey ? 'text' : 'password'}
-                  value={tmdbApiKey}
-                  onChange={(e) => setTmdbApiKey(e.target.value)}
-                  placeholder="Optional custom TMDB key"
-                  className="cinema-input text-xs font-mono pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] hover:text-[#F5F3EB] border-none bg-transparent cursor-pointer"
-                >
-                  {showApiKey ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-
-              <div className="flex gap-2">
-                <CinemaButton variant="secondary" size="sm" onClick={handleSaveTmdbKey}>
-                  Update
-                </CinemaButton>
-                {tmdbApiKey && (
-                  <CinemaButton variant="ghost" size="sm" onClick={handleResetTmdbKey}>
-                    Reset
-                  </CinemaButton>
-                )}
-              </div>
-            </div>
-
-            {/* Live Diagnostics Tool */}
-            <div className="pt-3 border-t border-white/[0.06] space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#F5F3EB]">Connection Diagnostics</span>
-                <CinemaButton
-                  variant="secondary"
-                  size="sm"
-                  isLoading={isRunningDiagnostics}
-                  onClick={handleRunDiagnostics}
-                >
-                  Test Connection
-                </CinemaButton>
-              </div>
-
-              {diagnostics && (
-                <div className="p-3 rounded-xl bg-[#09090B] border border-white/10 text-xs space-y-1.5 font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-[#9E9DA5]">Status:</span>
-                    <span className={diagnostics.isConnected ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                      {diagnostics.isConnected ? `CONNECTED (${diagnostics.latencyMs}ms)` : 'FAILED'}
-                    </span>
-                  </div>
-                  {diagnostics.lastError && (
-                    <div className="pt-1 text-rose-400 text-[11px]">
-                      Error: {diagnostics.lastError}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Danger Zone (Section 28 & 29) */}
-      <section className="p-4 rounded-2xl bg-[#B81C28]/10 border border-[#B81C28]/25 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-[#D94048]">
-          <AlertTriangle size={16} />
-          <h3 className="text-xs uppercase tracking-wider font-bold">Danger Zone</h3>
-        </div>
-
-        <CinemaButton
-          variant="danger"
-          size="sm"
-          icon={<Trash2 size={14} />}
-          onClick={() => setIsConfirmClearOpen(true)}
-        >
-          Clear Local Cinema
-        </CinemaButton>
-      </section>
-
-      {/* Brand & Version Info */}
-      <div className="pt-3 pb-2 flex flex-col items-center justify-center text-center gap-1.5 opacity-70">
-        <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
-        <p className="text-[10px] text-[#63626B] font-mono tracking-wider">
-          v1.0.0 • PRIVATE LOCAL-FIRST VAULT
-        </p>
-      </div>
-
-      {/* Clear Database Confirmation Modal (Section 29) */}
-      <Modal
-        isOpen={isConfirmClearOpen}
-        onClose={() => setIsConfirmClearOpen(false)}
-        title="Clear Local Cinema"
-        maxWidth="max-w-md"
-        footer={
-          <div className="flex items-center justify-end gap-3 w-full">
-            <CinemaButton
-              variant="ghost"
-              size="md"
-              onClick={() => setIsConfirmClearOpen(false)}
-            >
-              Cancel
-            </CinemaButton>
-            <CinemaButton
-              variant="danger"
-              size="md"
-              onClick={handleConfirmClear}
-            >
-              Clear Everything
-            </CinemaButton>
-          </div>
-        }
-      >
-        <div className="space-y-4 text-left">
-          <div className="p-3.5 rounded-xl bg-[#B81C28]/15 border border-[#B81C28]/30 flex items-start gap-3">
-            <AlertTriangle size={20} className="text-[#D94048] flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-[#F5F2F0] leading-relaxed">
-              This will permanently delete your movies, watched history, custom collections, personal ratings, and notes from IndexedDB.
-            </p>
-          </div>
-
-          <p className="text-xs text-[#9E9DA5]">
-            Consider creating a backup first via <strong>Backup Center</strong> before proceeding.
-          </p>
-        </div>
-      </Modal>
-
-      {/* Backup and Import Modals */}
       <BackupCenterModal isOpen={isBackupOpen} onClose={() => setIsBackupOpen(false)} />
       <ImportWizard
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onComplete={() => {
+          setIsImportOpen(false);
           notifyDataChanged();
-          showToast('Import completed successfully!');
         }}
       />
+      <Modal
+        isOpen={isClearOpen}
+        onClose={() => setIsClearOpen(false)}
+        title="Erase all data?"
+        maxWidth={420}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsClearOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" isLoading={clearing} onClick={clearAll}>
+              Erase
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[14px] text-muted">
+          Your watchlist, watch history, ratings, reviews and collections will be permanently removed from this device. Create a backup first if you
+          may want them back.
+        </p>
+      </Modal>
     </div>
   );
 };

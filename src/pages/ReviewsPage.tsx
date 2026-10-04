@@ -6,7 +6,7 @@ import { ReviewCard } from '../components/review/ReviewCard';
 import { ReviewDetailModal } from '../components/review/ReviewDetailModal';
 import { ReviewEditorModal } from '../components/review/ReviewEditorModal';
 import { ReviewShareModal } from '../components/review/ReviewShareModal';
-import { EmptyState } from '../components/common/EmptyState';
+import { EmptyState } from '../components/ui/States';
 import {
   BookOpen,
   Search,
@@ -132,7 +132,7 @@ export const ReviewsPage: React.FC = () => {
 
           <div className="flex items-center gap-2.5">
             <h1 className="font-bold text-xl sm:text-2xl text-[#F5F3EB] tracking-tight">
-              Film Journal
+              Reviews
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/20 font-mono">
               {counts.all}
@@ -223,21 +223,20 @@ export const ReviewsPage: React.FC = () => {
         <div className="py-20 flex flex-col items-center justify-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-[#E0AD52]/20 border-t-[#E0AD52] animate-spin" />
           <span className="text-xs uppercase tracking-widest text-[#63626B] font-mono">
-            Opening Film Journal
+            Loading reviews
           </span>
         </div>
       ) : filteredAndSortedItems.length === 0 ? (
         items.length === 0 ? (
           <EmptyState
-            icon={BookOpen}
-            title="NO REVIEWS YET"
-            description="Watch something. Then write what you thought."
-            actionLabel="EXPLORE MOVIES"
-            onAction={() => setActiveTab('discover')}
+            icon={<BookOpen size={20} />}
+            title="No reviews yet"
+            description="Rate or review a title from its detail page."
+            action={{ label: 'Discover', onClick: () => setActiveTab('discover') }}
           />
         ) : (
           <div className="p-8 rounded-2xl bg-[#131319]/60 border border-white/[0.06] text-center space-y-2">
-            <h3 className="font-semibold text-base text-[#F5F3EB]">No Matching Journal Entries</h3>
+            <h3 className="font-semibold text-base text-[#F5F3EB]">No matching reviews</h3>
             <p className="text-xs text-[#9E9DA5]">
               No entries matched your current search or filter.
             </p>

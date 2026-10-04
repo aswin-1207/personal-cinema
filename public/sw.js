@@ -1,5 +1,16 @@
-// MyCinema Production Service Worker v7 (New Brand Identity & Resilient App Shell)
-const CACHE_NAME = 'mycinema-v7';
+// MyCinema Production Service Worker
+// v9: purge static entries that may hold an HTML fallback instead of a JS/CSS chunk.
+const CACHE_NAME = 'mycinema-v9';
+// v2: older versions stored opaque responses, which Chrome pads to ~7 MB each.
+const IMAGE_CACHE_NAME = 'tmdb-images-v2';
+const IMAGE_CACHE_MAX_ENTRIES = 400;
+
+// Keep the poster cache bounded so it never exhausts the origin's storage quota.
+const trimImageCache = async (cache) => {
+  const keys = await cache.keys();
+  const excess = keys.length - IMAGE_CACHE_MAX_ENTRIES;
+  for (let i = 0; i < excess; i++) await cache.delete(keys[i]);
+};
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -31,7 +42,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME && key !== 'tmdb-images-cache') {
+          if (key !== CACHE_NAME && key !== IMAGE_CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -52,13 +63,16 @@ self.addEventListener('fetch', (event) => {
   // 2. Handle TMDB image caching (posters and backdrops)
   if (url.hostname === 'image.tmdb.org') {
     event.respondWith(
-      caches.open('tmdb-images-cache').then((cache) => {
+      caches.open(IMAGE_CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
-          return fetch(event.request)
+          // Request in CORS mode so the cached entry has its real size (opaque
+          // responses are quota-padded and would crowd out IndexedDB data).
+          return fetch(event.request.url, { mode: 'cors', credentials: 'omit' })
+            .catch(() => fetch(event.request))
             .then((networkResponse) => {
-              if (networkResponse.status === 200 || networkResponse.type === 'opaque') {
-                cache.put(event.request, networkResponse.clone());
+              if (networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+                cache.put(event.request, networkResponse.clone()).then(() => trimImageCache(cache)).catch(() => {});
               }
               return networkResponse;
             })
@@ -88,19 +102,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static assets (JS, CSS, fonts, icons): Cache first, fallback to network
+  // 4. Static assets (JS, CSS, fonts, icons): Cache first, fallback to network.
+  // SPA hosts answer missing hashed chunks with index.html (200), so an HTML body
+  // is never a valid static asset and must not be cached or served from cache.
   if (event.request.method === 'GET') {
+    const isHtml = (response) => (response.headers.get('content-type') || '').includes('text/html');
     event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        });
-      })
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached && !isHtml(cached)) return cached;
+          if (cached) cache.delete(event.request);
+          return fetch(event.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic' && !isHtml(networkResponse)) {
+              cache.put(event.request, networkResponse.clone()).catch(() => {});
+            }
+            return networkResponse;
+          });
+        })
+      )
     );
   }
 });

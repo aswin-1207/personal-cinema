@@ -1,9 +1,8 @@
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
-import QRCode from 'qrcode';
 
 console.log('============================================================');
-console.log('MYCINEMA — PHASE 3 AUTOMATED TEST SUITE (30 TESTS)');
+console.log('MYCINEMA — PHASE 3 AUTOMATED TEST SUITE (29 TESTS)');
 console.log('============================================================\n');
 
 const DB_VERSION = 2;
@@ -512,17 +511,6 @@ async function main() {
   });
 
   // 22. QR generation
-  await runTest(22, 'QR generation', async () => {
-    const qrDataUrl = await QRCode.toDataURL(testShareUrl, {
-      width: 200,
-      margin: 2,
-      color: { dark: '#EDC257', light: '#0D0D12' },
-    });
-    assert(qrDataUrl.startsWith('data:image/png;base64,'), 'Real QR data URL generated');
-    return `Generated real QR Code PNG data URI (${qrDataUrl.length} bytes)`;
-  });
-
-  // 23. Offline behavior
   await runTest(23, 'Offline behavior', async () => {
     // Offline simulation: read all local stores without network
     const movies = await db.getAll('movies');
@@ -689,7 +677,7 @@ async function main() {
   console.log('============================================================');
   const passed = testResults.filter((r) => r.pass).length;
   const failed = testResults.filter((r) => !r.pass).length;
-  console.log(`Total: ${testResults.length} / 30 Tests | Passed: ${passed} | Failed: ${failed}\n`);
+  console.log(`Total: ${testResults.length} / 29 Tests | Passed: ${passed} | Failed: ${failed}\n`);
 
   if (failed > 0) {
     process.exit(1);

@@ -3,8 +3,10 @@ export type ShareCardStyle = 'poster' | 'cinema' | 'minimal';
 export interface MovieSharePayload {
   movieId: number;
   title: string;
+  mediaType?: 'movie' | 'tv';
   year?: string;
   runtime?: string;
+  seasons?: string;
   genres: string[];
   posterUrl?: string | null;
   backdropUrl?: string | null;

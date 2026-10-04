@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check, Loader2, RotateCw } from 'lucide-react';
 import { Movie, UserMovie } from '../../types/movie';
 import { useCinema } from '../../context/CinemaContext';
 import { soundService } from '../../services/soundService';
@@ -9,59 +10,47 @@ interface WatchedButtonProps {
   userData?: UserMovie;
   style?: 'prominent' | 'pill' | 'icon';
   className?: string;
+  onChanged?: (watched: boolean) => void;
 }
 
-export const WatchedButton: React.FC<WatchedButtonProps> = ({
-  movie,
-  userData,
-  style = 'prominent',
-  className = '',
-}) => {
-  const { markAsWatched, unmarkWatched, preferences } = useCinema();
-  const [isPressing, setIsPressing] = useState(false);
-  const [isMorphing, setIsMorphing] = useState(false);
+/**
+ * Mark as Watched. The confirmation animation only plays after the IndexedDB
+ * write resolves; failures show a retry state instead of a fake success.
+ */
+export const WatchedButton: React.FC<WatchedButtonProps> = ({ movie, userData, style = 'prominent', className = '', onChanged }) => {
+  const { markAsWatched, unmarkWatched } = useCinema();
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   const isWatched = userData?.status === 'watched';
   const watchedDate = userData?.watchedAt
-    ? new Date(userData.watchedAt).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-      })
+    ? new Date(userData.watchedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null;
+  const title = movie.title || movie.name || 'this title';
 
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     if (isProcessing) return;
     setIsProcessing(true);
-    setIsPressing(true);
     setHasError(false);
-
-    setTimeout(() => setIsPressing(false), 160);
-
     try {
       if (isWatched) {
+        await unmarkWatched(movie.id);
         soundService.playSubtleClick();
         hapticsService.tap();
-        await unmarkWatched(movie.id);
+        onChanged?.(false);
       } else {
         await markAsWatched(movie);
         soundService.playWatchedChime();
         hapticsService.success();
-
-        // Trigger signature 750ms morph sequence ONLY upon successful DB write and if motion is allowed
-        const prefersReduced =
-          preferences?.motionReduced ||
-          (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
-        if (!prefersReduced) {
-          setIsMorphing(true);
-          setTimeout(() => setIsMorphing(false), 750);
-        }
+        setIsConfirming(true);
+        window.setTimeout(() => setIsConfirming(false), 700);
+        onChanged?.(true);
       }
     } catch (err) {
-      console.error('Failed to toggle watched state:', err);
+      console.error('Failed to update watched state:', err);
       soundService.playErrorTone();
       hapticsService.error();
       setHasError(true);
@@ -70,159 +59,69 @@ export const WatchedButton: React.FC<WatchedButtonProps> = ({
     }
   };
 
-  // 1. Icon Style (for cards, lists, rails)
+  const icon = hasError ? (
+    <RotateCw size={style === 'icon' ? 15 : 17} aria-hidden="true" />
+  ) : isProcessing ? (
+    <Loader2 size={style === 'icon' ? 15 : 17} className="animate-spin" aria-hidden="true" />
+  ) : (
+    <Check
+      size={style === 'icon' ? 16 : 18}
+      strokeWidth={3}
+      className={isConfirming ? 'animate-check-draw' : ''}
+      aria-hidden="true"
+    />
+  );
+
   if (style === 'icon') {
     return (
       <button
+        type="button"
         onClick={handleToggle}
         disabled={isProcessing}
-        title={
-          hasError
-            ? 'Failed to record — Tap to retry'
-            : isWatched
-            ? `Watched ${watchedDate ? `(${watchedDate})` : ''} — Click to unmark`
-            : 'Mark as Watched'
-        }
-        aria-label={hasError ? 'Retry marking as watched' : isWatched ? 'Mark as Unwatched' : 'Mark as Watched'}
         aria-pressed={isWatched}
-        className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-out border ${
+        aria-label={hasError ? `Retry marking ${title} as watched` : isWatched ? `Unmark ${title} as watched` : `Mark ${title} as watched`}
+        title={hasError ? "Couldn't save — tap to retry" : isWatched ? 'Watched — tap to unmark' : 'Mark as watched'}
+        className={`relative w-9 h-9 rounded-full flex items-center justify-center border transition-colors duration-200 before:absolute before:-inset-1 before:content-[''] ${
           hasError
-            ? 'bg-red-950/40 text-red-400 border-red-500/80 animate-pulse'
-            : isProcessing
-            ? 'bg-[#E0AD52]/20 text-[#E0AD52] border-[#E0AD52] animate-pulse'
+            ? 'bg-danger/20 text-[#F0848A] border-danger/60'
             : isWatched
-            ? 'bg-[#E0AD52]/20 text-[#E0AD52] border-[#E0AD52]/60 shadow-[0_0_14px_rgba(224,173,82,0.35)]'
-            : 'bg-[#131319]/90 text-[#F5F3EB] border-white/10 hover:border-[#E0AD52] hover:scale-105'
-        } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
+            ? 'bg-gold text-ink border-gold'
+            : 'bg-ink/75 text-text border-white/20 hover:border-gold hover:text-gold'
+        } ${isConfirming ? 'animate-watched-morph' : ''} ${className}`}
       >
-        {hasError ? (
-          <span className="text-xs font-bold leading-none">!</span>
-        ) : (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={isWatched ? 3 : 2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={isMorphing ? 'animate-check-draw' : ''}
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        )}
+        {icon}
       </button>
     );
   }
 
-  // 2. Pill Style (for headers, chips, modal bars)
-  if (style === 'pill') {
-    return (
-      <button
-        onClick={handleToggle}
-        disabled={isProcessing}
-        title={
-          hasError
-            ? 'Storage error — Tap to retry'
-            : isWatched
-            ? `Watched on ${watchedDate || 'archive'} — Click to undo`
-            : 'Mark as Watched'
-        }
-        aria-pressed={isWatched}
-        className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all duration-300 ease-out border backdrop-blur-md ${
-          hasError
-            ? 'bg-red-950/40 text-red-300 border-red-500/80'
-            : isProcessing
-            ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52] animate-pulse'
-            : isWatched
-            ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/50 shadow-[0_0_16px_rgba(224,173,82,0.25)]'
-            : 'bg-white/[0.06] text-[#9E9DA5] border-white/10 hover:text-[#F5F3EB] hover:border-[#E0AD52]/40 hover:bg-white/[0.1]'
-        } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
-      >
-        {hasError ? (
-          <span className="text-xs font-bold">!</span>
-        ) : (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={isMorphing ? 'animate-check-draw text-[#E0AD52]' : isWatched ? 'text-[#E0AD52]' : 'text-[#9E9DA5]'}
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        )}
-        <span>
-          {hasError
-            ? 'ERROR · RETRY'
-            : isProcessing
-            ? 'RECORDING...'
-            : isWatched
-            ? watchedDate
-              ? `✓ WATCHED · ${watchedDate}`
-              : '✓ WATCHED'
-            : 'MARK AS WATCHED'}
-        </span>
-      </button>
-    );
-  }
+  const label = hasError
+    ? "Couldn't save · Retry"
+    : isProcessing
+    ? 'Saving…'
+    : isWatched
+    ? watchedDate
+      ? `Watched · ${watchedDate}`
+      : 'Watched'
+    : 'Mark as Watched';
 
-  // 3. Prominent CTA (Movie Detail & Hero primary action)
+  const sizing = style === 'pill' ? 'min-h-10 px-4 text-[13px]' : 'min-h-12 px-6 text-[14px]';
   return (
     <button
+      type="button"
       onClick={handleToggle}
       disabled={isProcessing}
       aria-pressed={isWatched}
-      title={
+      title={isWatched ? 'Tap to unmark as watched' : undefined}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-bold uppercase tracking-[0.06em] whitespace-nowrap border transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.98] ${sizing} ${
         hasError
-          ? 'Storage error — Tap to retry'
+          ? 'bg-danger/15 text-[#F0848A] border-danger/50'
           : isWatched
-          ? `Watched on ${watchedDate || 'vault'} — Click to unmark`
-          : 'Mark as Watched'
-      }
-      className={`h-[48px] px-6 rounded-2xl font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 ease-out flex items-center justify-center gap-2.5 cursor-pointer border ${
-        hasError
-          ? 'bg-red-950/60 text-red-300 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.35)]'
-          : isProcessing
-          ? 'bg-[#131319] text-[#E0AD52] border-[#E0AD52] shadow-[0_0_20px_rgba(224,173,82,0.35)] animate-pulse'
-          : isWatched
-          ? 'bg-[#E0AD52]/15 text-[#E0AD52] border-[#E0AD52]/60 shadow-[0_0_24px_rgba(224,173,82,0.35)] hover:bg-[#E0AD52]/25'
-          : 'bg-[#E0AD52] hover:bg-[#D49B35] text-[#09090B] border-transparent shadow-[0_4px_24px_rgba(224,173,82,0.35)] hover:shadow-[0_6px_28px_rgba(224,173,82,0.5)] active:scale-[0.97]'
-      } ${isPressing ? 'scale-[0.97]' : isMorphing ? 'animate-watched-morph' : 'scale-100'} ${className}`}
+          ? 'bg-gold/12 text-gold border-gold/50 hover:bg-gold/20'
+          : 'bg-gold text-ink border-gold hover:bg-gold-strong shadow-[0_6px_20px_rgba(224,173,82,0.25)]'
+      } ${isConfirming ? 'animate-watched-morph' : ''} ${className}`}
     >
-      {hasError ? (
-        <span className="text-sm font-bold">!</span>
-      ) : (
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={isMorphing ? 'animate-check-draw text-[#E0AD52]' : ''}
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      )}
-      <span className="truncate">
-        {hasError
-          ? 'ERROR · RETRY'
-          : isProcessing
-          ? 'RECORDING...'
-          : isWatched
-          ? watchedDate
-            ? `✓ WATCHED · ${watchedDate}`
-            : '✓ WATCHED'
-          : 'MARK AS WATCHED'}
-      </span>
+      {icon}
+      <span className="truncate">{label}</span>
     </button>
   );
 };

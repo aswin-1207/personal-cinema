@@ -2,75 +2,80 @@ import React from 'react';
 import { CinemaProvider, useCinema } from './context/CinemaContext';
 import { CinemaShell } from './components/cinema/CinemaShell';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
-
-// Primary Landing Page (Synchronous for instant FCP)
+import { Spinner } from './components/ui/States';
 import { Home } from './pages/Home';
 
-// Code-split secondary pages for performance & reduced initial bundle
-const Discover = React.lazy(() => import('./pages/Discover').then((m) => ({ default: m.Discover })));
-const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage').then((m) => ({ default: m.WatchlistPage })));
-const WatchedPage = React.lazy(() => import('./pages/WatchedPage').then((m) => ({ default: m.WatchedPage })));
-const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage').then((m) => ({ default: m.CollectionsPage })));
-const CollectionDetail = React.lazy(() => import('./pages/CollectionDetail').then((m) => ({ default: m.CollectionDetail })));
-const MovieDetail = React.lazy(() => import('./pages/MovieDetail').then((m) => ({ default: m.MovieDetail })));
-const Profile = React.lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
-const ReviewsPage = React.lazy(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })));
+const CHUNK_RELOAD_KEY = 'mycinema_chunk_reload';
 
-const AtmosphericLoader: React.FC = () => (
-  <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] p-8 text-center animate-fade-in">
-    <div className="w-8 h-8 rounded-full border-2 border-gold/20 border-t-gold animate-spin mb-3" />
-    <span className="text-[11px] uppercase tracking-widest text-text-muted/70 font-mono">
-      Preparing Cinema Experience
-    </span>
-  </div>
-);
+// After a new deploy, an open tab can request a page chunk that no longer exists.
+// Reload once to pick up the current build instead of showing the error screen.
+function lazyPage<T extends React.ComponentType<any>>(loader: () => Promise<{ default: T }>) {
+  return React.lazy(() =>
+    loader()
+      .then((mod) => {
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        return mod;
+      })
+      .catch((err) => {
+        if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+          sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+        throw err;
+      })
+  );
+}
+
+const Discover = lazyPage(() => import('./pages/Discover').then((m) => ({ default: m.Discover })));
+const WatchlistPage = lazyPage(() => import('./pages/WatchlistPage').then((m) => ({ default: m.WatchlistPage })));
+const WatchedPage = lazyPage(() => import('./pages/WatchedPage').then((m) => ({ default: m.WatchedPage })));
+const CollectionsPage = lazyPage(() => import('./pages/CollectionsPage').then((m) => ({ default: m.CollectionsPage })));
+const CollectionDetail = lazyPage(() => import('./pages/CollectionDetail').then((m) => ({ default: m.CollectionDetail })));
+const MovieDetail = lazyPage(() => import('./pages/MovieDetail').then((m) => ({ default: m.MovieDetail })));
+const Profile = lazyPage(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const ReviewsPage = lazyPage(() => import('./pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })));
 
 const AppContent: React.FC = () => {
-  const {
-    activeTab,
-    selectedMovieId,
-    closeMovieDetail,
-    selectedCollectionId,
-    closeCollectionDetail,
-  } = useCinema();
+  const { activeTab, activeSub, selectedMovieId, closeMovieDetail, selectedCollectionId, closeCollectionDetail } = useCinema();
+
+  let page: React.ReactNode;
+  let key: string;
+  if (selectedMovieId != null) {
+    key = `movie-${selectedMovieId}`;
+    page = <MovieDetail movieId={selectedMovieId} onClose={closeMovieDetail} />;
+  } else if (selectedCollectionId) {
+    key = `collection-${selectedCollectionId}`;
+    page = <CollectionDetail collectionId={selectedCollectionId} onBack={closeCollectionDetail} />;
+  } else {
+    key = `${activeTab}-${activeSub ?? ''}`;
+    page =
+      activeTab === 'discover' ? <Discover /> :
+      activeTab === 'watchlist' ? <WatchlistPage /> :
+      activeTab === 'watched' ? <WatchedPage /> :
+      activeTab === 'collections' ? <CollectionsPage /> :
+      activeTab === 'profile' ? <Profile /> :
+      activeTab === 'reviews' ? <ReviewsPage /> :
+      <Home />;
+  }
 
   return (
-    <CinemaShell
-      selectedCollectionId={selectedCollectionId}
-      selectedMovieId={selectedMovieId}
-      renderMovieDetail={(movieId) => (
-        <React.Suspense fallback={<AtmosphericLoader />}>
-          <MovieDetail movieId={movieId} onClose={closeMovieDetail} />
-        </React.Suspense>
-      )}
-      renderCollectionDetail={(collectionId) => (
-        <React.Suspense fallback={<AtmosphericLoader />}>
-          <CollectionDetail collectionId={collectionId} onBack={closeCollectionDetail} />
-        </React.Suspense>
-      )}
-    >
-      <React.Suspense fallback={<AtmosphericLoader />}>
-        {activeTab === 'home' && <Home />}
-        {activeTab === 'discover' && <Discover />}
-        {activeTab === 'watchlist' && <WatchlistPage />}
-        {activeTab === 'watched' && <WatchedPage />}
-        {activeTab === 'collections' && <CollectionsPage />}
-        {activeTab === 'profile' && <Profile />}
-        {activeTab === 'reviews' && <ReviewsPage />}
+    <CinemaShell>
+      <React.Suspense fallback={<Spinner />}>
+        <div key={key} className="animate-cinema-fade">
+          {page}
+        </div>
       </React.Suspense>
     </CinemaShell>
   );
 };
 
-export const App: React.FC = () => {
-  return (
-    <ErrorBoundary>
-      <CinemaProvider>
-        <AppContent />
-      </CinemaProvider>
-    </ErrorBoundary>
-  );
-};
+export const App: React.FC = () => (
+  <ErrorBoundary>
+    <CinemaProvider>
+      <AppContent />
+    </CinemaProvider>
+  </ErrorBoundary>
+);
 
 export default App;
-

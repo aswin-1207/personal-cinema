@@ -147,7 +147,7 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Backup & Restore Center"
+      title="Backup & restore"
       maxWidth="max-w-3xl"
       footer={
         <button
@@ -177,14 +177,14 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
               )}
               <div>
                 <h4 className="font-semibold text-sm text-cinema-white">
-                  {health.isBackupOverdue ? 'Backup Recommended' : 'Cinema Data Secured'}
+                  {health.isBackupOverdue ? 'Backup recommended' : 'Backup up to date'}
                 </h4>
                 <p className="text-xs text-cinema-silver mt-0.5">
                   {health.lastBackupDate
                     ? `Last backed up ${health.daysSinceLastBackup} days ago (${new Date(
                         health.lastBackupDate
                       ).toLocaleDateString()})`
-                    : 'No backup has been created yet for your cinema.'}
+                    : 'No backup yet.'}
                 </p>
               </div>
             </div>
@@ -194,14 +194,14 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
               className="cinema-button-primary px-4 py-2 text-xs flex items-center gap-1.5 flex-shrink-0"
             >
               <Download size={14} />
-              <span>Back Up Now</span>
+              <span>Back up now</span>
             </button>
           </div>
         )}
 
         {/* Section 1: Full Export */}
         <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 flex items-center justify-between">
-          <h4 className="font-semibold text-cinema-white text-sm">Full Library JSON Backup</h4>
+          <h4 className="font-semibold text-cinema-white text-sm">Full backup</h4>
           <button
             onClick={handleDownloadFullBackup}
             className="cinema-button-secondary px-4 py-2 text-xs flex items-center gap-1.5 flex-shrink-0 ml-4"
@@ -211,9 +211,9 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
           </button>
         </div>
 
-        {/* Section 2: Restore from Backup */}
+        {/* Section 2: Restore from a backup */}
         <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 space-y-3">
-          <h4 className="font-semibold text-cinema-white text-sm">Restore from Backup</h4>
+          <h4 className="font-semibold text-cinema-white text-sm">Restore from a backup</h4>
 
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -375,7 +375,7 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
                     <div className="p-3 rounded-lg bg-cinema-crimson/20 border border-cinema-crimson text-cinema-white space-y-2">
                       <div className="font-bold flex items-center gap-1.5 text-cinema-crimson">
                         <AlertTriangle size={16} />
-                        <span>Warning: Permanent Overwrite</span>
+                        <span>This replaces everything on this device</span>
                       </div>
                       <p className="text-xs text-cinema-silver">
                         This action will erase all currently stored local movies, watched dates, and custom
@@ -425,23 +425,23 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
 
         {/* Section 3: Partial Exports */}
         <div className="bg-cinema-surface/40 p-4 rounded-xl border border-white/5 space-y-3">
-          <h4 className="font-semibold text-cinema-white text-sm">Partial Table Exports</h4>
+          <h4 className="font-semibold text-cinema-white text-sm">Export</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
               <div>
-                <span className="font-medium text-cinema-white text-xs block">Full Cinema Library</span>
-                <span className="text-[11px] text-cinema-subtle">All movies & statuses</span>
+                <span className="font-medium text-cinema-white text-xs block">All titles</span>
+                <span className="text-[11px] text-cinema-subtle">Movies, series & statuses</span>
               </div>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => ExportService.exportLibrary('csv')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   CSV
                 </button>
                 <button
                   onClick={() => ExportService.exportLibrary('json')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   JSON
                 </button>
@@ -450,19 +450,40 @@ export const BackupCenterModal: React.FC<BackupCenterModalProps> = ({ isOpen, on
 
             <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
               <div>
-                <span className="font-medium text-cinema-white text-xs block">Watched History</span>
+                <span className="font-medium text-cinema-white text-xs block">Watched</span>
                 <span className="text-[11px] text-cinema-subtle">Ratings, dates, reviews</span>
               </div>
               <div className="flex gap-1.5">
                 <button
                   onClick={() => ExportService.exportWatchHistory('csv')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   CSV
                 </button>
                 <button
                   onClick={() => ExportService.exportWatchHistory('json')}
-                  className="px-2.5 py-1 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-cinema-charcoal/50 border border-white/5 flex items-center justify-between">
+              <div>
+                <span className="font-medium text-cinema-white text-xs block">Reviews</span>
+                <span className="text-[11px] text-cinema-subtle">Ratings, reviews & notes</span>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => ExportService.exportReviews('csv')}
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
+                >
+                  CSV
+                </button>
+                <button
+                  onClick={() => ExportService.exportReviews('json')}
+                  className="min-h-9 px-3 rounded bg-cinema-surface hover:bg-cinema-gold hover:text-cinema-black text-cinema-silver text-[11px] border border-white/5 transition-colors"
                 >
                   JSON
                 </button>

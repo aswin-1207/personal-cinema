@@ -1,393 +1,242 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bookmark, Compass, Info, Star } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
-import { useCinemaShell } from '../components/cinema/CinemaShell';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
-import { CollectionRepository } from '../db/repositories/collectionRepository';
 import { tmdbService } from '../services/tmdbService';
-import { MovieWithUserData, Movie } from '../types/movie';
-import { Collection, CollectionProgress } from '../types/collection';
-import { CinemaHero } from '../components/cinema/CinemaHero';
-import { MoviePosterRail } from '../components/movie/MoviePosterRail';
-import { CollectionCard } from '../components/collection/CollectionCard';
-import { WatchedButton } from '../components/movie/WatchedButton';
-import { SEED_MOVIES } from '../data/seedCatalog';
-import { atmosphereService } from '../services/atmosphereService';
+import { Movie, MovieWithUserData, getMediaYear } from '../types/movie';
 import { BrandLogo } from '../components/common/BrandLogo';
-import {
-  ChevronRight,
-  TrendingUp,
-  User,
-} from 'lucide-react';
+import { ProfileButton } from '../components/ui/ProfileButton';
+import { MediaRail, RAIL_ITEM_WIDTH } from '../components/ui/MediaRail';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { CollectionCard } from '../components/ui/CollectionCard';
+import { EmptyState } from '../components/ui/States';
+import { Button } from '../components/ui/Button';
+import { WatchedButton } from '../components/movie/WatchedButton';
+import { mediaTypeLabel } from '../components/ui/MediaCard';
+import { useCollectionsOverview } from '../hooks/useCollectionsOverview';
+import { useUserDataMap } from '../hooks/useUserDataMap';
 
-export const Home: React.FC = () => {
-  const {
-    openMovieDetail,
-    openCollectionDetail,
-    setActiveTab,
-    dataVersion,
-  } = useCinema();
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+};
 
-  const { setAmbientColor } = useCinemaShell();
-
-  const [heroMovie, setHeroMovie] = useState<MovieWithUserData | null>(null);
-  const [continueWatching, setContinueWatching] = useState<MovieWithUserData[]>([]);
-  const [watchlist, setWatchlist] = useState<MovieWithUserData[]>([]);
-  const [recentlyWatched, setRecentlyWatched] = useState<MovieWithUserData[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [activeJourney, setActiveJourney] = useState<{
-    collection: Collection;
-    progress: CollectionProgress;
-    nextMovie: MovieWithUserData;
-  } | null>(null);
-  const [trendingMovies, setTrendingMovies] = useState<Movie[]>(() =>
-    SEED_MOVIES.filter((m) => m.seedCategory === 'trending').slice(0, 15)
-  );
-  const [popularMovies, setPopularMovies] = useState<Movie[]>(() =>
-    SEED_MOVIES.filter((m) => m.seedCategory === 'recent_popular').slice(0, 15)
-  );
-  const [tamilMovies, setTamilMovies] = useState<Movie[]>(() =>
-    SEED_MOVIES.filter((m) => m.originalLanguage === 'ta').slice(0, 15)
-  );
-  const [hollywoodMovies, setHollywoodMovies] = useState<Movie[]>(() =>
-    SEED_MOVIES.filter((m) => m.originalLanguage === 'en').slice(0, 15)
-  );
-  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>(() =>
-    [...SEED_MOVIES].sort((a, b) => (b.voteAverage || 0) - (a.voteAverage || 0)).slice(0, 15)
-  );
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadHomeData() {
-      try {
-        const allLibrary = await UserMovieRepository.getAllWithMovies();
-
-        const watchingList = allLibrary.filter((m) => m.userData?.status === 'watching');
-        const watchListItems = allLibrary.filter((m) => m.userData?.status === 'want_to_watch');
-        const watchedListItems = allLibrary
-          .filter((m) => m.userData?.status === 'watched')
-          .sort((a, b) => {
-            const dateA = a.userData?.watchedAt || '';
-            const dateB = b.userData?.watchedAt || '';
-            return dateB.localeCompare(dateA);
-          });
-
-        const allCollections = await CollectionRepository.getAll();
-
-        // Find active collection journey (collection with both watched and unwatched films)
-        let foundJourney: { collection: Collection; progress: CollectionProgress; nextMovie: MovieWithUserData } | null = null;
-        for (const col of allCollections) {
-          const colFull = await CollectionRepository.getWithMovies(col.id);
-          if (colFull && colFull.movies.length > 0) {
-            const unwatched = colFull.movies.filter((m) => m.userData?.status !== 'watched');
-            if (unwatched.length > 0 && colFull.progress.watched > 0) {
-              foundJourney = {
-                collection: colFull.collection,
-                progress: colFull.progress,
-                nextMovie: unwatched[0],
-              };
-              break;
-            }
-          }
-        }
-
-        // If no partially watched collection, look for any collection with movies
-        if (!foundJourney && allCollections.length > 0) {
-          for (const col of allCollections) {
-            const colFull = await CollectionRepository.getWithMovies(col.id);
-            if (colFull && colFull.movies.length > 0) {
-              const unwatched = colFull.movies.filter((m) => m.userData?.status !== 'watched');
-              if (unwatched.length > 0) {
-                foundJourney = {
-                  collection: colFull.collection,
-                  progress: colFull.progress,
-                  nextMovie: unwatched[0],
-                };
-                break;
-              }
-            }
-          }
-        }
-
-        // Choose Hero: first watching movie, or first watchlist item, or first library item
-        let chosenHero: MovieWithUserData | null = null;
-        if (watchingList.length > 0) {
-          chosenHero = watchingList[0];
-        } else if (watchListItems.length > 0) {
-          chosenHero = watchListItems[0];
-        } else if (allLibrary.length > 0) {
-          chosenHero = allLibrary[0];
-        }
-
-        // Fallback hero if user library is empty: use first seed movie immediately
-        const initialHero = chosenHero || (SEED_MOVIES.length > 0 ? { movie: SEED_MOVIES[0] } : null);
-
-        // Render local state immediately
-        if (isMounted) {
-          setHeroMovie(initialHero);
-          setContinueWatching(watchingList);
-          setWatchlist(watchListItems);
-          setRecentlyWatched(watchedListItems);
-          setCollections(allCollections);
-          setActiveJourney(foundJourney);
-
-          if (initialHero?.movie) {
-            setAmbientColor(atmosphereService.getArtworkAtmosphere(initialHero.movie.backdropPath || initialHero.movie.posterPath));
-          }
-        }
-
-        // Fetch rich discovery feeds in background
-        Promise.allSettled([
-          tmdbService.getTrending('week'),
-          tmdbService.getPopular(1),
-          tmdbService.discover({ withOriginalLanguage: 'ta', sortBy: 'popularity.desc' }),
-          tmdbService.discover({ withOriginCountry: 'US', sortBy: 'popularity.desc' }),
-          tmdbService.discover({ sortBy: 'vote_average.desc', voteCountGte: 1000 }),
-        ]).then(([trendingRes, popularRes, tamilRes, hollywoodRes, topRatedRes]) => {
-          if (!isMounted) return;
-          if (trendingRes.status === 'fulfilled' && trendingRes.value.length > 0) {
-            setTrendingMovies(trendingRes.value);
-            if (!chosenHero) {
-              setHeroMovie({ movie: trendingRes.value[0] });
-              setAmbientColor(atmosphereService.getArtworkAtmosphere(trendingRes.value[0].backdropPath || trendingRes.value[0].posterPath));
-            }
-          }
-          if (popularRes.status === 'fulfilled' && popularRes.value.length > 0) {
-            setPopularMovies(popularRes.value);
-          }
-          if (tamilRes.status === 'fulfilled' && tamilRes.value.length > 0) {
-            setTamilMovies(tamilRes.value);
-          }
-          if (hollywoodRes.status === 'fulfilled' && hollywoodRes.value.length > 0) {
-            setHollywoodMovies(hollywoodRes.value);
-          }
-          if (topRatedRes.status === 'fulfilled' && topRatedRes.value.length > 0) {
-            setTopRatedMovies(topRatedRes.value);
-          }
-        });
-      } catch (err) {
-        console.error('Failed to load home data:', err);
-      }
-    }
-
-    loadHomeData();
-    return () => {
-      isMounted = false;
-    };
-  }, [dataVersion, setAmbientColor]);
+/** Compact featured card: the single best answer to "what should I watch?". */
+const FeaturedCard: React.FC<{ label: string; item: MovieWithUserData }> = ({ label, item }) => {
+  const { openMovieDetail, addToWatchlist } = useCinema();
+  const { movie, userData } = item;
+  const backdrop = tmdbService.getBackdropUrl(movie.backdropPath, 'w780');
+  const poster = tmdbService.getPosterUrl(movie.posterPath, 'w342');
+  const status = userData?.status;
+  const meta = [getMediaYear(movie), mediaTypeLabel(movie), movie.genres?.[0]?.name].filter(Boolean).join(' · ');
 
   return (
-    <div className="pb-6 space-y-4 sm:space-y-6">
-      {/* Compact Top Bar */}
-      <div className="flex items-center justify-between pt-1 pb-1 border-b border-white/[0.06] animate-cinema-fade">
-        <BrandLogo variant="inside" size={26} alt="MYCINEMA" />
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('discover')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer min-h-[36px]"
-            title="Search & Discover"
-          >
-            <span>Search & Discover</span>
-            <ChevronRight size={13} />
-          </button>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-[#9E9DA5] hover:text-[#F5F3EB] transition-colors border border-white/[0.08] cursor-pointer md:hidden flex items-center justify-center min-w-[36px] min-h-[36px]"
-            title="Profile & Settings"
-            aria-label="Profile and settings"
-          >
-            <User size={16} />
-          </button>
+    <section aria-label={label} className="relative overflow-hidden rounded-[20px] border border-line bg-surface">
+      {backdrop && (
+        <img src={backdrop} alt="" {...({ fetchpriority: "high" } as object)} decoding="async" className="absolute inset-0 w-full h-full object-cover opacity-45" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/30" aria-hidden="true" />
+      <div className="relative flex gap-4 p-4 sm:p-5">
+        <button
+          type="button"
+          onClick={() => openMovieDetail(movie.id)}
+          className="shrink-0 w-[92px] sm:w-[120px] aspect-[2/3] rounded-xl overflow-hidden border border-white/10 bg-surface-2"
+          aria-label={`Open ${movie.title}`}
+        >
+          {poster && <img src={poster} alt="" className="w-full h-full object-cover" />}
+        </button>
+        <div className="min-w-0 flex-1 flex flex-col">
+          <span className="font-caps-label text-gold">{label}</span>
+          <h2 className="mt-1 text-[20px] sm:text-[24px] font-bold leading-tight text-text line-clamp-2">{movie.title}</h2>
+          <p className="mt-1 text-[12px] text-muted truncate">
+            {meta}
+            {movie.voteAverage > 0 && (
+              <span className="text-gold">
+                {' · '}
+                <Star size={11} className="inline -mt-0.5 fill-current" aria-hidden="true" /> {movie.voteAverage.toFixed(1)}
+              </span>
+            )}
+          </p>
+          {movie.overview && <p className="hidden sm:block mt-2 text-[13px] text-muted line-clamp-2 max-w-xl">{movie.overview}</p>}
+          <div className="mt-auto pt-3 flex flex-wrap gap-2">
+            <WatchedButton movie={movie} userData={userData} style="pill" />
+            {!status || status === 'none' ? (
+              <Button size="sm" variant="secondary" className="min-h-10" icon={<Bookmark size={15} aria-hidden="true" />} onClick={() => addToWatchlist(movie)}>
+                Watchlist
+              </Button>
+            ) : (
+              <Button size="sm" variant="secondary" className="min-h-10" icon={<Info size={15} aria-hidden="true" />} onClick={() => openMovieDetail(movie.id)}>
+                Details
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+    </section>
+  );
+};
 
-      {/* Compact Cinema Hero */}
-      <CinemaHero
-        movieWithData={heroMovie}
-        onOpenDetails={(id) => openMovieDetail(id)}
-      />
+export const Home: React.FC = () => {
+  const { preferences, dataVersion, setActiveTab, openCollectionDetail, isOnline } = useCinema();
+  const userDataMap = useUserDataMap(dataVersion);
+  const { overviews } = useCollectionsOverview(dataVersion);
 
-      {/* Rail: Currently Watching (Only when items exist) */}
-      {continueWatching.length > 0 && (
-        <MoviePosterRail
-          title="Currently Watching"
-          items={continueWatching}
-          onMovieClick={(m) => openMovieDetail(m.id)}
+  const [library, setLibrary] = useState<MovieWithUserData[] | null>(null);
+  const [trending, setTrending] = useState<Movie[]>([]);
+  const [trendingSeries, setTrendingSeries] = useState<Movie[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
+  const [discoverError, setDiscoverError] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    UserMovieRepository.getAllWithMovies()
+      .then((rows) => alive && setLibrary(rows))
+      .catch((err) => {
+        console.error('Failed to load library:', err);
+        if (alive) setLibrary([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [dataVersion]);
+
+  const loadDiscovery = useCallback(() => {
+    let alive = true;
+    setDiscoverLoading(true);
+    setDiscoverError(false);
+    Promise.allSettled([tmdbService.getTrending('week', undefined, 'movie'), tmdbService.getTrending('week', undefined, 'tv')]).then(
+      ([movies, series]) => {
+        if (!alive) return;
+        if (movies.status === 'fulfilled') setTrending(movies.value);
+        if (series.status === 'fulfilled') setTrendingSeries(series.value);
+        setDiscoverError(movies.status === 'rejected' && series.status === 'rejected');
+        setDiscoverLoading(false);
+      }
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => loadDiscovery(), [loadDiscovery]);
+
+  const sections = useMemo(() => {
+    const rows = library ?? [];
+    const byRecent = (key: 'watchingAt' | 'addedAt' | 'watchedAt') => (a: MovieWithUserData, b: MovieWithUserData) =>
+      (b.userData?.[key] || b.userData?.addedAt || '').localeCompare(a.userData?.[key] || a.userData?.addedAt || '');
+    const watching = rows.filter((r) => r.userData?.status === 'watching').sort(byRecent('watchingAt'));
+    const watchlist = rows.filter((r) => r.userData?.status === 'want_to_watch').sort(byRecent('addedAt'));
+    const watched = rows.filter((r) => r.userData?.status === 'watched').sort(byRecent('watchedAt'));
+    return { watching, watchlist, watched };
+  }, [library]);
+
+  const featured = useMemo((): { label: string; item: MovieWithUserData } | null => {
+    if (sections.watching[0]) return { label: 'Continue watching', item: sections.watching[0] };
+    if (sections.watchlist[0]) return { label: 'Up next from your watchlist', item: sections.watchlist[0] };
+    const pick = trending.find((m) => !userDataMap.get(m.id) || userDataMap.get(m.id)?.status === 'none');
+    return pick ? { label: 'Trending this week', item: { movie: pick, userData: userDataMap.get(pick.id) } } : null;
+  }, [sections, trending, userDataMap]);
+
+  const featuredId = featured?.item.movie.id;
+  const libraryIds = useMemo(() => new Set((library ?? []).map((r) => r.movie.id)), [library]);
+  const freshTrending = useMemo(
+    () => trending.filter((m) => m.id !== featuredId && !libraryIds.has(m.id)).slice(0, 18),
+    [trending, featuredId, libraryIds]
+  );
+  const freshSeries = useMemo(
+    () => trendingSeries.filter((m) => m.id !== featuredId && !libraryIds.has(m.id)).slice(0, 18),
+    [trendingSeries, featuredId, libraryIds]
+  );
+  const activeCollections = useMemo(
+    () => overviews.filter((o) => o.progress.total > 0).sort((a, b) => Number(a.progress.isComplete) - Number(b.progress.isComplete)).slice(0, 8),
+    [overviews]
+  );
+
+  const name = preferences.displayName?.trim().split(/\s+/)[0];
+  const libraryEmpty = library !== null && library.length === 0;
+
+  return (
+    <div className="space-y-7 sm:space-y-9 pb-4">
+      <header className="flex items-center justify-between gap-3 md:hidden -mt-1">
+        <BrandLogo variant="inside" size={24} alt="MyCinema" />
+        <ProfileButton className="-mr-1.5" />
+      </header>
+
+      <div className="space-y-4">
+        <h1 className="font-page-title">
+          {greeting()}
+          {name ? `, ${name}` : ''}.
+        </h1>
+        {featured ? (
+          <FeaturedCard label={featured.label} item={featured.item} />
+        ) : library === null || discoverLoading ? (
+          <div className="h-[178px] sm:h-[220px] rounded-[20px] cinema-skeleton" aria-hidden="true" />
+        ) : null}
+      </div>
+
+      {libraryEmpty && (
+        <EmptyState
+          compact
+          icon={<Compass size={20} />}
+          title="Your cinema is waiting"
+          description="Save a few titles to build your watchlist."
+          action={{ label: 'Discover', onClick: () => setActiveTab('discover') }}
         />
       )}
 
-      {/* Continue Your Journey: Active Collection Feature */}
-      {activeJourney && (
-        <section className="bg-gradient-to-r from-[#131319] to-[#0F0F14] border border-[#E0AD52]/30 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.7)] animate-cinema-rise">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-2.5 sm:mb-3">
-            <div>
-              <div className="flex items-center gap-1.5 text-[#E0AD52] text-[11px] font-semibold tracking-wider uppercase">
-                <TrendingUp size={13} />
-                <span>CONTINUE YOUR JOURNEY</span>
-              </div>
-              <h2 className="font-semibold text-base sm:text-lg text-[#F5F3EB] mt-0.5 break-words">
-                {activeJourney.collection.name}
-              </h2>
-            </div>
+      <MediaRail
+        title="Watching"
+        items={sections.watching.filter((r) => r.movie.id !== featuredId).map((r) => r.movie)}
+        userDataMap={userDataMap}
+        onViewAll={() => setActiveTab('watchlist', 'watching')}
+      />
 
-            <button
-              onClick={() => openCollectionDetail(activeJourney.collection.id)}
-              className="text-xs text-[#E0AD52] hover:underline flex items-center gap-1 font-semibold tracking-wide min-h-[44px] cursor-pointer bg-transparent border-none"
-            >
-              <span>View Collection</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
+      <MediaRail
+        title="Next in your watchlist"
+        items={sections.watchlist.filter((r) => r.movie.id !== featuredId).slice(0, 20).map((r) => r.movie)}
+        userDataMap={userDataMap}
+        onViewAll={() => setActiveTab('watchlist')}
+        priority
+      />
 
-          <div className="space-y-1 mb-3">
-            <div className="flex justify-between text-xs text-[#9E9DA5]">
-              <span>
-                {activeJourney.progress.watched} of {activeJourney.progress.total} watched
-              </span>
-              <span className="font-semibold text-[#E0AD52]">{activeJourney.progress.percent}%</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-[#09090B] overflow-hidden border border-white/5">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#E0AD52] to-[#D19830] transition-all duration-700 ease-out shadow-[0_0_10px_rgba(224,173,82,0.35)]"
-                style={{ width: `${activeJourney.progress.percent}%` }}
+      <MediaRail
+        title="Trending movies"
+        items={freshTrending}
+        userDataMap={userDataMap}
+        loading={discoverLoading}
+        error={discoverError}
+        offline={!isOnline}
+        onRetry={loadDiscovery}
+        onViewAll={() => setActiveTab('discover')}
+        hideWhenEmpty={!discoverLoading && !discoverError}
+      />
+
+      {activeCollections.length > 0 && (
+        <section aria-labelledby="home-collections">
+          <SectionHeader id="home-collections" title="Your collections" actionLabel="View all" onAction={() => setActiveTab('collections')} />
+          <div className="mt-2 flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory bleed-x rail-x pb-1">
+            {activeCollections.map((o) => (
+              <CollectionCard
+                key={o.collection.id}
+                overview={o}
+                onOpen={() => openCollectionDetail(o.collection.id)}
+                className="shrink-0 snap-start w-[80vw] max-w-[300px] sm:w-[300px]"
               />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 bg-[#09090B]/70 border border-white/[0.08] rounded-xl p-2.5 sm:p-3">
-            <div className="w-12 sm:w-14 aspect-[2/3] rounded-lg overflow-hidden bg-[#131319] flex-shrink-0 shadow-lg border border-[#E0AD52]/20">
-              {activeJourney.nextMovie.movie.posterPath ? (
-                <img
-                  src={tmdbService.getImageUrl(activeJourney.nextMovie.movie.posterPath, 'w185')}
-                  alt={activeJourney.nextMovie.movie.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[10px] text-[#63626B]">
-                  No Art
-                </div>
-              )}
-            </div>
-
-            <div className="flex-grow min-w-0 pr-2">
-              <div className="text-[10px] text-[#E0AD52] font-semibold uppercase tracking-wider">
-                NEXT IN COLLECTION
-              </div>
-              <h3
-                className="font-semibold text-xs sm:text-sm text-[#F5F3EB] line-clamp-2 break-words mt-0.5"
-                title={activeJourney.nextMovie.movie.title}
-              >
-                {activeJourney.nextMovie.movie.title}
-              </h3>
-              <p className="text-[11px] text-[#9E9DA5] mt-0.5">
-                {activeJourney.nextMovie.movie.releaseDate?.substring(0, 4)}{' '}
-                {activeJourney.nextMovie.movie.runtime ? `· ${activeJourney.nextMovie.movie.runtime}m` : ''}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <WatchedButton
-                movie={activeJourney.nextMovie.movie}
-                userData={activeJourney.nextMovie.userData}
-                style="icon"
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Rail: On Your Watchlist (if present) */}
-      {watchlist.length > 0 && (
-        <MoviePosterRail
-          title="On Your Watchlist"
-          actionLabel="View All"
-          onAction={() => setActiveTab('watchlist')}
-          items={watchlist}
-          onMovieClick={(m) => openMovieDetail(m.id)}
-        />
-      )}
-
-      {/* Rail: Trending Now */}
-      <MoviePosterRail
-        title="Trending Now"
-        actionLabel="Explore"
-        onAction={() => setActiveTab('discover')}
-        items={trendingMovies.map((m) => ({ movie: m }))}
-        onMovieClick={(m) => openMovieDetail(m.id)}
-      />
-
-      {/* Rail: Popular Films */}
-      <MoviePosterRail
-        title="Popular Films"
-        items={popularMovies.map((m) => ({ movie: m }))}
-        onMovieClick={(m) => openMovieDetail(m.id)}
-      />
-
-      {/* Rail: Tamil Cinema Spotlight */}
-      {tamilMovies.length > 0 && (
-        <MoviePosterRail
-          title="Tamil Cinema"
-          badge="Kollywood"
-          items={tamilMovies.map((m) => ({ movie: m }))}
-          onMovieClick={(m) => openMovieDetail(m.id)}
-        />
-      )}
-
-      {/* Rail: Hollywood Hits */}
-      {hollywoodMovies.length > 0 && (
-        <MoviePosterRail
-          title="Hollywood Hits"
-          badge="Hollywood"
-          items={hollywoodMovies.map((m) => ({ movie: m }))}
-          onMovieClick={(m) => openMovieDetail(m.id)}
-        />
-      )}
-
-      {/* Rail: Critically Acclaimed */}
-      <MoviePosterRail
-        title="Critically Acclaimed"
-        items={topRatedMovies.map((m) => ({ movie: m }))}
-        onMovieClick={(m) => openMovieDetail(m.id)}
-      />
-
-      {/* Curated Collections Rail */}
-      {collections.length > 0 && (
-        <section className="space-y-2.5">
-          <div className="flex items-end justify-between gap-4">
-            <h3 className="font-section-title text-[#F5F3EB]">Curated Collections</h3>
-            <button
-              onClick={() => setActiveTab('collections')}
-              className="cinema-button-ghost text-xs font-semibold flex items-center gap-1 text-[#E0AD52] hover:text-[#D49B35] p-0 cursor-pointer"
-            >
-              <span>All Collections</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2 pt-0.5 -mx-3.5 px-3.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8">
-            {collections.map((col) => (
-              <div key={col.id} className="w-56 sm:w-64 md:w-72 flex-shrink-0">
-                <CollectionCard
-                  collection={col}
-                  onClick={() => openCollectionDetail(col.id)}
-                />
-              </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* Rail: Recently Watched */}
-      {recentlyWatched.length > 0 && (
-        <MoviePosterRail
-          title="Recently Watched"
-          actionLabel="View Archive"
-          onAction={() => setActiveTab('watched')}
-          items={recentlyWatched}
-          onMovieClick={(m) => openMovieDetail(m.id)}
-        />
-      )}
+      <MediaRail title="Trending series" items={freshSeries} userDataMap={userDataMap} onViewAll={() => setActiveTab('discover', 'series')} />
+
+      <MediaRail
+        title="Recently watched"
+        items={sections.watched.slice(0, 18).map((r) => r.movie)}
+        userDataMap={userDataMap}
+        onViewAll={() => setActiveTab('watched')}
+      />
+
+      <span className={`hidden ${RAIL_ITEM_WIDTH}`} aria-hidden="true" />
     </div>
   );
 };

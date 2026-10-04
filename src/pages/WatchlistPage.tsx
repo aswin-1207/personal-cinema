@@ -1,259 +1,159 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Bookmark, Compass, Eye } from 'lucide-react';
 import { useCinema } from '../context/CinemaContext';
 import { UserMovieRepository } from '../db/repositories/userMovieRepository';
 import { MovieWithUserData } from '../types/movie';
-import { MoviePoster } from '../components/movie/MoviePoster';
-import { EmptyState } from '../components/common/EmptyState';
-import { Bookmark, Search, PlayCircle } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
+import { ChipGroup } from '../components/ui/ChipGroup';
+import { SearchBar } from '../components/ui/SearchBar';
+import { SortSelect } from '../components/ui/SortSelect';
+import { MediaCard } from '../components/ui/MediaCard';
+import { MediaGrid, MediaGridSkeleton } from '../components/ui/MediaGrid';
+import { EmptyState } from '../components/ui/States';
+import { MediaFilter, releaseKey, titleKey, useLibraryFilters } from '../hooks/useLibraryFilters';
+
+type Segment = 'want_to_watch' | 'watching';
+type SortKey = 'added' | 'release' | 'rating' | 'title';
 
 export const WatchlistPage: React.FC = () => {
-  const { openMovieDetail, setActiveTab, dataVersion } = useCinema();
-  const [movies, setMovies] = useState<MovieWithUserData[]>([]);
+  const { setActiveTab, activeSub, setActiveSub, dataVersion } = useCinema();
+  const [items, setItems] = useState<MovieWithUserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'want_to_watch' | 'watching'>('all');
-  const [sortBy, setSortBy] = useState<'added' | 'year' | 'rating' | 'title'>('added');
-  const [sortDesc, setSortDesc] = useState(true);
+  const [sort, setSort] = useState<SortKey>('added');
+  const segment: Segment = activeSub === 'watching' ? 'watching' : 'want_to_watch';
 
   useEffect(() => {
-    let isMounted = true;
-    UserMovieRepository.getWatchlistWithMovies().then((watchlistItems) => {
-      if (!isMounted) return;
-      setMovies(watchlistItems);
-      setLoading(false);
-    });
+    let alive = true;
+    UserMovieRepository.getWatchlistWithMovies()
+      .then((rows) => alive && setItems(rows))
+      .catch((err) => console.error('Failed to load watchlist:', err))
+      .finally(() => alive && setLoading(false));
     return () => {
-      isMounted = false;
+      alive = false;
     };
   }, [dataVersion]);
 
-  const counts = useMemo(() => {
-    const wantToWatch = movies.filter((m) => m.userData?.status === 'want_to_watch').length;
-    const watching = movies.filter((m) => m.userData?.status === 'watching').length;
-    return { all: movies.length, wantToWatch, watching };
-  }, [movies]);
+  const counts = useMemo(
+    () => ({
+      want_to_watch: items.filter((i) => i.userData?.status === 'want_to_watch').length,
+      watching: items.filter((i) => i.userData?.status === 'watching').length,
+    }),
+    [items]
+  );
 
-  const filteredAndSortedMovies = useMemo(() => {
-    let list = movies;
+  const segmentItems = useMemo(() => items.filter((i) => i.userData?.status === segment), [items, segment]);
+  const { query, setQuery, media, setMedia, mediaCounts, filtered } = useLibraryFilters(segmentItems);
 
-    if (statusFilter !== 'all') {
-      list = list.filter((item) => item.userData?.status === statusFilter);
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    switch (sort) {
+      case 'release':
+        return list.sort((a, b) => releaseKey(b).localeCompare(releaseKey(a)));
+      case 'rating':
+        return list.sort((a, b) => (b.movie.voteAverage || 0) - (a.movie.voteAverage || 0));
+      case 'title':
+        return list.sort((a, b) => titleKey(a).localeCompare(titleKey(b)));
+      default:
+        return list.sort((a, b) =>
+          (b.userData?.watchingAt || b.userData?.addedAt || '').localeCompare(a.userData?.watchingAt || a.userData?.addedAt || '')
+        );
     }
+  }, [filtered, sort]);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (item) =>
-          (item.movie.title && item.movie.title.toLowerCase().includes(q)) ||
-          (item.movie.name && item.movie.name.toLowerCase().includes(q)) ||
-          (item.movie.originalTitle && item.movie.originalTitle.toLowerCase().includes(q)) ||
-          (item.movie.originalName && item.movie.originalName.toLowerCase().includes(q))
-      );
-    }
-
-    return [...list].sort((a, b) => {
-      let comparison = 0;
-      switch (sortBy) {
-        case 'added': {
-          const dateA = a.userData?.watchingAt || a.userData?.addedAt || '';
-          const dateB = b.userData?.watchingAt || b.userData?.addedAt || '';
-          comparison = dateA.localeCompare(dateB);
-          break;
-        }
-        case 'year': {
-          const dateA = a.movie.releaseDate || a.movie.firstAirDate || '';
-          const dateB = b.movie.releaseDate || b.movie.firstAirDate || '';
-          comparison = dateA.localeCompare(dateB);
-          break;
-        }
-        case 'rating':
-          comparison = (a.movie.voteAverage || 0) - (b.movie.voteAverage || 0);
-          break;
-        case 'title': {
-          const tA = a.movie.title || a.movie.name || '';
-          const tB = b.movie.title || b.movie.name || '';
-          comparison = tA.localeCompare(tB);
-          break;
-        }
-      }
-      return sortDesc ? -comparison : comparison;
-    });
-  }, [movies, statusFilter, searchQuery, sortBy, sortDesc]);
+  const switchSegment = (s: Segment) => {
+    if (s !== segment) setActiveSub(s === 'watching' ? 'watching' : null);
+  };
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
-        <div className="space-y-0.5">
-          <h1 className="font-hero-title text-xl sm:text-2xl md:text-3xl text-[#F5F3EB]">
-            Watchlist
-          </h1>
-          <p className="text-xs text-[#9E9DA5]">
-            {counts.all} {counts.all === 1 ? 'title' : 'titles'}
-            {counts.watching > 0 ? ` · ${counts.watching} watching` : ''}
-          </p>
-        </div>
+    <div className="space-y-4 pb-4">
+      <PageHeader title="Watchlist" subtitle={loading ? undefined : `${counts.want_to_watch} to watch · ${counts.watching} watching`} />
 
-        {/* Search & Sort Controls */}
-        {movies.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Search Bar */}
-            <div className="relative flex-1 xs:flex-initial">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9E9DA5] pointer-events-none"
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search watchlist..."
-                className="bg-[#131319] border border-white/[0.08] focus:border-[#E0AD52]/50 text-xs text-[#F5F3EB] placeholder-[#63626B] rounded-xl pl-8 pr-3 py-2 w-full xs:w-44 sm:w-52 transition-all outline-none min-h-[38px]"
-              />
-            </div>
-
-            {/* Sort Toggle */}
-            <div className="flex items-center gap-1.5 bg-[#131319] border border-white/[0.08] rounded-xl p-1 text-xs">
-              <button
-                onClick={() => {
-                  if (sortBy === 'added') setSortDesc(!sortDesc);
-                  else {
-                    setSortBy('added');
-                    setSortDesc(true);
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer border-none transition-colors ${
-                  sortBy === 'added'
-                    ? 'bg-[#E0AD52] text-[#09090B]'
-                    : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
-                }`}
-              >
-                Date {sortBy === 'added' ? (sortDesc ? '↓' : '↑') : ''}
-              </button>
-              <button
-                onClick={() => {
-                  if (sortBy === 'rating') setSortDesc(!sortDesc);
-                  else {
-                    setSortBy('rating');
-                    setSortDesc(true);
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer border-none transition-colors ${
-                  sortBy === 'rating'
-                    ? 'bg-[#E0AD52] text-[#09090B]'
-                    : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
-                }`}
-              >
-                Rating {sortBy === 'rating' ? (sortDesc ? '↓' : '↑') : ''}
-              </button>
-              <button
-                onClick={() => {
-                  if (sortBy === 'title') setSortDesc(!sortDesc);
-                  else {
-                    setSortBy('title');
-                    setSortDesc(false);
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer border-none transition-colors ${
-                  sortBy === 'title'
-                    ? 'bg-[#E0AD52] text-[#09090B]'
-                    : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
-                }`}
-              >
-                Title {sortBy === 'title' ? (sortDesc ? '↓' : '↑') : ''}
-              </button>
-            </div>
-          </div>
-        )}
+      <div role="tablist" aria-label="Watchlist sections" className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-surface border border-line max-w-md">
+        {(
+          [
+            { id: 'want_to_watch', label: 'Want to Watch', icon: Bookmark },
+            { id: 'watching', label: 'Watching', icon: Eye },
+          ] as const
+        ).map((s) => {
+          const selected = segment === s.id;
+          const Icon = s.icon;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => switchSegment(s.id)}
+              className={`min-h-11 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold transition-colors ${
+                selected ? 'bg-gold text-ink' : 'text-muted hover:text-text'
+              }`}
+            >
+              <Icon size={15} aria-hidden="true" />
+              {s.label}
+              <span className={`tabular-nums text-[12px] ${selected ? 'text-ink/70' : 'text-subtle'}`}>{counts[s.id]}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filter Tabs / Pills */}
-      {movies.length > 0 && (
-        <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'all'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            All ({counts.all})
-          </button>
-          <button
-            onClick={() => setStatusFilter('want_to_watch')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'want_to_watch'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            Want to Watch ({counts.wantToWatch})
-          </button>
-          <button
-            onClick={() => setStatusFilter('watching')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'watching'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            Watching ({counts.watching})
-          </button>
-        </div>
-      )}
-
-      {/* Poster Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="aspect-[2/3] rounded-2xl bg-[#131319] animate-pulse" />
-          ))}
-        </div>
-      ) : filteredAndSortedMovies.length === 0 ? (
-        <div className="py-12 text-center">
-          {searchQuery ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[#9E9DA5]">
-                No films match "{searchQuery}".
-              </p>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="cinema-button-ghost text-xs text-[#E0AD52] cursor-pointer"
-              >
-                Clear Search
-              </button>
-            </div>
-          ) : statusFilter === 'watching' ? (
-            <EmptyState
-              icon={PlayCircle}
-              title="No movies currently watching"
-              description="Mark a movie as watching to track active screenings."
-              actionLabel="View Watchlist"
-              onAction={() => setStatusFilter('want_to_watch')}
-            />
-          ) : (
-            <EmptyState
-              icon={Bookmark}
-              title="Your watchlist is empty"
-              description="Add movies from Discover to track what you want to watch."
-              actionLabel="Explore Movies"
-              onAction={() => setActiveTab('discover')}
-            />
-          )}
-        </div>
+        <MediaGridSkeleton />
+      ) : segmentItems.length === 0 ? (
+        segment === 'watching' ? (
+          <EmptyState
+            icon={<Eye size={22} />}
+            title="Nothing in progress"
+            description="Mark a movie or series as Watching from its detail page to track it here."
+            action={counts.want_to_watch > 0 ? { label: 'Open Want to Watch', onClick: () => switchSegment('want_to_watch') } : undefined}
+          />
+        ) : (
+          <EmptyState
+            icon={<Bookmark size={22} />}
+            title="Your watchlist is empty"
+            description="Save movies and series you want to watch."
+            action={{ label: 'Discover titles', icon: <Compass size={16} aria-hidden="true" />, onClick: () => setActiveTab('discover') }}
+          />
+        )
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
-          {filteredAndSortedMovies.map((item) => (
-            <MoviePoster
-              key={item.movie.id}
-              movie={item.movie}
-              userData={item.userData}
-              onClick={() => openMovieDetail(item.movie.id)}
-              className="w-full"
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col sm:flex-row gap-2.5">
+            <SearchBar value={query} onChange={setQuery} label={segment === 'watching' ? 'Search watching' : 'Search watchlist'} className="sm:max-w-sm" />
+            <div className="flex items-center gap-2 min-w-0">
+              <ChipGroup<MediaFilter>
+                label="Media type"
+                size="sm"
+                value={media}
+                onChange={setMedia}
+                options={[
+                  { value: 'all', label: 'All', count: mediaCounts.all },
+                  { value: 'movie', label: 'Movies', count: mediaCounts.movie },
+                  { value: 'tv', label: 'Series', count: mediaCounts.tv },
+                ]}
+                className="flex-1 min-w-0 !mx-0 !px-0"
+              />
+              <SortSelect<SortKey>
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: 'added', label: 'Recently added' },
+                  { value: 'release', label: 'Release date' },
+                  { value: 'rating', label: 'TMDB rating' },
+                  { value: 'title', label: 'Title' },
+                ]}
+              />
+            </div>
+          </div>
+
+          {sorted.length === 0 ? (
+            <EmptyState compact title="No matches" description="Try a different title or filter." action={{ label: 'Clear', onClick: () => { setQuery(''); setMedia('all'); } }} />
+          ) : (
+            <MediaGrid>
+              {sorted.map((item, i) => (
+                <MediaCard key={item.movie.id} movie={item.movie} userData={item.userData} priority={i < 6} />
+              ))}
+            </MediaGrid>
+          )}
+        </>
       )}
     </div>
   );

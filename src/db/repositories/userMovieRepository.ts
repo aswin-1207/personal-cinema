@@ -73,6 +73,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: 'watched',
       personalRating: options?.rating !== undefined ? options.rating : existing?.personalRating ?? null,
@@ -83,7 +84,7 @@ export class UserMovieRepository {
       watchedAt: existing?.watchedAt || now, // preserve original watchedAt if already recorded
       watchingAt: null,
       scheduledAt: null,
-      rewatchCount: existing ? (existing.status === 'watched' ? existing.rewatchCount + 1 : existing.rewatchCount) : 0,
+      rewatchCount: existing?.rewatchCount ?? 0,
     };
 
     await store.put(updated);
@@ -102,6 +103,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: 'want_to_watch',
       personalRating: existing?.personalRating ?? null,
@@ -131,6 +133,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: 'want_to_watch',
       personalRating: existing?.personalRating ?? null,
@@ -160,6 +163,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: 'watching',
       personalRating: existing?.personalRating ?? null,
@@ -213,6 +217,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: existing?.status || 'none', // Favoriting does not add to watchlist
       personalRating: existing?.personalRating ?? null,
@@ -238,6 +243,7 @@ export class UserMovieRepository {
     const now = new Date().toISOString();
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: existing?.status || 'none', // Rating does not force watched
       personalRating: rating,
@@ -267,6 +273,7 @@ export class UserMovieRepository {
     const hasReview = data.review !== undefined ? Boolean(data.review.trim()) : Boolean(existing?.review?.trim());
 
     const updated: UserMovie = {
+      ...existing,
       movieId,
       status: existing?.status || 'none', // Writing a review does not force watched
       personalRating: existing?.personalRating ?? null,

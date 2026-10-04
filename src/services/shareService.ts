@@ -1,5 +1,5 @@
 import { MovieSharePayload, CollectionSharePayload, ShareCardStyle, ShareResult } from '../types/share';
-import { Movie, UserMovie } from '../types/movie';
+import { Movie, UserMovie, parseCanonicalId } from '../types/movie';
 import { CollectionWithMovies } from '../types/collection';
 import { TMDBService } from './tmdbService';
 
@@ -13,11 +13,16 @@ export class ShareService {
     userData?: UserMovie,
     privacy?: { includeStatus?: boolean; includeRating?: boolean; includeReview?: boolean }
   ): MovieSharePayload {
+    const isSeries = movie.mediaType === 'tv';
     return {
       movieId: movie.id,
       title: movie.title,
+      mediaType: isSeries ? 'tv' : 'movie',
       year: movie.releaseDate ? movie.releaseDate.substring(0, 4) : undefined,
-      runtime: movie.runtime ? `${movie.runtime}m` : undefined,
+      runtime: !isSeries && movie.runtime ? `${movie.runtime}m` : undefined,
+      seasons: isSeries && movie.numberOfSeasons
+        ? `${movie.numberOfSeasons} season${movie.numberOfSeasons === 1 ? '' : 's'}`
+        : undefined,
       genres: (movie.genres || []).map((g) => g.name).slice(0, 3),
       posterUrl: TMDBService.getPosterUrl(movie.posterPath, 'w500'),
       backdropUrl: TMDBService.getBackdropUrl(movie.backdropPath, 'w780'),
@@ -26,6 +31,11 @@ export class ShareService {
       rating: privacy?.includeRating && userData?.personalRating ? userData.personalRating : null,
       review: privacy?.includeReview && userData?.review ? userData.review : null,
     };
+  }
+
+  static getMediaLabel(payload: Pick<MovieSharePayload, 'movieId' | 'mediaType'>): 'Movie' | 'Series' {
+    const type = payload.mediaType ?? parseCanonicalId(payload.movieId).mediaType;
+    return type === 'tv' ? 'Series' : 'Movie';
   }
 
   /**
@@ -311,7 +321,12 @@ export class ShareService {
       ctx.fillText(payload.title, width / 2, height - 200);
 
       // Subtitle (Year, Runtime, Genres)
-      const subParts = [payload.year, payload.runtime, payload.genres.join(', ')].filter(Boolean);
+      const subParts = [
+        payload.year,
+        this.getMediaLabel(payload),
+        payload.seasons ?? payload.runtime,
+        payload.genres.join(', '),
+      ].filter(Boolean);
       ctx.fillStyle = '#9E9DA5';
       ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillText(subParts.join(' • '), width / 2, height - 155);
@@ -334,20 +349,6 @@ export class ShareService {
       console.warn('Canvas share card generation failed:', err);
       return null;
     }
-  }
-
-  /**
-   * Direct app fallback URLs (standardized URI protocols without claiming app installation)
-   */
-  static getWhatsAppUrl(text: string, url: string): string {
-    const full = encodeURIComponent(`${text} ${url}`.trim());
-    return `https://wa.me/?text=${full}`;
-  }
-
-  static getTelegramUrl(text: string, url: string): string {
-    const u = encodeURIComponent(url);
-    const t = encodeURIComponent(text);
-    return `https://t.me/share/url?url=${u}&text=${t}`;
   }
 
   static getEmailUrl(subject: string, body: string, url: string): string {

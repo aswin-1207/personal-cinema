@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { ScrollLockManager } from '../../services/scrollLockManager';
 
@@ -6,100 +7,165 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  description?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
   onSubmit?: (e: React.FormEvent) => void;
   maxWidth?: number | string;
+  /** Prevent closing via backdrop/Escape (e.g. while an import is running). */
+  dismissible?: boolean;
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Dialog primitive: bottom sheet on phones, centered dialog from 640px.
+ * Fixed header → scrollable body → fixed footer. Locks page scroll, traps focus,
+ * closes on Escape/backdrop and restores focus + page scroll on close.
+ */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
+  description,
   children,
   footer,
   onSubmit,
   maxWidth = 540,
+  dismissible = true,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const dismissibleRef = useRef(dismissible);
+  dismissibleRef.current = dismissible;
+  const titleId = useId();
+  const descId = useId();
+
   useEffect(() => {
     if (!isOpen) return;
-
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     ScrollLockManager.lock();
 
+    const focusTimer = window.setTimeout(() => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const autofocus = dialog.querySelector<HTMLElement>('[autofocus], [data-autofocus]');
+      const body = dialog.querySelector<HTMLElement>('[data-modal-body]');
+      const firstInBody = body?.querySelector<HTMLElement>(FOCUSABLE);
+      (autofocus || firstInBody || dialog).focus({ preventScroll: true });
+    }, 30);
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && dismissibleRef.current) {
+        e.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key === 'Tab' && dialogRef.current) {
+        const nodes = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+          (el) => el.offsetParent !== null
+        );
+        if (nodes.length === 0) return;
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
 
-    const handlePopState = () => {
-      onClose();
-    };
+    const handlePopState = () => onCloseRef.current();
 
-    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('popstate', handlePopState);
 
     return () => {
+      window.clearTimeout(focusTimer);
       ScrollLockManager.unlock();
-      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('popstate', handlePopState);
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const widthClass = typeof maxWidth === 'string' && maxWidth.startsWith('max-w-') ? `sm:${maxWidth}` : '';
+  const widthStyle =
+    typeof maxWidth === 'number'
+      ? { ['--modal-max' as string]: `${maxWidth}px` }
+      : typeof maxWidth === 'string' && !maxWidth.startsWith('max-w-')
+      ? { ['--modal-max' as string]: maxWidth }
+      : undefined;
+
   const content = (
     <>
-      {/* Modal Header (Fixed) */}
-      {title && (
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] flex-shrink-0 bg-[#131319]">
-          <h3 className="font-semibold text-base sm:text-lg text-[#F5F3EB] line-clamp-1">
-            {title}
-          </h3>
+      {(title || !footer) && (
+        <div className="flex items-start justify-between gap-3 pl-5 pr-3 sm:pl-6 pt-3 sm:pt-4 pb-3 border-b border-line shrink-0">
+          <div className="min-w-0 pt-1.5">
+            {title && (
+              <h2 id={titleId} className="text-[17px] font-semibold text-text leading-snug line-clamp-2">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p id={descId} className="mt-0.5 text-[13px] text-muted">
+                {description}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 min-w-[40px] min-h-[40px] rounded-xl hover:bg-white/[0.08] text-[#9E9DA5] hover:text-white transition-colors flex items-center justify-center cursor-pointer border-none bg-transparent"
-            title="Close"
-            aria-label="Close dialog"
+            className="shrink-0 w-11 h-11 rounded-full text-muted hover:text-text hover:bg-white/5 flex items-center justify-center"
+            aria-label="Close"
           >
-            <X size={18} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
       )}
 
-      {/* Content Body (Scrollable) */}
-      <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
+      <div data-modal-body className="px-5 sm:px-6 py-4 sm:py-5 overflow-y-auto overscroll-contain flex-1 min-h-0">
         {children}
       </div>
 
-      {/* Modal Footer (Fixed, Never Clipped) */}
       {footer && (
-        <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-t border-white/[0.08] bg-[#131319] flex items-center justify-between sm:justify-end gap-3 z-10">
+        <div className="shrink-0 px-5 sm:px-6 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:pb-3 border-t border-line bg-surface flex items-center justify-end gap-2.5 flex-wrap">
           {footer}
         </div>
       )}
     </>
   );
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(env(safe-area-inset-top,0px),0.75rem)] pb-[max(env(safe-area-inset-bottom,0px),0.75rem)] bg-[#050508]/85 backdrop-blur-xl animate-cinema-fade"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-6 bg-black/75 animate-cinema-fade"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && dismissible) onClose();
+      }}
     >
-      {/* Dialog Box: Fully Contained, Elevated, Never trapped at bottom edge */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title || 'Dialog'}
-        className={`w-full bg-[#131319] border border-white/[0.12] shadow-2xl overflow-hidden flex flex-col rounded-2xl max-h-[calc(100dvh-max(env(safe-area-inset-top,0px),0.75rem)-max(env(safe-area-inset-bottom,0px),0.75rem)-1rem)] sm:max-h-[88dvh] my-auto animate-cinema-scale ${
-          typeof maxWidth === 'string' && maxWidth.startsWith('max-w-') ? maxWidth : ''
-        }`}
-        style={{
-          maxWidth: typeof maxWidth === 'number' ? maxWidth : (typeof maxWidth === 'string' && !maxWidth.startsWith('max-w-') ? maxWidth : undefined),
-        }}
-        onClick={(e) => e.stopPropagation()}
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : 'Dialog'}
+        aria-describedby={description ? descId : undefined}
+        tabIndex={-1}
+        style={widthStyle}
+        className={`relative w-full sm:max-w-[var(--modal-max,540px)] ${widthClass} bg-surface border border-line-strong shadow-[0_24px_64px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden outline-none rounded-t-[20px] sm:rounded-[20px] max-h-[calc(100dvh-env(safe-area-inset-top,0px)-24px)] sm:max-h-[min(88dvh,820px)] animate-cinema-sheet sm:animate-cinema-scale`}
       >
+        <div className="sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/15" aria-hidden="true" />
         {onSubmit ? (
-          <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0" noValidate>
             {content}
           </form>
         ) : (
@@ -107,5 +173,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
       </div>
     </div>
+    ,
+    document.body
   );
 };

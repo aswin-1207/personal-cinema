@@ -15,6 +15,53 @@ import { hapticsService } from '../services/hapticsService';
 
 export type TabType = 'home' | 'discover' | 'watchlist' | 'watched' | 'collections' | 'profile' | 'reviews';
 
+const TABS: TabType[] = ['home', 'discover', 'watchlist', 'watched', 'collections', 'profile', 'reviews'];
+
+export interface Route {
+  tab: TabType;
+  sub: string | null;
+  movieId: number | null;
+  collectionId: string | null;
+}
+
+interface HistoryEntryState {
+  pc: true;
+  key: string;
+  depth: number;
+  tab: TabType;
+}
+
+function parseHash(hash: string, fallbackTab: TabType = 'home'): Route {
+  const h = hash.replace(/^#\/?/, '');
+  const empty: Route = { tab: fallbackTab, sub: null, movieId: null, collectionId: null };
+  if (h.startsWith('movie=')) {
+    const id = parseInt(h.slice(6), 10);
+    return isNaN(id) ? { ...empty, tab: 'home' } : { ...empty, movieId: id };
+  }
+  if (h.startsWith('collection=')) {
+    const id = decodeURIComponent(h.slice(11));
+    return { ...empty, tab: 'collections', collectionId: id || null };
+  }
+  if (h === 'journal') return { ...empty, tab: 'reviews' };
+  const [rawTab, rawSub] = h.split('/');
+  const tab = rawTab.toLowerCase() as TabType;
+  if (TABS.includes(tab)) {
+    return { ...empty, tab, sub: rawSub ? decodeURIComponent(rawSub) : null };
+  }
+  return { ...empty, tab: 'home' };
+}
+
+function routeToHash(route: Route): string {
+  if (route.movieId != null) return `#movie=${route.movieId}`;
+  if (route.collectionId) return `#collection=${encodeURIComponent(route.collectionId)}`;
+  if (route.tab === 'home' && !route.sub) return '#home';
+  return `#${route.tab}${route.sub ? `/${encodeURIComponent(route.sub)}` : ''}`;
+}
+
+const isShareHash = (hash: string) => hash.startsWith('#share-movie=') || hash.startsWith('#share-col=');
+
+const newEntryKey = () => Math.random().toString(36).slice(2, 10);
+
 interface ToastState {
   id: string;
   message: string;
@@ -24,7 +71,11 @@ interface ToastState {
 
 interface CinemaContextType {
   activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
+  setActiveTab: (tab: TabType, sub?: string | null) => void;
+  /** Optional sub-view of the active tab (e.g. a Discover "View all" category). */
+  activeSub: string | null;
+  setActiveSub: (sub: string | null) => void;
+  goBack: () => void;
   selectedMovieId: number | null;
   openMovieDetail: (movieId: number) => void;
   closeMovieDetail: () => void;
@@ -52,8 +103,6 @@ interface CinemaContextType {
   removeFromLibrary: (movieId: number) => Promise<void>;
 
   // Celebrations
-  celebrationMovie: Movie | null;
-  dismissCelebrationMovie: () => void;
   celebrationCollection: Collection | null;
   dismissCelebrationCollection: () => void;
 
@@ -73,11 +122,15 @@ interface CinemaContextType {
 const CinemaContext = createContext<CinemaContextType | null>(null);
 
 export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('home');
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
-
-  const [celebrationMovie, setCelebrationMovie] = useState<Movie | null>(null);
+  const [route, setRoute] = useState<Route>(() =>
+    typeof window !== 'undefined' && !isShareHash(window.location.hash)
+      ? parseHash(window.location.hash)
+      : { tab: 'home', sub: null, movieId: null, collectionId: null }
+  );
+  const activeTab = route.tab;
+  const selectedMovieId = route.movieId;
+  const selectedCollectionId = route.collectionId;
+  const scrollPositions = React.useRef(new Map<string, number>());
   const [celebrationCollection, setCelebrationCollection] = useState<Collection | null>(null);
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
@@ -121,19 +174,9 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.warn('Seed catalog initialization deferred:', err);
       });
 
-    const handleHash = () => {
-      const h = window.location.hash.toLowerCase();
-      if (h === '#reviews' || h === '#journal') {
-        setActiveTab('reviews');
-      }
-    };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('hashchange', handleHash);
     };
   }, []);
 
@@ -166,86 +209,130 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Auto-reset any dangling scroll locks on tab transitions
+  // Respect the in-app Reduced Motion preference globally
   useEffect(() => {
-    ScrollLockManager.forceUnlockAll();
-  }, [activeTab]);
+    document.documentElement.classList.toggle('reduce-motion', Boolean(preferences.motionReduced));
+  }, [preferences.motionReduced]);
 
-  // Handle popstate for browser back button support
-  useEffect(() => {
-    const handlePopState = () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#movie=')) {
-        const id = parseInt(hash.replace('#movie=', ''), 10);
-        if (!isNaN(id)) setSelectedMovieId(id);
-      } else {
-        setSelectedMovieId(null);
-      }
+  // --- Hash router: the document is the single scroll owner, so every route
+  // change saves/restores window scroll per history entry. ---
+  const currentState = (): HistoryEntryState | null => {
+    const st = window.history.state;
+    return st && st.pc ? (st as HistoryEntryState) : null;
+  };
 
-      if (hash.startsWith('#collection=')) {
-        const id = hash.replace('#collection=', '');
-        if (id) setSelectedCollectionId(id);
-      } else {
-        setSelectedCollectionId(null);
+  const restoreScroll = (top: number) => {
+    let tries = 0;
+    const attempt = () => {
+      const maxTop = document.documentElement.scrollHeight - window.innerHeight;
+      if (maxTop >= top - 4 || tries > 20) {
+        window.scrollTo({ top, behavior: 'instant' as ScrollBehavior });
+        return;
       }
+      tries++;
+      window.setTimeout(attempt, 50);
     };
+    requestAnimationFrame(attempt);
+  };
 
-    // Deep link detection on initial mount
-    if (window.location.hash.startsWith('#movie=')) {
-      const id = parseInt(window.location.hash.replace('#movie=', ''), 10);
-      if (!isNaN(id)) setSelectedMovieId(id);
-    } else if (window.location.hash.startsWith('#collection=')) {
-      const id = window.location.hash.replace('#collection=', '');
-      if (id) setSelectedCollectionId(id);
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    if (!isShareHash(window.location.hash) && !window.location.pathname.startsWith('/share/')) {
+      const initial = parseHash(window.location.hash);
+      const st: HistoryEntryState = { pc: true, key: newEntryKey(), depth: 0, tab: initial.tab };
+      window.history.replaceState(st, '', routeToHash(initial));
     }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (isShareHash(window.location.hash)) return;
+      const st = e.state && e.state.pc ? (e.state as HistoryEntryState) : null;
+      const next = parseHash(window.location.hash, st?.tab ?? 'home');
+      ScrollLockManager.forceUnlockAll();
+      setRoute(next);
+      const saved = st ? scrollPositions.current.get(st.key) : undefined;
+      restoreScroll(saved ?? 0);
+    };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const openMovieDetail = (movieId: number) => {
-    setSelectedMovieId(movieId);
+  const navigate = useCallback((next: Route, options?: { replace?: boolean }) => {
+    const prev = currentState();
+    if (prev) scrollPositions.current.set(prev.key, window.scrollY);
+    const st: HistoryEntryState = {
+      pc: true,
+      key: newEntryKey(),
+      depth: options?.replace ? prev?.depth ?? 0 : (prev?.depth ?? 0) + 1,
+      tab: next.tab,
+    };
     try {
-      if (window.location.hash !== `#movie=${movieId}`) {
-        window.history.pushState({ type: 'movie', id: movieId }, '', `#movie=${movieId}`);
-      }
-    } catch {}
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const closeMovieDetail = () => {
-    setSelectedMovieId(null);
-    ScrollLockManager.forceUnlockAll();
-    if (window.location.hash.startsWith('#movie=')) {
-      try {
-        window.history.back();
-      } catch {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
+      if (options?.replace) window.history.replaceState(st, '', routeToHash(next));
+      else window.history.pushState(st, '', routeToHash(next));
+    } catch {
+      /* history unavailable (sandboxed iframe) — state still updates */
     }
-  };
-
-  const openCollectionDetail = (collectionId: string) => {
-    setSelectedCollectionId(collectionId);
-    try {
-      if (window.location.hash !== `#collection=${collectionId}`) {
-        window.history.pushState({ type: 'collection', id: collectionId }, '', `#collection=${collectionId}`);
-      }
-    } catch {}
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const closeCollectionDetail = () => {
-    setSelectedCollectionId(null);
     ScrollLockManager.forceUnlockAll();
-    if (window.location.hash.startsWith('#collection=')) {
-      try {
-        window.history.back();
-      } catch {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    setRoute(next);
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, []);
+
+  const routeRef = React.useRef(route);
+  routeRef.current = route;
+
+  const setActiveTab = useCallback(
+    (tab: TabType, sub: string | null = null) => {
+      const cur = routeRef.current;
+      if (cur.tab === tab && cur.sub === sub && cur.movieId == null && cur.collectionId == null) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
+      navigate({ tab, sub, movieId: null, collectionId: null });
+    },
+    [navigate]
+  );
+
+  const setActiveSub = useCallback(
+    (sub: string | null) => {
+      const cur = routeRef.current;
+      navigate({ ...cur, sub, movieId: null, collectionId: null });
+    },
+    [navigate]
+  );
+
+  /** Back within the app if we pushed the current entry, otherwise go to the parent view. */
+  const goBack = useCallback(() => {
+    const st = currentState();
+    if (st && st.depth > 0) {
+      window.history.back();
+      return;
     }
-  };
+    const cur = routeRef.current;
+    if (cur.movieId != null) navigate({ ...cur, movieId: null }, { replace: true });
+    else if (cur.collectionId) navigate({ tab: 'collections', sub: null, movieId: null, collectionId: null }, { replace: true });
+    else if (cur.sub) navigate({ ...cur, sub: null }, { replace: true });
+    else navigate({ tab: 'home', sub: null, movieId: null, collectionId: null }, { replace: true });
+  }, [navigate]);
+
+  const openMovieDetail = useCallback(
+    (movieId: number) => {
+      const cur = routeRef.current;
+      if (cur.movieId === movieId) return;
+      navigate({ tab: cur.tab, sub: cur.sub, collectionId: null, movieId });
+    },
+    [navigate]
+  );
+
+  const closeMovieDetail = goBack;
+
+  const openCollectionDetail = useCallback(
+    (collectionId: string) => {
+      navigate({ tab: 'collections', sub: null, movieId: null, collectionId });
+    },
+    [navigate]
+  );
+
+  const closeCollectionDetail = goBack;
 
   // --- Centralized Movie Actions with Concurrency and Error Guards ---
 
@@ -264,7 +351,8 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // 1. Ensure movie metadata is stored
       await MovieRepository.save(movie);
 
-      // 2. Mark as watched in UserMovie repository
+      // 2. Mark as watched in UserMovie repository (keep the prior record so Undo can restore it)
+      const previous = await UserMovieRepository.getByMovieId(movie.id);
       const updated = await UserMovieRepository.markWatched(movie.id, options);
 
       // 3. Audio & tactile feedback
@@ -289,7 +377,7 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // 5. Show Undo Toast
       showToast(`✓ Marked "${movie.title}" as Watched`, 'Undo', async () => {
         try {
-          await unmarkWatched(movie.id);
+          await undoMarkWatched(movie.id, previous);
           showToast(`Restored "${movie.title}"`);
         } catch {
           showToast(`Could not restore "${movie.title}"`);
@@ -304,6 +392,31 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       throw err;
     } finally {
       inFlightOps.current.delete(opKey);
+    }
+  };
+
+  // Undo returns the title to exactly where it was (Watching, Watchlist, or untracked).
+  const undoMarkWatched = async (movieId: number, previous: UserMovie | undefined) => {
+    try {
+      if (!previous) {
+        await UserMovieRepository.remove(movieId);
+      } else {
+        const current = await UserMovieRepository.getByMovieId(movieId);
+        await UserMovieRepository.save({
+          ...(current ?? previous),
+          status: previous.status,
+          watchedAt: previous.watchedAt ?? null,
+          watchingAt: previous.watchingAt ?? null,
+        });
+      }
+      const affectedColIds = await CollectionRepository.getCollectionsForMovie(movieId);
+      for (const colId of affectedColIds) {
+        await CollectionRepository.calculateProgress(colId);
+      }
+      notifyDataChanged();
+    } catch (err) {
+      console.error('Failed to undo watched:', err);
+      throw err;
     }
   };
 
@@ -507,6 +620,9 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         activeTab,
         setActiveTab,
+        activeSub: route.sub,
+        setActiveSub,
+        goBack,
         selectedMovieId,
         openMovieDetail,
         closeMovieDetail,
@@ -524,8 +640,6 @@ export const CinemaProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteRating,
         removeFromWatchlist,
         removeFromLibrary,
-        celebrationMovie,
-        dismissCelebrationMovie: () => setCelebrationMovie(null),
         celebrationCollection,
         dismissCelebrationCollection: () => setCelebrationCollection(null),
         isOnline,

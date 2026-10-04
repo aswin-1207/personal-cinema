@@ -142,7 +142,10 @@ export const SharedMoviePage: React.FC<SharedMoviePageProps> = ({ hash, onDismis
 
           <div className="flex items-center justify-center gap-2 text-xs text-[#9E9DA5] mb-4">
             {moviePayload.year && <span>{moviePayload.year}</span>}
-            {moviePayload.runtime && <span>• {moviePayload.runtime}</span>}
+            <span>{moviePayload.year ? '• ' : ''}{ShareService.getMediaLabel(moviePayload)}</span>
+            {(moviePayload.seasons || moviePayload.runtime) && (
+              <span>• {moviePayload.seasons || moviePayload.runtime}</span>
+            )}
             {moviePayload.genres && moviePayload.genres.length > 0 && (
               <span>• {moviePayload.genres.join(', ')}</span>
             )}

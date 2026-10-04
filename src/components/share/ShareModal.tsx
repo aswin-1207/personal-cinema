@@ -11,8 +11,6 @@ import {
   Check,
   Star,
   Download,
-  MessageCircle,
-  Send,
   Mail,
   Eye,
 } from 'lucide-react';
@@ -40,6 +38,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
 
   const canNative = ShareService.canNativeShare();
 
+  // Private fields are opt-in per share: reset them every time the sheet opens.
+  useEffect(() => {
+    if (!isOpen) return;
+    setIncludeStatus(false);
+    setIncludeRating(false);
+    setIncludeReview(false);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -54,7 +60,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   }, [isOpen, movie, userData, style, includeStatus, includeRating, includeReview]);
 
   const getShareText = () => {
-    let text = `Check out "${movie.title}" on MyCinema.`;
+    const typeLabel = movie.mediaType === 'tv' ? 'series' : 'movie';
+    let text = `Check out the ${typeLabel} "${movie.title}" on MyCinema.`;
     if (includeRating && userData?.personalRating) {
       text += ` I rated it ${userData.personalRating.toFixed(1)} / 5 stars.`;
     } else if (includeStatus && userData?.status) {
@@ -151,12 +158,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
   const posterImg = movie.posterPath ? tmdbService.getImageUrl(movie.posterPath, 'w500') : '';
   const backdropImg = movie.backdropPath ? tmdbService.getImageUrl(movie.backdropPath, 'w780') : '';
   const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const metaLine = [
+    year,
+    movie.mediaType === 'tv' ? 'Series' : 'Movie',
+    movie.mediaType === 'tv'
+      ? movie.numberOfSeasons ? `${movie.numberOfSeasons} season${movie.numberOfSeasons === 1 ? '' : 's'}` : ''
+      : movie.runtime ? `${Math.floor(movie.runtime / 60) ? `${Math.floor(movie.runtime / 60)}h ` : ''}${movie.runtime % 60}m` : '',
+  ].filter(Boolean).join(' · ');
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Share Movie"
+      title={movie.mediaType === 'tv' ? 'Share series' : 'Share movie'}
       maxWidth="max-w-2xl"
       footer={
         <button
@@ -204,7 +218,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   {movie.title}
                 </h4>
                 <p className="text-[11px] text-[#9E9DA5] mt-0.5">
-                  {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                  {metaLine}
                 </p>
                 {includeRating && userData?.personalRating && (
                   <div className="flex items-center justify-center gap-1 mt-1.5 text-[#E0AD52] text-xs font-semibold">
@@ -243,7 +257,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                       {movie.title}
                     </h4>
                     <p className="text-xs text-[#9E9DA5] drop-shadow">
-                      {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                      {metaLine}
                     </p>
                   </div>
                   {includeRating && userData?.personalRating && (
@@ -293,7 +307,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                     {movie.title}
                   </h4>
                   <p className="text-xs text-[#9E9DA5] mt-0.5">
-                    {year} {movie.runtime ? `· ${movie.runtime}m` : ''}
+                    {metaLine}
                   </p>
                   {includeRating && userData?.personalRating && (
                     <div className="flex items-center gap-1 text-[#E0AD52] text-xs font-semibold mt-1">
@@ -318,7 +332,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                   <BrandLogo variant="symbol" size={12} alt="MYCINEMA" />
                   <span>MYCINEMA</span>
                 </div>
-                <span>Personal Vault</span>
+                <span>MyCinema</span>
               </div>
             </div>
           )}
@@ -418,7 +432,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
               className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold min-h-[44px] cursor-pointer shadow-gold"
             >
               <Share2 size={16} />
-              <span>{canNative ? 'Share via Native Apps' : 'Share Movie'}</span>
+              <span>{canNative ? 'Share' : movie.mediaType === 'tv' ? 'Copy series details' : 'Copy movie details'}</span>
             </button>
 
             {/* Copy Link & Copy Text */}
@@ -452,25 +466,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
                 <span>Save Card</span>
               </button>
 
-              <a
-                href={ShareService.getWhatsAppUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-emerald-950/40 hover:text-emerald-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via WhatsApp web"
-              >
-                <MessageCircle size={14} />
-              </a>
-
-              <a
-                href={ShareService.getTelegramUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-sky-950/40 hover:text-sky-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via Telegram"
-              >
-                <Send size={14} />
-              </a>
 
               <a
                 href={ShareService.getEmailUrl(`Check out ${movie.title} on MyCinema`, getShareText(), shareUrl)}

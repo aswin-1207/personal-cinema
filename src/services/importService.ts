@@ -833,6 +833,7 @@ export class ImportService {
           : existingUserMovie?.isFavorite ?? false;
 
       const userMovieRecord: UserMovie = {
+        ...existingUserMovie,
         movieId: chosenMovie.id,
         status: statusToApply,
         personalRating: ratingToApply,

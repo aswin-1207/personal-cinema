@@ -147,7 +147,7 @@ export const CollectionCompletionModal: React.FC<CollectionCompletionModalProps>
                 {finalMovie.title}
               </h4>
               <p className="text-[11px] text-[#9E9DA5] mt-0.5 truncate">
-                Concluded this cinematic journey
+                Collection complete
               </p>
             </div>
           </div>
