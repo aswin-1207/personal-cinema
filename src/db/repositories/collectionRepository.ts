@@ -28,8 +28,17 @@ export class CollectionRepository {
 
     const db = await getDB();
     const now = new Date().toISOString();
+    let newId = 'col_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    try {
+      if (typeof globalThis !== 'undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+        newId = globalThis.crypto.randomUUID();
+      } else if (typeof window !== 'undefined' && window.crypto && typeof window.crypto.randomUUID === 'function') {
+        newId = window.crypto.randomUUID();
+      }
+    } catch {}
+
     const collection: Collection = {
-      id: crypto.randomUUID ? crypto.randomUUID() : 'col_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+      id: newId,
       name: trimmedName.slice(0, 100),
       description: data.description?.trim().slice(0, 500) || '',
       coverType: data.coverType || 'collage',

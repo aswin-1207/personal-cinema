@@ -24,6 +24,7 @@ const MOBILE_NAV_ITEMS: NavItemDef[] = [
   { id: 'watchlist', label: 'Watchlist', icon: Bookmark },
   { id: 'watched', label: 'Watched', icon: CheckCircle2 },
   { id: 'collections', label: 'Collections', icon: Layers },
+  { id: 'profile', label: 'Profile', icon: User },
 ];
 
 export const CinemaDesktopNav: React.FC = () => {

@@ -10,7 +10,7 @@ import { CinemaHeader } from '../components/ui/CinemaHeader';
 import { FolderPlus, Upload } from 'lucide-react';
 
 export const CollectionsPage: React.FC = () => {
-  const { openCollectionDetail, dataVersion, notifyDataChanged } = useCinema();
+  const { openCollectionDetail, dataVersion, notifyDataChanged, showToast } = useCinema();
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -88,8 +88,14 @@ export const CollectionsPage: React.FC = () => {
       <CreateCollectionModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onCreated={(col) => {
-          setCollections((prev) => [...prev, col]);
+        onCreated={async (col) => {
+          setIsCreateOpen(false);
+          setCollections((prev) => {
+            const exists = prev.some((c) => c.id === col.id);
+            return exists ? prev : [col, ...prev];
+          });
+          notifyDataChanged();
+          showToast(`Collection "${col.name}" created.`);
           openCollectionDetail(col.id);
         }}
       />

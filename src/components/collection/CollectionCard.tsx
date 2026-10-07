@@ -161,11 +161,11 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection, onCl
           <div className="flex items-center justify-between text-[10px] sm:text-[11px]">
             {isComplete ? (
               <span className="text-[#E0AD52] font-semibold tracking-wider uppercase truncate">
-                ✓ COMPLETE · {progress.total} {progress.total === 1 ? 'FILM' : 'FILMS'}
+                ✓ COMPLETE • {progress.total} {progress.total === 1 ? 'TITLE' : 'TITLES'}
               </span>
             ) : (
               <span className="text-[#9E9DA5] font-semibold tracking-wider uppercase truncate">
-                {progress.watched}/{progress.total} WATCHED
+                {progress.watched} / {progress.total} WATCHED
               </span>
             )}
             <span className={`font-bold text-[11px] sm:text-xs ml-1 flex-shrink-0 ${isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>

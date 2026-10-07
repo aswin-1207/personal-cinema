@@ -12,6 +12,7 @@ export const WatchedPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'movie' | 'tv'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'rating' | 'year' | 'title'>('recent');
 
   useEffect(() => {
@@ -26,11 +27,23 @@ export const WatchedPage: React.FC = () => {
     };
   }, [dataVersion]);
 
+  const counts = useMemo(() => {
+    const filmCount = movies.filter((m) => m.movie.mediaType !== 'tv').length;
+    const seriesCount = movies.filter((m) => m.movie.mediaType === 'tv').length;
+    return { all: movies.length, filmCount, seriesCount };
+  }, [movies]);
+
   const filteredAndSortedMovies = useMemo(() => {
     let list = movies;
 
     if (onlyFavorites) {
       list = list.filter((item) => item.userData?.isFavorite);
+    }
+
+    if (mediaTypeFilter === 'movie') {
+      list = list.filter((item) => item.movie.mediaType !== 'tv');
+    } else if (mediaTypeFilter === 'tv') {
+      list = list.filter((item) => item.movie.mediaType === 'tv');
     }
 
     if (searchQuery.trim()) {
@@ -158,6 +171,42 @@ export const WatchedPage: React.FC = () => {
         )}
       </div>
 
+      {/* Media Type Filter Tabs */}
+      {movies.length > 0 && (
+        <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3">
+          <button
+            onClick={() => setMediaTypeFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              mediaTypeFilter === 'all'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            All ({counts.all})
+          </button>
+          <button
+            onClick={() => setMediaTypeFilter('movie')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              mediaTypeFilter === 'movie'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            Films ({counts.filmCount})
+          </button>
+          <button
+            onClick={() => setMediaTypeFilter('tv')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+              mediaTypeFilter === 'tv'
+                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+            }`}
+          >
+            Series ({counts.seriesCount})
+          </button>
+        </div>
+      )}
+
       {/* Poster Grid */}
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5">
@@ -167,15 +216,16 @@ export const WatchedPage: React.FC = () => {
         </div>
       ) : filteredAndSortedMovies.length === 0 ? (
         <div className="py-12 text-center">
-          {searchQuery || onlyFavorites ? (
+          {searchQuery || onlyFavorites || mediaTypeFilter !== 'all' ? (
             <div className="space-y-3">
               <p className="text-sm text-[#9E9DA5]">
-                No screened films match the active filters.
+                No watched titles match the active filters.
               </p>
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setOnlyFavorites(false);
+                  setMediaTypeFilter('all');
                 }}
                 className="cinema-button-ghost text-xs text-[#E0AD52] cursor-pointer"
               >

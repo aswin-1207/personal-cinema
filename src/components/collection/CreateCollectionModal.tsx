@@ -22,9 +22,24 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
+  // Reset state when modal opens or closes
+  React.useEffect(() => {
+    if (isOpen) {
+      setName('');
+      setDescription('');
+      setCoverType('collage');
+      setSortMode('custom');
+      setIsSubmitting(false);
+      setError('');
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (isSubmitting) return;
+
+    const trimmed = name.trim();
+    if (!trimmed) {
       setError('Collection name is required');
       return;
     }
@@ -33,8 +48,8 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
       setIsSubmitting(true);
       setError('');
       const col = await CollectionRepository.create({
-        name,
-        description,
+        name: trimmed,
+        description: description.trim(),
         coverType,
         sortMode,
       });
@@ -42,8 +57,9 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
       setDescription('');
       onCreated(col);
       onClose();
-    } catch (err) {
-      setError('Failed to create collection. Please try again.');
+    } catch (err: any) {
+      console.error('Failed to create collection:', err);
+      setError(err?.message || 'Failed to create collection. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -61,17 +77,18 @@ export const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="cinema-button-secondary px-4 py-2 text-xs font-semibold"
+            className="cinema-button-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
+            onClick={handleSubmit}
             disabled={isSubmitting || !name.trim()}
-            className="cinema-button-primary px-5 py-2 text-xs font-semibold flex items-center gap-2 disabled:opacity-50"
+            className="cinema-button-primary px-5 py-2 text-xs font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-gold"
           >
             <FolderPlus size={15} />
-            <span>Create Collection</span>
+            <span>{isSubmitting ? 'Creating...' : 'Create Collection'}</span>
           </button>
         </>
       }

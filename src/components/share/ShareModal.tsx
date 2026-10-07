@@ -11,9 +11,6 @@ import {
   Check,
   Star,
   Download,
-  MessageCircle,
-  Send,
-  Mail,
   Eye,
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
@@ -150,13 +147,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
 
   const posterImg = movie.posterPath ? tmdbService.getImageUrl(movie.posterPath, 'w500') : '';
   const backdropImg = movie.backdropPath ? tmdbService.getImageUrl(movie.backdropPath, 'w780') : '';
-  const year = movie.releaseDate ? movie.releaseDate.substring(0, 4) : '';
+  const year = movie.releaseDate
+    ? movie.releaseDate.substring(0, 4)
+    : movie.firstAirDate
+    ? movie.firstAirDate.substring(0, 4)
+    : '';
+  const isSeries = movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Share Movie"
+      title={isSeries ? 'Share Series' : 'Share Movie'}
       maxWidth="max-w-2xl"
       footer={
         <button
@@ -418,67 +420,38 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie, 
               className="cinema-button-primary w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold min-h-[44px] cursor-pointer shadow-gold"
             >
               <Share2 size={16} />
-              <span>{canNative ? 'Share via Native Apps' : 'Share Movie'}</span>
+              <span>{canNative ? 'Share via Native Apps' : isSeries ? 'Share Series' : 'Share Movie'}</span>
             </button>
 
-            {/* Copy Link & Copy Text */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Copy Link, Copy Text & Save Card */}
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleCopyLink}
                 className="cinema-button-secondary py-2.5 flex items-center justify-center gap-1.5 text-xs min-h-[44px] cursor-pointer"
+                title="Copy share link to clipboard"
               >
                 {copiedLink ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
-                <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+                <span>{copiedLink ? 'Copied' : 'Link'}</span>
               </button>
 
               <button
                 onClick={handleCopyText}
                 className="cinema-button-secondary py-2.5 flex items-center justify-center gap-1.5 text-xs min-h-[44px] cursor-pointer"
+                title="Copy summary text"
               >
                 {copiedText ? <Check size={14} className="text-[#E0AD52]" /> : <Copy size={14} />}
-                <span>{copiedText ? 'Text Copied!' : 'Copy Text'}</span>
+                <span>{copiedText ? 'Copied' : 'Text'}</span>
               </button>
-            </div>
 
-            {/* Direct Messaging Fallbacks & Image Download */}
-            <div className="flex items-center justify-between gap-1.5 pt-1">
               <button
                 onClick={handleDownloadImage}
                 disabled={isGeneratingImage}
-                className="flex-1 py-2 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#9E9DA5] hover:text-[#F5F3EB] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px] cursor-pointer"
-                title="Download share card image"
+                className="cinema-button-secondary py-2.5 flex items-center justify-center gap-1.5 text-xs min-h-[44px] cursor-pointer text-[#F5F3EB]"
+                title="Download high-resolution share card image"
               >
-                <Download size={13} />
-                <span>Save Card</span>
+                <Download size={14} />
+                <span>{isGeneratingImage ? 'Saving...' : 'Card'}</span>
               </button>
-
-              <a
-                href={ShareService.getWhatsAppUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-emerald-950/40 hover:text-emerald-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via WhatsApp web"
-              >
-                <MessageCircle size={14} />
-              </a>
-
-              <a
-                href={ShareService.getTelegramUrl(getShareText(), shareUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-sky-950/40 hover:text-sky-400 text-[#9E9DA5] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via Telegram"
-              >
-                <Send size={14} />
-              </a>
-
-              <a
-                href={ShareService.getEmailUrl(`Check out ${movie.title} on MyCinema`, getShareText(), shareUrl)}
-                className="py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-[#9E9DA5] hover:text-[#F5F3EB] text-[11px] flex items-center justify-center gap-1 transition-colors min-h-[40px]"
-                title="Share via Email"
-              >
-                <Mail size={14} />
-              </a>
             </div>
           </div>
         </div>

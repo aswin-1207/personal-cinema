@@ -12,6 +12,7 @@ export const WatchlistPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'want_to_watch' | 'watching'>('all');
+  const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'movie' | 'tv'>('all');
   const [sortBy, setSortBy] = useState<'added' | 'year' | 'rating' | 'title'>('added');
   const [sortDesc, setSortDesc] = useState(true);
 
@@ -30,7 +31,9 @@ export const WatchlistPage: React.FC = () => {
   const counts = useMemo(() => {
     const wantToWatch = movies.filter((m) => m.userData?.status === 'want_to_watch').length;
     const watching = movies.filter((m) => m.userData?.status === 'watching').length;
-    return { all: movies.length, wantToWatch, watching };
+    const filmCount = movies.filter((m) => m.movie.mediaType !== 'tv').length;
+    const seriesCount = movies.filter((m) => m.movie.mediaType === 'tv').length;
+    return { all: movies.length, wantToWatch, watching, filmCount, seriesCount };
   }, [movies]);
 
   const filteredAndSortedMovies = useMemo(() => {
@@ -38,6 +41,12 @@ export const WatchlistPage: React.FC = () => {
 
     if (statusFilter !== 'all') {
       list = list.filter((item) => item.userData?.status === statusFilter);
+    }
+
+    if (mediaTypeFilter === 'movie') {
+      list = list.filter((item) => item.movie.mediaType !== 'tv');
+    } else if (mediaTypeFilter === 'tv') {
+      list = list.filter((item) => item.movie.mediaType === 'tv');
     }
 
     if (searchQuery.trim()) {
@@ -169,37 +178,74 @@ export const WatchlistPage: React.FC = () => {
 
       {/* Filter Tabs / Pills */}
       {movies.length > 0 && (
-        <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
-          <button
-            onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'all'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            All ({counts.all})
-          </button>
-          <button
-            onClick={() => setStatusFilter('want_to_watch')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'want_to_watch'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            Want to Watch ({counts.wantToWatch})
-          </button>
-          <button
-            onClick={() => setStatusFilter('watching')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
-              statusFilter === 'watching'
-                ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
-                : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
-            }`}
-          >
-            Watching ({counts.watching})
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-white/[0.06] pb-3">
+          {/* Status Filters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+                statusFilter === 'all'
+                  ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                  : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+              }`}
+            >
+              All ({counts.all})
+            </button>
+            <button
+              onClick={() => setStatusFilter('want_to_watch')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+                statusFilter === 'want_to_watch'
+                  ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                  : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+              }`}
+            >
+              Want to Watch ({counts.wantToWatch})
+            </button>
+            <button
+              onClick={() => setStatusFilter('watching')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all border ${
+                statusFilter === 'watching'
+                  ? 'bg-[#E0AD52]/20 border-[#E0AD52]/60 text-[#E0AD52]'
+                  : 'bg-[#131319] border-white/5 text-[#9E9DA5] hover:text-white'
+              }`}
+            >
+              Watching ({counts.watching})
+            </button>
+          </div>
+
+          {/* Media Type Toggle */}
+          <div className="flex items-center gap-1 bg-[#131319] p-1 rounded-xl border border-white/[0.08] text-xs">
+            <button
+              onClick={() => setMediaTypeFilter('all')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer border-none ${
+                mediaTypeFilter === 'all'
+                  ? 'bg-[#E0AD52] text-[#09090B]'
+                  : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setMediaTypeFilter('movie')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer border-none ${
+                mediaTypeFilter === 'movie'
+                  ? 'bg-[#E0AD52] text-[#09090B]'
+                  : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
+              }`}
+            >
+              Films ({counts.filmCount})
+            </button>
+            <button
+              onClick={() => setMediaTypeFilter('tv')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer border-none ${
+                mediaTypeFilter === 'tv'
+                  ? 'bg-[#E0AD52] text-[#09090B]'
+                  : 'bg-transparent text-[#9E9DA5] hover:text-[#F5F3EB]'
+              }`}
+            >
+              Series ({counts.seriesCount})
+            </button>
+          </div>
         </div>
       )}
 
@@ -215,7 +261,7 @@ export const WatchlistPage: React.FC = () => {
           {searchQuery ? (
             <div className="space-y-3">
               <p className="text-sm text-[#9E9DA5]">
-                No films match "{searchQuery}".
+                No titles match "{searchQuery}".
               </p>
               <button
                 onClick={() => setSearchQuery('')}

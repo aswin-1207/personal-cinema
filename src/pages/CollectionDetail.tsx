@@ -225,11 +225,11 @@ export const CollectionDetail: React.FC<CollectionDetailProps> = ({ collectionId
 
             {/* Derived Progress Bar */}
             <div className="space-y-1.5 max-w-md pt-2">
-              <div className="flex justify-between text-xs text-[#9E9DA5]">
+              <div className="flex justify-between text-xs text-[#9E9DA5] font-semibold tracking-wider uppercase">
                 <span>
-                  {progress.watched} of {progress.total} films watched
+                  {progress.watched} / {progress.total} WATCHED
                   {!progress.isComplete && progress.unwatched > 0
-                    ? ` · ${progress.unwatched} remaining`
+                    ? ` • ${progress.unwatched} REMAINING`
                     : ''}
                 </span>
                 <span className={`font-bold ${progress.isComplete ? 'text-[#E0AD52]' : 'text-[#F5F3EB]'}`}>

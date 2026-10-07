@@ -134,9 +134,6 @@ export const CompletionMoment: React.FC = () => {
           {celebrationMovie.title}
         </h3>
 
-        <p style={{ fontSize: 13, color: 'var(--cinema-silver)', fontStyle: 'italic', marginBottom: 20 }}>
-          "Another one in the books."
-        </p>
 
         {/* Interactive 5-star rating */}
         <div style={{ marginBottom: 20 }}>

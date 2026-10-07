@@ -185,6 +185,8 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     ? movie.firstAirDate.substring(0, 4)
     : '';
 
+  const isTvSeries = movie.mediaType === 'tv' || Boolean(movie.firstAirDate) || Boolean(movie.numberOfSeasons);
+
   const handleSaveReviewAndNotes = async () => {
     setIsSavingReview(true);
     try {
@@ -203,7 +205,7 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
     setIsCollectionPickerOpen(false);
     soundService.playSubtleClick();
     hapticsService.confirm();
-    showToast('Movie added to collection');
+    showToast(`${isTvSeries ? 'Series' : 'Movie'} added to collection`);
     // Refresh member collections
     const colIds = await CollectionRepository.getCollectionsForMovie(movie.id);
     const colList = await Promise.all(colIds.map((id) => CollectionRepository.getById(id)));
@@ -250,11 +252,12 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
             <Heart size={16} className={userData?.isFavorite ? 'fill-[#B81C28]' : ''} />
           </button>
 
-          {/* Share Movie Card */}
+          {/* Share Title Card */}
           <button
             onClick={() => setIsShareOpen(true)}
-            className="p-2.5 rounded-xl bg-[#171924]/80 hover:bg-[#171924] border border-white/10 text-[#9E9DA5] hover:text-white transition-all"
-            title="Share Movie"
+            className="p-2.5 rounded-xl bg-[#171924]/80 hover:bg-[#171924] border border-white/10 text-[#9E9DA5] hover:text-white transition-all cursor-pointer"
+            title={isTvSeries ? 'Share Series' : 'Share Movie'}
+            aria-label={isTvSeries ? 'Share Series' : 'Share Movie'}
           >
             <Share2 size={16} />
           </button>
@@ -705,11 +708,11 @@ export const MovieDetail: React.FC<MovieDetailProps> = ({ movieId, onClose }) =>
           </div>
         )}
 
-        {/* Similar Films Section */}
+        {/* Similar Films / Series Section */}
         {similarMovies.length > 0 && (
           <div className="space-y-4 pt-6 border-t border-white/[0.06]">
             <h3 className="font-section-title text-[#F5F2F0]">
-              Films You Might Also Like
+              {isTvSeries ? 'Series You Might Also Like' : 'Films You Might Also Like'}
             </h3>
             <div className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain no-scrollbar pb-2.5 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 scroll-smooth">
               {similarMovies.map((sim) => (

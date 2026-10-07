@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useCinema } from '../context/CinemaContext';
+import { UserMovieRepository } from '../db/repositories/userMovieRepository';
+import { CollectionRepository } from '../db/repositories/collectionRepository';
+import { ReviewRepository } from '../db/repositories/reviewRepository';
 import { BackupCenterModal } from '../components/backup/BackupCenterModal';
 import { ImportWizard } from '../components/import/ImportWizard';
 import { Modal } from '../components/common/Modal';
@@ -8,11 +11,16 @@ import { CinemaToggle } from '../components/common/CinemaToggle';
 import { clearAllLocalData } from '../db/database';
 import { tmdbService, TMDBDiagnostics } from '../services/tmdbService';
 import { CinemaHeader } from '../components/ui/CinemaHeader';
-import { ReviewRepository } from '../db/repositories/reviewRepository';
 import { BrandLogo } from '../components/common/BrandLogo';
 import {
+  Bookmark,
+  CheckCircle2,
+  Layers,
+  BookOpen,
   Database,
   Upload,
+  Download,
+  RefreshCw,
   Volume2,
   Vibrate,
   Sliders,
@@ -23,7 +31,7 @@ import {
   EyeOff,
   KeyRound,
   AlertTriangle,
-  BookOpen,
+  ChevronRight,
 } from 'lucide-react';
 
 export const Profile: React.FC = () => {
@@ -33,9 +41,15 @@ export const Profile: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
-  // Settings form states
+  // Identity state
   const [displayName, setDisplayName] = useState(preferences.displayName || '');
   const [isSavingName, setIsSavingName] = useState(false);
+
+  // Library summary counts
+  const [watchlistCount, setWatchlistCount] = useState<number>(0);
+  const [watchedCount, setWatchedCount] = useState<number>(0);
+  const [collectionsCount, setCollectionsCount] = useState<number>(0);
+  const [journalCount, setJournalCount] = useState<number>(0);
 
   // TMDB advanced states
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -44,32 +58,29 @@ export const Profile: React.FC = () => {
   const [diagnostics, setDiagnostics] = useState<TMDBDiagnostics | null>(null);
   const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
 
-  const handleRunDiagnostics = async () => {
-    setIsRunningDiagnostics(true);
-    try {
-      const res = await tmdbService.runDiagnostics();
-      setDiagnostics(res);
-      if (res.isConnected) {
-        showToast('TMDB Connection: OK (200)');
-      } else {
-        showToast(`TMDB Connection: ${res.lastError}`);
-      }
-    } finally {
-      setIsRunningDiagnostics(false);
-    }
-  };
-
   useEffect(() => {
     setDisplayName(preferences.displayName || '');
     setTmdbApiKey(preferences.tmdbApiKey || '');
   }, [preferences]);
 
-  const [journalCount, setJournalCount] = useState<number>(0);
-
   useEffect(() => {
-    ReviewRepository.getAllJournalEntries()
-      .then((entries) => setJournalCount(entries.length))
-      .catch((err) => console.error('Failed to load journal count:', err));
+    let isMounted = true;
+    Promise.all([
+      UserMovieRepository.getWatchlistWithMovies().then((w) => w.length).catch(() => 0),
+      UserMovieRepository.getWatchedWithMovies().then((w) => w.length).catch(() => 0),
+      CollectionRepository.getAll().then((c) => c.length).catch(() => 0),
+      ReviewRepository.getAllJournalEntries().then((r) => r.length).catch(() => 0),
+    ]).then(([wl, wd, col, jnl]) => {
+      if (!isMounted) return;
+      setWatchlistCount(wl);
+      setWatchedCount(wd);
+      setCollectionsCount(col);
+      setJournalCount(jnl);
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [dataVersion]);
 
   const handleSaveDisplayName = async (e?: React.FormEvent) => {
@@ -93,6 +104,21 @@ export const Profile: React.FC = () => {
     showToast('Reset to default TMDB configuration.');
   };
 
+  const handleRunDiagnostics = async () => {
+    setIsRunningDiagnostics(true);
+    try {
+      const res = await tmdbService.runDiagnostics();
+      setDiagnostics(res);
+      if (res.isConnected) {
+        showToast('TMDB Connection: OK (200)');
+      } else {
+        showToast(`TMDB Connection: ${res.lastError}`);
+      }
+    } finally {
+      setIsRunningDiagnostics(false);
+    }
+  };
+
   const handleConfirmClear = async () => {
     setIsConfirmClearOpen(false);
     await clearAllLocalData();
@@ -101,13 +127,11 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 sm:space-y-6 pb-4 animate-cinema-fade max-w-3xl mx-auto">
+    <div className="space-y-6 pb-6 animate-cinema-fade max-w-3xl mx-auto">
       {/* Header */}
-      <CinemaHeader
-        title="Profile"
-      />
+      <CinemaHeader title="Profile" />
 
-      {/* Account / User Identity Area */}
+      {/* Account / User Identity Bar */}
       <div className="p-3.5 sm:p-4 rounded-2xl bg-[#131319] border border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-[#1B1B22] border border-[#E0AD52]/30 flex items-center justify-center font-bold text-sm text-[#E0AD52] shadow-[0_0_12px_rgba(224,173,82,0.15)] flex-shrink-0">
@@ -116,6 +140,9 @@ export const Profile: React.FC = () => {
           <div className="min-w-0">
             <div className="font-bold text-sm sm:text-base text-[#F5F3EB] tracking-wide uppercase truncate">
               {displayName || 'Film Collector'}
+            </div>
+            <div className="text-[11px] text-[#9E9DA5] font-mono">
+              Personal Cinema Companion
             </div>
           </div>
         </div>
@@ -139,68 +166,194 @@ export const Profile: React.FC = () => {
         </form>
       </div>
 
-      {/* FILM JOURNEY */}
-      <section className="space-y-1.5">
+      {/* SECTION 1: YOUR CINEMA */}
+      <section className="space-y-2">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Film Journey
+          Your Cinema
         </h2>
-        <div className="rounded-2xl bg-[#131319] border border-[#E0AD52]/20 hover:border-[#E0AD52]/40 transition-colors overflow-hidden">
+        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
+          {/* Watchlist */}
           <button
-            onClick={() => {
-              setActiveTab('reviews');
-              window.location.hash = '#reviews';
-            }}
+            onClick={() => setActiveTab('watchlist')}
             className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#E0AD52]/10 border border-[#E0AD52]/30 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/20 transition-colors">
-                <BookOpen size={17} className="text-[#E0AD52]" />
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <Bookmark size={17} className="text-[#E0AD52]" />
               </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors flex items-center gap-2">
-                <span>Film Journal & Reflections</span>
-                {journalCount > 0 && (
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#E0AD52]/15 text-[#E0AD52] border border-[#E0AD52]/30">
-                    {journalCount} {journalCount === 1 ? 'Film' : 'Films'}
-                  </span>
-                )}
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Watchlist
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  {watchlistCount} {watchlistCount === 1 ? 'title' : 'titles'} saved
+                </div>
               </div>
             </div>
-            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
-              ›
-            </span>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
           </button>
-        </div>
-      </section>
 
-      {/* COLLECTIONS SHORTCUT */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Collections
-        </h2>
-        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] hover:border-white/20 transition-colors overflow-hidden">
+          {/* Watched */}
+          <button
+            onClick={() => setActiveTab('watched')}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#66C78B]/15 transition-colors">
+                <CheckCircle2 size={17} className="text-[#66C78B]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#66C78B] transition-colors">
+                  Watched
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  {watchedCount} {watchedCount === 1 ? 'title' : 'titles'} screened
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#66C78B] transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Collections */}
           <button
             onClick={() => setActiveTab('collections')}
             className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-white/10 transition-colors">
-                <Database size={17} className="text-[#E0AD52]" />
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#8C7AD0]/15 transition-colors">
+                <Layers size={17} className="text-[#8C7AD0]" />
               </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
-                <span>Curated Universes & Lists</span>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#8C7AD0] transition-colors">
+                  Collections
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  {collectionsCount} {collectionsCount === 1 ? 'collection' : 'collections'} created
+                </div>
               </div>
             </div>
-            <span className="text-[#9E9DA5] group-hover:text-[#E0AD52] text-lg font-mono transition-transform group-hover:translate-x-1">
-              ›
-            </span>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#8C7AD0] transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Film Journey */}
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <BookOpen size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Film Journey
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  {journalCount} personal {journalCount === 1 ? 'review' : 'reviews'} & reflections
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
       </section>
 
-      {/* PREFERENCES */}
-      <section className="space-y-1.5">
+      {/* SECTION 2: DATA */}
+      <section className="space-y-2">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Preferences
+          Data
+        </h2>
+        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
+          {/* Import */}
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <Upload size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Import
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  CSV, Excel (XLSX), or Text movie lists
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Backup */}
+          <button
+            onClick={() => setIsBackupOpen(true)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <Database size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Backup Center
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  Export secure offline JSON archive of your library
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Restore */}
+          <button
+            onClick={() => setIsBackupOpen(true)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <RefreshCw size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Restore
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  Smart merge or replace library from backup
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Export */}
+          <button
+            onClick={() => setIsBackupOpen(true)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#E0AD52]/15 transition-colors">
+                <Download size={17} className="text-[#E0AD52]" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB] group-hover:text-[#E0AD52] transition-colors">
+                  Export
+                </div>
+                <div className="text-[11px] text-[#9E9DA5]">
+                  Export library to CSV or readable JSON
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-[#63626B] group-hover:text-[#E0AD52] transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 3: APP PREFERENCES */}
+      <section className="space-y-2">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          App Preferences
         </h2>
         <div className="p-1 sm:p-1.5 rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04]">
           <CinemaToggle
@@ -223,36 +376,6 @@ export const Profile: React.FC = () => {
             checked={preferences.motionReduced}
             onChange={(checked) => updatePreference('motionReduced', checked)}
           />
-        </div>
-      </section>
-
-      {/* DATA & BACKUP */}
-      <section className="space-y-1.5">
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
-          Data & Backup
-        </h2>
-        <div className="rounded-2xl bg-[#131319] border border-white/[0.08] divide-y divide-white/[0.04] overflow-hidden">
-          <button
-            onClick={() => setIsBackupOpen(true)}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
-          >
-            <div className="flex items-center gap-3">
-              <Database size={16} className="text-[#E0AD52]" />
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Backup Center</div>
-            </div>
-            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
-          </button>
-
-          <button
-            onClick={() => setIsImportOpen(true)}
-            className="w-full p-3.5 sm:p-4 flex items-center justify-between text-left hover:bg-white/[0.03] transition-colors cursor-pointer border-none bg-transparent"
-          >
-            <div className="flex items-center gap-3">
-              <Upload size={16} className="text-[#E0AD52]" />
-              <div className="text-xs sm:text-sm font-semibold text-[#F5F3EB]">Import / Export</div>
-            </div>
-            <span className="text-[#9E9DA5] text-lg font-mono">›</span>
-          </button>
         </div>
       </section>
 
@@ -335,32 +458,39 @@ export const Profile: React.FC = () => {
         )}
       </section>
 
-      {/* Danger Zone (Section 28 & 29) */}
-      <section className="p-4 rounded-2xl bg-[#B81C28]/10 border border-[#B81C28]/25 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-[#D94048]">
-          <AlertTriangle size={16} />
-          <h3 className="text-xs uppercase tracking-wider font-bold">Danger Zone</h3>
+      {/* SECTION 4: ABOUT & DANGER ZONE */}
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#9E9DA5] px-1">
+          About
+        </h2>
+        
+        {/* Danger Zone */}
+        <div className="p-4 rounded-2xl bg-[#B81C28]/10 border border-[#B81C28]/25 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-[#D94048]">
+            <AlertTriangle size={16} />
+            <h3 className="text-xs uppercase tracking-wider font-bold">Danger Zone</h3>
+          </div>
+
+          <CinemaButton
+            variant="danger"
+            size="sm"
+            icon={<Trash2 size={14} />}
+            onClick={() => setIsConfirmClearOpen(true)}
+          >
+            Clear Local Cinema
+          </CinemaButton>
         </div>
 
-        <CinemaButton
-          variant="danger"
-          size="sm"
-          icon={<Trash2 size={14} />}
-          onClick={() => setIsConfirmClearOpen(true)}
-        >
-          Clear Local Cinema
-        </CinemaButton>
+        {/* Brand & Version Info */}
+        <div className="pt-4 pb-2 flex flex-col items-center justify-center text-center gap-1.5 opacity-70">
+          <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
+          <p className="text-[10px] text-[#63626B] font-mono tracking-wider">
+            v1.0.0 • PRIVATE LOCAL-FIRST VAULT
+          </p>
+        </div>
       </section>
 
-      {/* Brand & Version Info */}
-      <div className="pt-3 pb-2 flex flex-col items-center justify-center text-center gap-1.5 opacity-70">
-        <BrandLogo variant="inside" size={24} alt="MYCINEMA" />
-        <p className="text-[10px] text-[#63626B] font-mono tracking-wider">
-          v1.0.0 • PRIVATE LOCAL-FIRST VAULT
-        </p>
-      </div>
-
-      {/* Clear Database Confirmation Modal (Section 29) */}
+      {/* Clear Database Confirmation Modal */}
       <Modal
         isOpen={isConfirmClearOpen}
         onClose={() => setIsConfirmClearOpen(false)}
@@ -389,7 +519,7 @@ export const Profile: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-[#B81C28]/15 border border-[#B81C28]/30 flex items-start gap-3">
             <AlertTriangle size={20} className="text-[#D94048] flex-shrink-0 mt-0.5" />
             <p className="text-xs text-[#F5F2F0] leading-relaxed">
-              This will permanently delete your movies, watched history, custom collections, personal ratings, and notes from IndexedDB.
+              This will permanently delete your movies, series, watched history, custom collections, personal ratings, and notes from IndexedDB.
             </p>
           </div>
 
@@ -412,3 +542,5 @@ export const Profile: React.FC = () => {
     </div>
   );
 };
+
+export default Profile;
